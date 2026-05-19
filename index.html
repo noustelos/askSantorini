@@ -76,23 +76,36 @@
 
       <section class="questions-section section-shell" id="questions">
         <div class="section-heading compact">
-          <p class="eyebrow">Example questions</p>
-          <h2>Try asking:</h2>
+          <p class="eyebrow">Demo feature</p>
+          <h2>Try a useful Santorini question.</h2>
+          <p>Click a question to see an instant preview. The full AI guide is launching soon, but these answers are useful today.</p>
         </div>
-        <div class="question-grid" aria-label="Example questions">
-          <button type="button" class="question-card" data-question="Best sunset spot tonight">Best sunset spot tonight</button>
-          <button type="button" class="question-card" data-question="Catamaran sunset cruise">Catamaran sunset cruise</button>
-          <button type="button" class="question-card" data-question="Best beach near me">Best beach near me</button>
-          <button type="button" class="question-card" data-question="How to get to Oia">How to get to Oia</button>
-          <button type="button" class="question-card" data-question="Santorini in one day">Santorini in one day</button>
-          <button type="button" class="question-card" data-question="What to do if it's windy">What to do if it's windy</button>
-          <button type="button" class="question-card" data-question="Best local food">Best local food</button>
-          <button type="button" class="question-card" data-question="Family-friendly ideas">Family-friendly ideas</button>
-        </div>
-        <div class="answer-preview" id="answer-preview" aria-live="polite" hidden>
-          <p class="preview-label">Preview answer</p>
-          <h3 id="preview-question"></h3>
-          <p id="preview-answer"></p>
+        <div class="questions-experience">
+          <div class="question-grid" aria-label="Demo questions">
+            <button type="button" class="question-card" data-question="Best sunset spot tonight">Best sunset spot tonight</button>
+            <button type="button" class="question-card" data-question="Catamaran sunset cruise">Catamaran sunset cruise</button>
+            <button type="button" class="question-card" data-question="Best beach near me">Best beach near me</button>
+            <button type="button" class="question-card" data-question="How to get to Oia">How to get to Oia</button>
+            <button type="button" class="question-card" data-question="Santorini in one day">Santorini in one day</button>
+            <button type="button" class="question-card" data-question="What to do if it's windy">What to do if it's windy</button>
+            <button type="button" class="question-card" data-question="Best local food">Best local food</button>
+            <button type="button" class="question-card" data-question="Family-friendly ideas">Family-friendly ideas</button>
+          </div>
+          <div class="answer-preview" id="answer-preview" aria-live="polite">
+            <div class="preview-topline">
+              <p class="preview-label">Instant preview</p>
+              <span>Works today</span>
+            </div>
+            <div class="preview-question-row">
+              <span>Question</span>
+              <h3 id="preview-question"></h3>
+            </div>
+            <p id="preview-answer"></p>
+            <div class="preview-footer">
+              <span>Real AI guide launching soon.</span>
+              <a href="#chatbot">Join early access</a>
+            </div>
+          </div>
         </div>
       </section>
 

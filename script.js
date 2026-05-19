@@ -17,19 +17,36 @@ const notifyForm = document.querySelector("#notify-form");
 const modalButtons = document.querySelectorAll("[data-modal]");
 const closeButtons = document.querySelectorAll("[data-close]");
 
-questionCards.forEach((card) => {
-  card.addEventListener("click", () => {
-    const question = card.dataset.question;
-    const answer = answers[question];
+const showAnswerPreview = (card, shouldScroll = true) => {
+  const question = card.dataset.question;
+  const answer = answers[question];
 
-    questionCards.forEach((item) => item.classList.remove("is-active"));
-    card.classList.add("is-active");
-
-    previewQuestion.textContent = question;
-    previewAnswer.textContent = answer;
-    preview.hidden = false;
-    preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  questionCards.forEach((item) => {
+    item.classList.remove("is-active");
+    item.setAttribute("aria-pressed", "false");
   });
+
+  card.classList.add("is-active");
+  card.setAttribute("aria-pressed", "true");
+
+  previewQuestion.textContent = question;
+  previewAnswer.textContent = answer;
+
+  if (shouldScroll) {
+    preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+};
+
+questionCards.forEach((card, index) => {
+  card.setAttribute("aria-pressed", "false");
+
+  card.addEventListener("click", () => {
+    showAnswerPreview(card);
+  });
+
+  if (index === 0) {
+    showAnswerPreview(card, false);
+  }
 });
 
 if (notifyForm) {
