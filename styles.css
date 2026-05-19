@@ -6,6 +6,7 @@
   --muted: #666666;
   --blue: #063b78;
   --blue-soft: #e7eef7;
+  --gold: #b88a44;
   --line: rgba(6, 59, 120, 0.18);
   --shadow: 0 24px 70px rgba(6, 59, 120, 0.12);
   --radius: 22px;
@@ -265,11 +266,38 @@ h3 {
 }
 
 .hero-promise span {
+  animation: promise-pulse 6s ease-in-out infinite;
   padding: 10px 13px;
+  position: relative;
 }
 
 .hero-promise span + span {
   border-left: 1px solid var(--line);
+}
+
+.hero-promise span:nth-child(2) {
+  animation-delay: 2s;
+}
+
+.hero-promise span:nth-child(3) {
+  animation-delay: 4s;
+}
+
+@keyframes promise-pulse {
+  0%,
+  20%,
+  100% {
+    background: transparent;
+    box-shadow: inset 0 0 0 rgba(184, 138, 68, 0);
+    color: var(--blue);
+  }
+
+  7%,
+  13% {
+    background: rgba(184, 138, 68, 0.12);
+    box-shadow: inset 0 2px 0 rgba(184, 138, 68, 0.42), 0 0 22px rgba(184, 138, 68, 0.14);
+    color: #6f4d1d;
+  }
 }
 
 .chat-card {
@@ -860,5 +888,6 @@ h3 {
   *::after {
     scroll-behavior: auto !important;
     transition: none !important;
+    animation: none !important;
   }
 }
