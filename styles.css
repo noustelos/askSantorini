@@ -642,7 +642,7 @@ h3 {
   gap: 14px;
 }
 
-.footer-credit {
+.footer-links .footer-credit {
   color: var(--blue);
   display: inline-block;
   font-size: 0.78rem;
@@ -652,8 +652,8 @@ h3 {
   overflow-wrap: anywhere;
 }
 
-.footer-credit:hover {
-  color: var(--text);
+.footer-links .footer-credit:hover {
+  color: var(--blue);
 }
 
 .footer-links button {
