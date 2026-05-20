@@ -1,25 +1,41 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Ask Santorini AI | Free Smart Guide to Santorini</title>
     <meta name="description" content="Ask Santorini AI is a free smart guide for Santorini visitors. Ask about beaches, sunsets, tours, food, buses, villages and what to do today.">
-    <meta property="og:title" content="Ask Santorini AI">
-    <meta property="og:description" content="Your free smart guide to Santorini.">
-    <meta property="og:url" content="https://asksantorini.ai">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://asksantorini.ai/">
+    <meta property="og:title" content="Ask Santorini AI | Free Smart Guide to Santorini">
+    <meta property="og:description" content="Ask about Santorini beaches, sunsets, tours, food, buses, villages and daily plans.">
+    <meta property="og:url" content="https://asksantorini.ai/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Ask Santorini AI">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:image" content="https://asksantorini.ai/assets/social/ask-santorini-og.jpg">
+    <meta property="og:image:alt" content="Ask Santorini AI logo on a light background">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Ask Santorini AI | Free Smart Guide to Santorini">
+    <meta name="twitter:description" content="Ask about Santorini beaches, sunsets, tours, food, buses, villages and daily plans.">
+    <meta name="twitter:image" content="https://asksantorini.ai/assets/social/ask-santorini-og.jpg">
     <meta name="theme-color" content="#063b78">
+    <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.min.css">
   </head>
   <body id="top">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <header class="site-header">
       <a class="site-logo" href="#top" aria-label="Ask Santorini AI home">
-        <img src="assets/photos/santorini_inspired_logo_with_elegant_text.png" alt="Ask Santorini AI">
+        <picture>
+          <source srcset="assets/brand/ask-santorini-logo.webp" type="image/webp">
+          <img src="assets/brand/ask-santorini-logo.png" width="720" height="180" alt="Ask Santorini AI">
+        </picture>
       </a>
       <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="primary-navigation">
         <span aria-hidden="true"></span>
@@ -31,23 +47,23 @@
         <a href="#tours">Tours</a>
         <a href="#partners">Partners</a>
         <a href="mailto:hello@asksantorini.ai">Contact</a>
-        <a class="nav-cta" href="#chatbot">Start Asking</a>
+        <a class="nav-cta" href="#chatbot">Early Access</a>
       </nav>
     </header>
 
-    <main>
+    <main id="main-content">
       <section class="hero section-shell">
         <div class="hero-copy">
           <p class="eyebrow">ASK SANTORINI AI</p>
           <h1>Your free AI guide to Santorini.</h1>
-          <p class="hero-subtitle">Ask about beaches, sunsets, tours, food, buses, villages and what to do today.</p>
-          <div class="hero-actions" aria-label="Primary actions">
-            <a class="button button-primary" href="#chatbot">Start Asking</a>
-            <a class="button button-secondary" href="#questions">See Example Questions</a>
+          <p class="hero-subtitle">Launching soon with practical answers for beaches, sunsets, tours, food, buses, villages and what to do today.</p>
+          <div class="hero-actions" role="group" aria-label="Primary actions">
+            <a class="button button-primary" href="#chatbot">Join early access</a>
+            <a class="button button-secondary" href="#questions">Try example questions</a>
           </div>
-          <p class="hero-promise" aria-label="No app. No signup. Just ask.">
+          <p class="hero-promise">
             <span>No app</span>
-            <span>No signup</span>
+            <span>Free preview</span>
             <span>Just ask</span>
           </p>
         </div>
@@ -55,7 +71,7 @@
         <aside class="chat-card" aria-label="Sample Ask Santorini AI conversation">
           <div class="chat-card-top">
             <span class="status-dot" aria-hidden="true"></span>
-            <span>Coming soon preview</span>
+            <span>Preview mode</span>
           </div>
           <div class="chat-thread">
             <div class="message user-message">
@@ -86,7 +102,7 @@
           <p>Click a question to see an instant preview. The full AI guide is launching soon, but these answers are useful today.</p>
         </div>
         <div class="questions-experience">
-          <div class="question-grid" aria-label="Demo questions">
+          <div class="question-grid" role="group" aria-label="Demo questions">
             <button type="button" class="question-card" data-question="Best sunset spot tonight">Best sunset spot tonight</button>
             <button type="button" class="question-card" data-question="Catamaran sunset cruise">Catamaran sunset cruise</button>
             <button type="button" class="question-card" data-question="Best beach near me">Best beach near me</button>
@@ -103,9 +119,9 @@
             </div>
             <div class="preview-question-row">
               <span>Question</span>
-              <h3 id="preview-question"></h3>
+              <h3 id="preview-question">Best sunset spot tonight</h3>
             </div>
-            <p id="preview-answer"></p>
+            <p id="preview-answer">Oia is iconic but very crowded. Imerovigli and Firostefani are calmer alternatives with beautiful caldera views. For a premium experience, consider a sunset catamaran cruise.</p>
             <div class="preview-footer">
               <span>Real AI guide launching soon.</span>
               <a href="#chatbot">Join early access</a>
@@ -175,22 +191,22 @@
           <article class="tour-card">
             <h3>Sunset Catamaran Cruises</h3>
             <p>Caldera views, swimming stops and sunset from the water.</p>
-            <button type="button" disabled>Coming soon</button>
+            <span class="tour-status">Launching with AI guide</span>
           </article>
           <article class="tour-card">
             <h3>Volcano &amp; Hot Springs Tours</h3>
             <p>Classic island excursions with practical visitor context.</p>
-            <button type="button" disabled>Coming soon</button>
+            <span class="tour-status">Launching with AI guide</span>
           </article>
           <article class="tour-card">
             <h3>Wine Tasting</h3>
             <p>Local vineyards, volcanic soil and Santorini wine routes.</p>
-            <button type="button" disabled>Coming soon</button>
+            <span class="tour-status">Launching with AI guide</span>
           </article>
           <article class="tour-card">
             <h3>Airport / Port Transfers</h3>
             <p>Simple transfer options for arrivals, departures and day plans.</p>
-            <button type="button" disabled>Coming soon</button>
+            <span class="tour-status">Launching with AI guide</span>
           </article>
         </div>
         <p class="disclosure">Some links may be partner recommendations. To be featured, contact <a href="mailto:partners@asksantorini.ai">partners@asksantorini.ai</a>.</p>
@@ -212,16 +228,21 @@
           <div class="chatbot-copy">
             <p class="eyebrow">Early access</p>
             <h2>The AI guide is launching soon.</h2>
-            <p>The AI guide is launching soon. For now, explore example questions and join the early access list.</p>
+            <p>For now, explore example questions and join the early access list.</p>
             <p>We are preparing a practical Santorini AI assistant for beaches, sunsets, tours, transport, food and local tips.</p>
           </div>
-          <form class="notify-form" id="notify-form">
+          <form class="notify-form" id="notify-form" novalidate>
             <label for="email">Email address</label>
+            <div class="honeypot" aria-hidden="true">
+              <label for="company">Company</label>
+              <input id="company" name="company" type="text" tabindex="-1" autocomplete="off">
+            </div>
             <div class="form-row">
-              <input id="email" name="email" type="email" autocomplete="email" aria-describedby="form-note">
+              <input id="email" name="email" type="email" autocomplete="email" required inputmode="email" aria-describedby="form-note form-status">
               <button class="button button-primary" type="submit">Notify me</button>
             </div>
             <p class="form-note" id="form-note">For now, contact us at <a href="mailto:hello@asksantorini.ai">hello@asksantorini.ai</a></p>
+            <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
           </form>
         </div>
       </section>
@@ -232,22 +253,34 @@
         <div>
           <a class="footer-brand" href="#top">asksantorini.ai</a>
           <p>Independent visitor guide. Not affiliated with Google or any official tourism authority.</p>
+          <p>&copy; <span id="current-year">2026</span> AskSantorini.ai. All rights reserved.</p>
         </div>
-        <div class="footer-links" aria-label="Footer links">
-          <button type="button" data-modal="privacy-modal">Privacy</button>
+        <div class="footer-links">
+          <a href="#privacy-modal" data-modal="privacy-modal">Πολιτική Απορρήτου &amp; Cookies</a>
           <button type="button" data-modal="terms-modal">Terms</button>
           <a href="mailto:hello@asksantorini.ai">hello@asksantorini.ai</a>
-          <a class="footer-credit" href="https://noustelos.gr" target="_blank" rel="noopener">Designed by NOUSTELOS_STUDIO /&gt;</a>
+          <a class="footer-credit" href="https://noustelos.gr" target="_blank" rel="noopener">A NOUSTELOS_STUDIO /&gt; project</a>
         </div>
       </div>
     </footer>
 
+    <section class="cookie-banner is-hidden" id="cookie-banner" aria-label="Ενημέρωση για cookies">
+      <p>Ο ιστότοπός μας χρησιμοποιεί cookies για να βελτιώσει την εμπειρία σας και να αναλύσει την επισκεψιμότητα.</p>
+      <div class="cookie-actions">
+        <button class="button button-primary" type="button" id="accept-cookies">Αποδοχή Όλων</button>
+        <button class="cookie-secondary" type="button" id="essential-cookies">Ρυθμίσεις / Μόνο τα Απαραίτητα</button>
+      </div>
+    </section>
+
     <dialog class="info-modal" id="privacy-modal" aria-labelledby="privacy-title">
       <div class="modal-content">
-        <button class="modal-close" type="button" data-close aria-label="Close privacy notice">Close</button>
-        <h2 id="privacy-title">Privacy</h2>
-        <p>No sensitive personal data should be collected in this MVP. The early-access form is not connected to a backend and does not store email addresses yet.</p>
-        <p>For privacy or legal questions, contact <a href="mailto:info@asksantorini.ai">info@asksantorini.ai</a>.</p>
+        <button class="modal-close" type="button" data-close aria-label="Κλείσιμο πολιτικής απορρήτου">Κλείσιμο</button>
+        <h2 id="privacy-title">Πολιτική Απορρήτου</h2>
+        <p>Η παρούσα Πολιτική Απορρήτου περιγράφει τον τρόπο με τον οποίο το AskSantorini.ai συλλέγει και επεξεργάζεται προσωπικά δεδομένα στο πλαίσιο παροχής ενημερωτικών και ψηφιακών υπηρεσιών.</p>
+        <p>Ενδέχεται να συλλέγουμε στοιχεία επικοινωνίας, όπως email ή τηλέφωνο, όταν τα υποβάλλετε μέσω φόρμας ή μέσω απευθείας επικοινωνίας. Τα δεδομένα αυτά χρησιμοποιούνται για απάντηση σε αιτήματα, ενημέρωση σχετικά με υπηρεσίες, συνεργασίες ή πρόσβαση σε λειτουργίες early access.</p>
+        <p>Δεν πωλούμε προσωπικά δεδομένα. Ενδέχεται να κοινοποιούμε περιορισμένα στοιχεία σε αξιόπιστους συνεργάτες ή παρόχους τεχνικών υπηρεσιών, αποκλειστικά όταν είναι απαραίτητο για τη λειτουργία του ιστότοπου, την εξυπηρέτηση αιτημάτων ή τη συμμόρφωση με νόμιμες υποχρεώσεις.</p>
+        <p>Ο ιστότοπος μπορεί να χρησιμοποιεί απαραίτητα cookies για τη βασική λειτουργία του και, εφόσον δοθεί συγκατάθεση, cookies ανάλυσης επισκεψιμότητας για τη βελτίωση της εμπειρίας χρήστη.</p>
+        <p>Μπορείτε να ζητήσετε πρόσβαση, διόρθωση ή διαγραφή των δεδομένων σας επικοινωνώντας στο <a href="mailto:info@asksantorini.ai">info@asksantorini.ai</a>.</p>
       </div>
     </dialog>
 
@@ -261,6 +294,6 @@
       </div>
     </dialog>
 
-    <script src="script.js" defer></script>
+    <script src="script.min.js" defer></script>
   </body>
 </html>
