@@ -652,3 +652,4 @@ document.querySelectorAll("dialog").forEach((modal) => {
 });
 
 setLanguage(getInitialLanguage());
+
