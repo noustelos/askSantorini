@@ -75,7 +75,7 @@ button {
   backdrop-filter: blur(16px);
 }
 
-.brand,
+.site-logo,
 .site-nav,
 .hero-actions,
 .form-row,
@@ -84,42 +84,17 @@ button {
   align-items: center;
 }
 
-.brand {
-  gap: 10px;
-  color: var(--blue);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
+.site-logo {
+  flex-shrink: 0;
+  text-decoration: none;
 }
 
-.brand-mark {
-  width: 34px;
-  height: 22px;
-  border: 2px solid var(--blue);
-  border-top: 0;
-  border-radius: 0 0 18px 18px;
-  position: relative;
-}
-
-.brand-mark::before,
-.brand-mark::after {
-  content: "";
-  position: absolute;
-  left: 5px;
-  right: 5px;
-  height: 2px;
-  background: var(--blue);
-  border-radius: 999px;
-}
-
-.brand-mark::before {
-  top: 5px;
-}
-
-.brand-mark::after {
-  top: 11px;
-  left: 11px;
+.site-logo img {
+  display: block;
+  width: auto;
+  height: 54px;
+  max-width: 280px;
+  object-fit: contain;
 }
 
 .site-nav {
@@ -965,6 +940,11 @@ h3 {
     margin-top: 10px;
   }
 
+  .site-logo img {
+    height: 40px;
+    max-width: 220px;
+  }
+
   .site-nav a {
     font-size: 0.82rem;
   }
@@ -990,6 +970,13 @@ h3 {
     max-width: 100%;
   }
 
+
+@media (max-width: 420px) {
+  .site-logo img {
+    height: 36px;
+    max-width: 190px;
+  }
+}
   .questions-experience,
   .question-grid,
   .steps-grid,
