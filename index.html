@@ -193,7 +193,7 @@
             <button type="button" disabled>Coming soon</button>
           </article>
         </div>
-        <p class="disclosure">Some links may be partner recommendations.</p>
+        <p class="disclosure">Some links may be partner recommendations. To be featured, contact <a href="mailto:partners@asksantorini.ai">partners@asksantorini.ai</a>.</p>
       </section>
 
       <section class="partners-section section-shell" id="partners">
@@ -203,7 +203,7 @@
             <h2>For hotels, tours and local businesses</h2>
             <p>AskSantorini.ai is being built as a simple AI concierge for Santorini visitors. Hotels, tour providers and local businesses can be featured in relevant visitor questions.</p>
           </div>
-          <a class="button button-primary" href="mailto:hello@asksantorini.ai?subject=AskSantorini.ai%20Partnership">Become a partner</a>
+          <a class="button button-primary" href="mailto:partners@asksantorini.ai?subject=AskSantorini.ai%20Partnership">Become a partner</a>
         </div>
       </section>
 
@@ -218,7 +218,7 @@
           <form class="notify-form" id="notify-form">
             <label for="email">Email address</label>
             <div class="form-row">
-              <input id="email" name="email" type="email" placeholder="you@example.com" autocomplete="email">
+              <input id="email" name="email" type="email" autocomplete="email" aria-describedby="form-note">
               <button class="button button-primary" type="submit">Notify me</button>
             </div>
             <p class="form-note" id="form-note">For now, contact us at <a href="mailto:hello@asksantorini.ai">hello@asksantorini.ai</a></p>
@@ -236,7 +236,7 @@
         <div class="footer-links" aria-label="Footer links">
           <button type="button" data-modal="privacy-modal">Privacy</button>
           <button type="button" data-modal="terms-modal">Terms</button>
-          <a href="mailto:hello@asksantorini.ai">Contact</a>
+          <a href="mailto:hello@asksantorini.ai">hello@asksantorini.ai</a>
           <a class="footer-credit" href="https://noustelos.gr" target="_blank" rel="noopener">Designed by NOUSTELOS_STUDIO /&gt;</a>
         </div>
       </div>
@@ -246,8 +246,8 @@
       <div class="modal-content">
         <button class="modal-close" type="button" data-close aria-label="Close privacy notice">Close</button>
         <h2 id="privacy-title">Privacy</h2>
-        <p>No sensitive personal data should be collected in this MVP. The early-access form is a placeholder and does not store email addresses yet.</p>
-        <p>For now, contact <a href="mailto:hello@asksantorini.ai">hello@asksantorini.ai</a> directly.</p>
+        <p>No sensitive personal data should be collected in this MVP. The early-access form is not connected to a backend and does not store email addresses yet.</p>
+        <p>For privacy or legal questions, contact <a href="mailto:info@asksantorini.ai">info@asksantorini.ai</a>.</p>
       </div>
     </dialog>
 
@@ -257,6 +257,7 @@
         <h2 id="terms-title">Terms</h2>
         <p>Some links may be partner recommendations. Information should be verified before booking or traveling.</p>
         <p>AskSantorini.ai is an independent visitor guide and not an official tourism authority.</p>
+        <p>For privacy or legal questions, contact <a href="mailto:info@asksantorini.ai">info@asksantorini.ai</a>.</p>
       </div>
     </dialog>
 

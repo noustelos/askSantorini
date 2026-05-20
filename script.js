@@ -97,9 +97,8 @@ questionCards.forEach((card, index) => {
 if (notifyForm) {
   notifyForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    alert(`Thanks.
-Email collection will be enabled soon.
-Please contact hello@asksantorini.ai.`);
+    alert(`Email collection is not active yet.
+For now, contact hello@asksantorini.ai.`);
   });
 }
 
