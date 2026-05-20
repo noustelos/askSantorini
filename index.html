@@ -7,6 +7,9 @@
     <meta name="description" content="Ask Santorini AI is a free smart guide for Santorini visitors. Ask about beaches, sunsets, tours, food, buses, villages and what to do today.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://asksantorini.ai/">
+    <link rel="alternate" hreflang="en" href="https://asksantorini.ai/?lang=en">
+    <link rel="alternate" hreflang="el" href="https://asksantorini.ai/?lang=el">
+    <link rel="alternate" hreflang="x-default" href="https://asksantorini.ai/">
     <meta property="og:title" content="Ask Santorini AI | Free Smart Guide to Santorini">
     <meta property="og:description" content="Ask about Santorini beaches, sunsets, tours, food, buses, villages and daily plans.">
     <meta property="og:url" content="https://asksantorini.ai/">
@@ -43,11 +46,16 @@
         <span aria-hidden="true"></span>
       </button>
       <nav class="site-nav" id="primary-navigation" aria-label="Primary navigation">
-        <a href="#how-it-works">How it works</a>
-        <a href="#tours">Tours</a>
-        <a href="#partners">Partners</a>
-        <a href="mailto:hello@asksantorini.ai">Contact</a>
-        <a class="nav-cta" href="#chatbot">Early Access</a>
+        <a href="#how-it-works" data-i18n="navHow">How it works</a>
+        <a href="#tours" data-i18n="navTours">Tours</a>
+        <a href="#partners" data-i18n="navPartners">Partners</a>
+        <a href="mailto:hello@asksantorini.ai" data-i18n="navContact">Contact</a>
+        <a class="nav-cta" href="#chatbot" data-i18n="navEarlyAccess">Early Access</a>
+        <div class="language-toggle" role="group" aria-label="Language">
+          <button type="button" data-language="en" aria-label="Switch to English" aria-pressed="true">EN</button>
+          <span aria-hidden="true">/</span>
+          <button type="button" data-language="el" aria-label="Αλλαγή στα Ελληνικά" aria-pressed="false">EL</button>
+        </div>
       </nav>
     </header>
 
@@ -55,82 +63,82 @@
       <section class="hero section-shell">
         <div class="hero-copy">
           <p class="eyebrow">ASK SANTORINI AI</p>
-          <h1>Your free AI guide to Santorini.</h1>
-          <p class="hero-subtitle">Launching soon with practical answers for beaches, sunsets, tours, food, buses, villages and what to do today.</p>
+          <h1 data-i18n="heroTitle">Your free AI guide to Santorini.</h1>
+          <p class="hero-subtitle" data-i18n="heroSubtitle">Ask about beaches, sunsets, tours, food, buses, villages and what to do today.</p>
           <div class="hero-actions" role="group" aria-label="Primary actions">
-            <a class="button button-primary" href="#chatbot">Join early access</a>
-            <a class="button button-secondary" href="#questions">Try example questions</a>
+            <a class="button button-primary" href="#chatbot" data-i18n="startAsking">Start Asking</a>
+            <a class="button button-secondary" href="#questions" data-i18n="seeQuestions">See Example Questions</a>
           </div>
           <p class="hero-promise">
-            <span>No app</span>
-            <span>Free preview</span>
-            <span>Just ask</span>
+            <span data-i18n="noAppPart">No app</span>
+            <span data-i18n="noSignupPart">No signup</span>
+            <span data-i18n="justAskPart">Just ask</span>
           </p>
         </div>
 
         <aside class="chat-card" aria-label="Sample Ask Santorini AI conversation">
           <div class="chat-card-top">
             <span class="status-dot" aria-hidden="true"></span>
-            <span>Preview mode</span>
+            <span data-i18n="previewMode">Preview mode</span>
           </div>
           <div class="chat-thread">
             <div class="message user-message">
-              <span>User</span>
-              <p>Best sunset spot tonight?</p>
+              <span data-i18n="chatUser">User</span>
+              <p data-i18n="chatSampleQuestion1">Best sunset spot tonight?</p>
             </div>
             <div class="message ai-message">
-              <span>AI</span>
-              <p>Oia is the most famous sunset spot, but Imerovigli is usually calmer with beautiful caldera views. For something special, a sunset catamaran cruise can be a relaxed alternative.</p>
+              <span data-i18n="chatAi">AI</span>
+              <p data-i18n="chatSampleAnswer1">Oia is the most famous sunset spot, but Imerovigli is usually calmer with beautiful caldera views. For something special, a sunset catamaran cruise can be a relaxed alternative.</p>
             </div>
             <div class="message user-message">
-              <span>User</span>
-              <p>Any beach recommendation?</p>
+              <span data-i18n="chatUser">User</span>
+              <p data-i18n="chatSampleQuestion2">Any beach recommendation?</p>
             </div>
             <div class="message ai-message">
-              <span>AI</span>
-              <p>Perissa and Perivolos are great for black sand beaches and beach bars. Kamari is easy and family-friendly. Red Beach is unique but can be crowded.</p>
+              <span data-i18n="chatAi">AI</span>
+              <p data-i18n="chatSampleAnswer2">Perissa and Perivolos are great for black sand beaches and beach bars. Kamari is easy and family-friendly. Red Beach is unique but can be crowded.</p>
             </div>
           </div>
-          <p class="chatbot-tech-note">AI assistant using Google Gemini technology.</p>
+          <p class="chatbot-tech-note" data-i18n="geminiNote">AI assistant using Google Gemini technology.</p>
         </aside>
       </section>
 
       <section class="questions-section section-shell" id="questions">
         <div class="section-heading compact">
-          <p class="eyebrow">Demo feature</p>
-          <h2>Try a useful Santorini question.</h2>
-          <p>Click a question to see an instant preview. The full AI guide is launching soon, but these answers are useful today.</p>
+          <p class="eyebrow" data-i18n="demoFeature">Demo feature</p>
+          <h2 data-i18n="questionsTitle">Try a useful Santorini question.</h2>
+          <p data-i18n="questionsIntro">Click a question to see an instant preview. The full AI guide is launching soon, but these answers are useful today.</p>
         </div>
         <div class="questions-experience">
-          <p class="starter-line">Choose a starting point</p>
+          <p class="starter-line" data-i18n="starterLine">Choose a starting point</p>
           <div class="question-grid" role="group" aria-label="Demo questions">
-            <button type="button" class="question-card" data-question="Best sunset spot tonight"><span aria-hidden="true">☼</span>Best sunset spot tonight</button>
-            <button type="button" class="question-card" data-question="Catamaran sunset cruise"><span aria-hidden="true">⌁</span>Catamaran sunset cruise</button>
-            <button type="button" class="question-card" data-question="Best beach near me"><span aria-hidden="true">◒</span>Best beach near me</button>
-            <button type="button" class="question-card" data-question="How to get to Oia"><span aria-hidden="true">↗</span>How to get to Oia</button>
-            <button type="button" class="question-card" data-question="Santorini in one day"><span aria-hidden="true">◇</span>Santorini in one day</button>
-            <button type="button" class="question-card" data-question="What to do if it's windy"><span aria-hidden="true">≈</span>What to do if it's windy</button>
-            <button type="button" class="question-card" data-question="Best local food"><span aria-hidden="true">•</span>Best local food</button>
-            <button type="button" class="question-card" data-question="Family-friendly ideas"><span aria-hidden="true">＋</span>Family-friendly ideas</button>
+            <button type="button" class="question-card" data-question-key="sunset"><span aria-hidden="true">☼</span><span data-question-text>Best sunset spot tonight</span></button>
+            <button type="button" class="question-card" data-question-key="catamaran"><span aria-hidden="true">⌁</span><span data-question-text>Catamaran sunset cruise</span></button>
+            <button type="button" class="question-card" data-question-key="beach"><span aria-hidden="true">◒</span><span data-question-text>Best beach near me</span></button>
+            <button type="button" class="question-card" data-question-key="oia"><span aria-hidden="true">↗</span><span data-question-text>How to get to Oia</span></button>
+            <button type="button" class="question-card" data-question-key="oneDay"><span aria-hidden="true">◇</span><span data-question-text>Santorini in one day</span></button>
+            <button type="button" class="question-card" data-question-key="windy"><span aria-hidden="true">≈</span><span data-question-text>What to do if it's windy</span></button>
+            <button type="button" class="question-card" data-question-key="food"><span aria-hidden="true">•</span><span data-question-text>Best local food</span></button>
+            <button type="button" class="question-card" data-question-key="family"><span aria-hidden="true">＋</span><span data-question-text>Family-friendly ideas</span></button>
           </div>
           <div class="answer-preview" id="answer-preview" aria-live="polite">
             <div class="preview-topline">
-              <p class="preview-label">AI suggestion</p>
-              <span>Works today</span>
+              <p class="preview-label" data-i18n="previewLabel">AI suggestion</p>
+              <span data-i18n="worksToday">Works today</span>
             </div>
             <div class="preview-question-row">
-              <span>Question</span>
+              <span data-i18n="questionLabel">Question</span>
               <h3 id="preview-question">Best sunset spot tonight</h3>
             </div>
             <p id="preview-answer">Oia is iconic but very crowded. Imerovigli and Firostefani are calmer alternatives with beautiful caldera views. For a premium experience, consider a sunset catamaran cruise.</p>
             <div class="preview-actions" aria-label="Suggested next steps">
-              <a href="#tours">View tour options</a>
-              <a href="#questions">Ask another question</a>
-              <a href="#how-it-works">See practical tips</a>
+              <a href="#tours" data-i18n="viewTourOptions">View tour options</a>
+              <a href="#questions" data-i18n="askAnother">Ask another question</a>
+              <a href="#how-it-works" data-i18n="seeTips">See practical tips</a>
             </div>
             <div class="preview-footer">
-              <span>Real AI guide launching soon.</span>
-              <a href="#chatbot">Join early access</a>
+              <span data-i18n="realGuideSoon">Real AI guide launching soon.</span>
+              <a href="#chatbot" data-i18n="joinEarlyAccess">Join early access</a>
             </div>
           </div>
         </div>
@@ -139,48 +147,48 @@
       <section class="feature-strip" aria-label="Guide topics">
         <div class="feature-row section-shell">
           <article class="feature-card">
-            <h3>Beaches</h3>
-            <p>Practical answers for real visitors.</p>
+            <h3 data-i18n="featureBeaches">Beaches</h3>
+            <p data-i18n="featureLine">Practical answers for real visitors.</p>
           </article>
           <article class="feature-card">
-            <h3>Sunsets</h3>
-            <p>Practical answers for real visitors.</p>
+            <h3 data-i18n="featureSunsets">Sunsets</h3>
+            <p data-i18n="featureLine">Practical answers for real visitors.</p>
           </article>
           <article class="feature-card">
-            <h3>Tours</h3>
-            <p>Practical answers for real visitors.</p>
+            <h3 data-i18n="featureTours">Tours</h3>
+            <p data-i18n="featureLine">Practical answers for real visitors.</p>
           </article>
           <article class="feature-card">
-            <h3>Food</h3>
-            <p>Practical answers for real visitors.</p>
+            <h3 data-i18n="featureFood">Food</h3>
+            <p data-i18n="featureLine">Practical answers for real visitors.</p>
           </article>
           <article class="feature-card">
-            <h3>Transport</h3>
-            <p>Practical answers for real visitors.</p>
+            <h3 data-i18n="featureTransport">Transport</h3>
+            <p data-i18n="featureLine">Practical answers for real visitors.</p>
           </article>
         </div>
       </section>
 
       <section class="how-section section-shell" id="how-it-works">
         <div class="section-heading">
-          <p class="eyebrow">How it works</p>
-          <h2>Useful local guidance in three simple steps.</h2>
+          <p class="eyebrow" data-i18n="howEyebrow">How it works</p>
+          <h2 data-i18n="howTitle">Useful local guidance in three simple steps.</h2>
         </div>
         <div class="steps-grid">
           <article class="step-card">
             <span>1</span>
-            <h3>Scan or open the site</h3>
-            <p>Use AskSantorini.ai from your phone before or during your trip.</p>
+            <h3 data-i18n="step1Title">Scan or open the site</h3>
+            <p data-i18n="step1Text">Use AskSantorini.ai from your phone before or during your trip.</p>
           </article>
           <article class="step-card">
             <span>2</span>
-            <h3>Ask anything</h3>
-            <p>Beaches, sunsets, tours, villages, buses, food and daily plans.</p>
+            <h3 data-i18n="step2Title">Ask anything</h3>
+            <p data-i18n="step2Text">Beaches, sunsets, tours, villages, buses, food and daily plans.</p>
           </article>
           <article class="step-card">
             <span>3</span>
-            <h3>Get smart local suggestions</h3>
-            <p>Receive practical ideas designed for real Santorini visitors.</p>
+            <h3 data-i18n="step3Title">Get smart local suggestions</h3>
+            <p data-i18n="step3Text">Receive practical ideas designed for real Santorini visitors.</p>
           </article>
         </div>
       </section>
@@ -188,70 +196,70 @@
       <section class="tours-section section-shell" id="tours">
         <div class="section-heading split-heading">
           <div>
-            <p class="eyebrow">Tours</p>
-            <h2>Tours and local suggestions</h2>
+            <p class="eyebrow" data-i18n="toursEyebrow">Tours</p>
+            <h2 data-i18n="toursTitle">Tours and local suggestions</h2>
           </div>
-          <p>AskSantorini.ai will include curated suggestions for popular Santorini experiences such as sunset catamarans, volcano tours, wine tasting, transfers and local food.</p>
+          <p data-i18n="toursIntro">AskSantorini.ai will include curated suggestions for popular Santorini experiences such as sunset catamarans, volcano tours, wine tasting, transfers and local food.</p>
         </div>
         <div class="tour-grid">
           <article class="tour-card">
-            <span class="tour-label">Popular</span>
-            <h3>Sunset Catamaran Cruises</h3>
-            <p>Caldera views, swimming stops and sunset from the water.</p>
-            <span class="tour-status">Launching with AI guide</span>
+            <span class="tour-label" data-i18n="tourLabelPopular">Popular</span>
+            <h3 data-i18n="tourCatamaranTitle">Sunset Catamaran Cruises</h3>
+            <p data-i18n="tourCatamaranText">Caldera views, swimming stops and sunset from the water.</p>
+            <span class="tour-status" data-i18n="tourStatus">Launching with AI guide</span>
           </article>
           <article class="tour-card">
-            <span class="tour-label">Classic</span>
-            <h3>Volcano &amp; Hot Springs Tours</h3>
-            <p>Classic island excursions with practical visitor context.</p>
-            <span class="tour-status">Launching with AI guide</span>
+            <span class="tour-label" data-i18n="tourLabelClassic">Classic</span>
+            <h3 data-i18n="tourVolcanoTitle">Volcano &amp; Hot Springs Tours</h3>
+            <p data-i18n="tourVolcanoText">Classic island excursions with practical visitor context.</p>
+            <span class="tour-status" data-i18n="tourStatus">Launching with AI guide</span>
           </article>
           <article class="tour-card">
-            <span class="tour-label">Romantic</span>
-            <h3>Wine Tasting</h3>
-            <p>Local vineyards, volcanic soil and Santorini wine routes.</p>
-            <span class="tour-status">Launching with AI guide</span>
+            <span class="tour-label" data-i18n="tourLabelRomantic">Romantic</span>
+            <h3 data-i18n="tourWineTitle">Wine Tasting</h3>
+            <p data-i18n="tourWineText">Local vineyards, volcanic soil and Santorini wine routes.</p>
+            <span class="tour-status" data-i18n="tourStatus">Launching with AI guide</span>
           </article>
           <article class="tour-card">
-            <span class="tour-label">Practical</span>
-            <h3>Airport / Port Transfers</h3>
-            <p>Simple transfer options for arrivals, departures and day plans.</p>
-            <span class="tour-status">Launching with AI guide</span>
+            <span class="tour-label" data-i18n="tourLabelPractical">Practical</span>
+            <h3 data-i18n="tourTransfersTitle">Airport / Port Transfers</h3>
+            <p data-i18n="tourTransfersText">Simple transfer options for arrivals, departures and day plans.</p>
+            <span class="tour-status" data-i18n="tourStatus">Launching with AI guide</span>
           </article>
         </div>
-        <p class="disclosure">Some links may be partner recommendations. To be featured, contact <a href="mailto:partners@asksantorini.ai">partners@asksantorini.ai</a>.</p>
+        <p class="disclosure"><span data-i18n="partnerDisclosure">Some links may be partner recommendations.</span> <span data-i18n="toBeFeatured">To be featured, contact</span> <a href="mailto:partners@asksantorini.ai">partners@asksantorini.ai</a>.</p>
       </section>
 
       <section class="partners-section section-shell" id="partners">
         <div class="partners-panel">
           <div>
-            <p class="eyebrow">Partners</p>
-            <h2>For hotels, tours and local businesses</h2>
-            <p>AskSantorini.ai is being built as a simple AI concierge for Santorini visitors. Hotels, tour providers and local businesses can be featured in relevant visitor questions.</p>
+            <p class="eyebrow" data-i18n="partnersEyebrow">Partners</p>
+            <h2 data-i18n="partnersTitle">For hotels, tours and local businesses</h2>
+            <p data-i18n="partnersText">AskSantorini.ai is being built as a simple AI concierge for Santorini visitors. Hotels, tour providers and local businesses can be featured in relevant visitor questions.</p>
           </div>
-          <a class="button button-primary" href="mailto:partners@asksantorini.ai?subject=AskSantorini.ai%20Partnership">Become a partner</a>
+          <a class="button button-primary" href="mailto:partners@asksantorini.ai?subject=AskSantorini.ai%20Partnership" data-i18n="becomePartner">Become a partner</a>
         </div>
       </section>
 
       <section class="chatbot-section section-shell" id="chatbot">
         <div class="chatbot-panel">
           <div class="chatbot-copy">
-            <p class="eyebrow">Early access</p>
-            <h2>The AI guide is launching soon.</h2>
-            <p>For now, explore example questions and join the early access list.</p>
-            <p>We are preparing a practical Santorini AI assistant for beaches, sunsets, tours, transport, food and local tips.</p>
+            <p class="eyebrow" data-i18n="earlyAccessEyebrow">Early access</p>
+            <h2 data-i18n="earlyAccessTitle">The AI guide is launching soon.</h2>
+            <p data-i18n="earlyAccessIntro">For now, explore example questions and join the early access list.</p>
+            <p data-i18n="earlyAccessText">We are preparing a practical Santorini AI assistant for beaches, sunsets, tours, transport, food and local tips.</p>
           </div>
           <form class="notify-form" id="notify-form" novalidate>
-            <label for="email">Email address</label>
+            <label for="email" data-i18n="emailLabel">Email address</label>
             <div class="honeypot" aria-hidden="true">
-              <label for="company">Company</label>
+              <label for="company" data-i18n="companyLabel">Company</label>
               <input id="company" name="company" type="text" tabindex="-1" autocomplete="off">
             </div>
             <div class="form-row">
               <input id="email" name="email" type="email" autocomplete="email" required inputmode="email" aria-describedby="form-note form-status">
-              <button class="button button-primary" type="submit">Notify me</button>
+              <button class="button button-primary" type="submit" data-i18n="notifyMe">Notify me</button>
             </div>
-            <p class="form-note" id="form-note">For now, contact us at <a href="mailto:hello@asksantorini.ai">hello@asksantorini.ai</a></p>
+            <p class="form-note" id="form-note"><span data-i18n="contactForNow">For now, contact us at</span> <a href="mailto:hello@asksantorini.ai">hello@asksantorini.ai</a></p>
             <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
           </form>
         </div>
@@ -262,45 +270,45 @@
       <div class="footer-inner section-shell">
         <div>
           <a class="footer-brand" href="#top">asksantorini.ai</a>
-          <p>Independent visitor guide. Not affiliated with Google or any official tourism authority.</p>
-          <p>&copy; <span id="current-year">2026</span> AskSantorini.ai. All rights reserved.</p>
+          <p data-i18n="footerDisclaimer">Independent visitor guide. Not affiliated with Google or any official tourism authority.</p>
+          <p>&copy; <span id="current-year">2026</span> AskSantorini.ai. <span data-i18n="allRights">All rights reserved.</span></p>
         </div>
         <div class="footer-links">
-          <a href="#privacy-modal" data-modal="privacy-modal">Πολιτική Απορρήτου &amp; Cookies</a>
-          <button type="button" data-modal="terms-modal">Terms</button>
+          <a href="#privacy-modal" data-modal="privacy-modal" data-i18n="privacyLink">Privacy &amp; Cookies</a>
+          <button type="button" data-modal="terms-modal" data-i18n="termsLink">Terms</button>
           <a href="mailto:hello@asksantorini.ai">hello@asksantorini.ai</a>
           <a class="footer-credit" href="https://noustelos.gr" target="_blank" rel="noopener">A NOUSTELOS_STUDIO /&gt; project</a>
         </div>
       </div>
     </footer>
 
-    <section class="cookie-banner is-hidden" id="cookie-banner" aria-label="Ενημέρωση για cookies">
-      <p>Ο ιστότοπός μας χρησιμοποιεί cookies για να βελτιώσει την εμπειρία σας και να αναλύσει την επισκεψιμότητα.</p>
+    <section class="cookie-banner is-hidden" id="cookie-banner" aria-label="Cookie notice" data-i18n-attr="aria-label:cookieNoticeAria">
+      <p data-i18n="cookieText">We use cookies to improve your experience and understand site traffic.</p>
       <div class="cookie-actions">
-        <button class="button button-primary" type="button" id="accept-cookies">Αποδοχή Όλων</button>
-        <button class="cookie-secondary" type="button" id="essential-cookies">Ρυθμίσεις / Μόνο τα Απαραίτητα</button>
+        <button class="button button-primary" type="button" id="accept-cookies" data-i18n="acceptCookies">Accept all</button>
+        <button class="cookie-secondary" type="button" id="essential-cookies" data-i18n="essentialCookies">Necessary only</button>
       </div>
     </section>
 
     <dialog class="info-modal" id="privacy-modal" aria-labelledby="privacy-title">
       <div class="modal-content">
-        <button class="modal-close" type="button" data-close aria-label="Κλείσιμο πολιτικής απορρήτου">Κλείσιμο</button>
-        <h2 id="privacy-title">Πολιτική Απορρήτου</h2>
-        <p>Η παρούσα Πολιτική Απορρήτου περιγράφει τον τρόπο με τον οποίο το AskSantorini.ai συλλέγει και επεξεργάζεται προσωπικά δεδομένα στο πλαίσιο παροχής ενημερωτικών και ψηφιακών υπηρεσιών.</p>
-        <p>Ενδέχεται να συλλέγουμε στοιχεία επικοινωνίας, όπως email ή τηλέφωνο, όταν τα υποβάλλετε μέσω φόρμας ή μέσω απευθείας επικοινωνίας. Τα δεδομένα αυτά χρησιμοποιούνται για απάντηση σε αιτήματα, ενημέρωση σχετικά με υπηρεσίες, συνεργασίες ή πρόσβαση σε λειτουργίες early access.</p>
-        <p>Δεν πωλούμε προσωπικά δεδομένα. Ενδέχεται να κοινοποιούμε περιορισμένα στοιχεία σε αξιόπιστους συνεργάτες ή παρόχους τεχνικών υπηρεσιών, αποκλειστικά όταν είναι απαραίτητο για τη λειτουργία του ιστότοπου, την εξυπηρέτηση αιτημάτων ή τη συμμόρφωση με νόμιμες υποχρεώσεις.</p>
-        <p>Ο ιστότοπος μπορεί να χρησιμοποιεί απαραίτητα cookies για τη βασική λειτουργία του και, εφόσον δοθεί συγκατάθεση, cookies ανάλυσης επισκεψιμότητας για τη βελτίωση της εμπειρίας χρήστη.</p>
-        <p>Μπορείτε να ζητήσετε πρόσβαση, διόρθωση ή διαγραφή των δεδομένων σας επικοινωνώντας στο <a href="mailto:info@asksantorini.ai">info@asksantorini.ai</a>.</p>
+        <button class="modal-close" type="button" data-close aria-label="Close privacy notice" data-i18n="closeButton" data-i18n-attr="aria-label:privacyCloseAria">Close</button>
+        <h2 id="privacy-title" data-i18n="privacyTitle">Privacy Policy</h2>
+        <p data-i18n="privacyP1">This Privacy Policy describes how AskSantorini.ai collects and processes personal data while providing informational and digital services.</p>
+        <p data-i18n="privacyP2">We may collect contact details, such as email or phone, when you submit them through a form or direct communication. This data is used to respond to requests, share service updates, partnerships or early access information.</p>
+        <p data-i18n="privacyP3">We do not sell personal data. We may share limited information with trusted partners or technical service providers only when necessary for site operation, request handling or legal compliance.</p>
+        <p data-i18n="privacyP4">The site may use necessary cookies for basic functionality and, with consent, analytics cookies to improve the user experience.</p>
+        <p><span data-i18n="privacyP5">You can request access, correction or deletion of your data by contacting</span> <a href="mailto:info@asksantorini.ai">info@asksantorini.ai</a>.</p>
       </div>
     </dialog>
 
     <dialog class="info-modal" id="terms-modal" aria-labelledby="terms-title">
       <div class="modal-content">
-        <button class="modal-close" type="button" data-close aria-label="Close terms notice">Close</button>
-        <h2 id="terms-title">Terms</h2>
-        <p>Some links may be partner recommendations. Information should be verified before booking or traveling.</p>
-        <p>AskSantorini.ai is an independent visitor guide and not an official tourism authority.</p>
-        <p>For legal or general information questions, contact <a href="mailto:info@asksantorini.ai">info@asksantorini.ai</a>.</p>
+        <button class="modal-close" type="button" data-close aria-label="Close terms notice" data-i18n="closeButton" data-i18n-attr="aria-label:termsCloseAria">Close</button>
+        <h2 id="terms-title" data-i18n="termsTitle">Terms</h2>
+        <p data-i18n="termsP1">Some links may be partner recommendations. Information should be verified before booking or traveling.</p>
+        <p data-i18n="termsP2">AskSantorini.ai is an independent visitor guide and not an official tourism authority.</p>
+        <p><span data-i18n="termsP3">For legal or general information questions, contact</span> <a href="mailto:info@asksantorini.ai">info@asksantorini.ai</a>.</p>
       </div>
     </dialog>
 
