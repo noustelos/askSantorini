@@ -73,6 +73,8 @@ const translations = {
     partnersTitle: "For hotels, tours and local businesses",
     partnersText: "AskSantorini.ai is an independent AI guide for Santorini visitors. Hotels, tour providers and local businesses can be featured when their services are relevant to visitor questions.",
     becomePartner: "Become a partner",
+    instagramUpdates: "Follow updates on Instagram",
+    instagramAria: "Visit Ask Santorini AI on Instagram",
     earlyAccessEyebrow: "Early access",
     earlyAccessTitle: "The full AI guide is launching soon.",
     earlyAccessIntro: "Get notified when the live Santorini AI assistant is ready.",
@@ -205,6 +207,8 @@ const translations = {
     partnersTitle: "Για ξενοδοχεία, εκδρομές και τοπικές επιχειρήσεις",
     partnersText: "Το AskSantorini.ai είναι ένας ανεξάρτητος AI οδηγός για επισκέπτες της Σαντορίνης. Ξενοδοχεία, πάροχοι εκδρομών και τοπικές επιχειρήσεις μπορούν να εμφανίζονται όταν οι υπηρεσίες τους σχετίζονται με τις ερωτήσεις των επισκεπτών.",
     becomePartner: "Γίνετε συνεργάτης",
+    instagramUpdates: "Ακολούθησε τα νέα στο Instagram",
+    instagramAria: "Άνοιγμα του Ask Santorini AI στο Instagram",
     earlyAccessEyebrow: "Πρώτη πρόσβαση",
     earlyAccessTitle: "Ο πλήρης AI οδηγός ετοιμάζεται.",
     earlyAccessIntro: "Ενημερώσου όταν ο ζωντανός AI βοηθός για τη Σαντορίνη είναι έτοιμος.",
@@ -652,4 +656,3 @@ document.querySelectorAll("dialog").forEach((modal) => {
 });
 
 setLanguage(getInitialLanguage());
-

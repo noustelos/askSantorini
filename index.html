@@ -50,6 +50,7 @@
         <a href="#tours" data-i18n="navTours">Tours</a>
         <a href="#partners" data-i18n="navPartners">Partners</a>
         <a href="mailto:hello@asksantorini.ai" data-i18n="navContact">Contact</a>
+        <a class="mobile-social-link" href="https://www.instagram.com/asksantoriniai/" target="_blank" rel="noopener noreferrer" aria-label="Visit Ask Santorini AI on Instagram" data-i18n-attr="aria-label:instagramAria">Instagram</a>
         <a class="nav-cta" href="#chatbot" data-i18n="navEarlyAccess">Early Access</a>
         <div class="language-toggle" role="group" aria-label="Language">
           <button type="button" data-language="en" aria-label="Switch to English" aria-pressed="true">EN</button>
@@ -237,7 +238,10 @@
             <h2 data-i18n="partnersTitle">For hotels, tours and local businesses</h2>
             <p data-i18n="partnersText">AskSantorini.ai is being built as a simple AI concierge for Santorini visitors. Hotels, tour providers and local businesses can be featured in relevant visitor questions.</p>
           </div>
-          <a class="button button-primary" href="mailto:partners@asksantorini.ai?subject=AskSantorini.ai%20Partnership" data-i18n="becomePartner">Become a partner</a>
+          <div class="partner-actions">
+            <a class="button button-primary" href="mailto:partners@asksantorini.ai?subject=AskSantorini.ai%20Partnership" data-i18n="becomePartner">Become a partner</a>
+            <a class="partner-social-link" href="https://www.instagram.com/asksantoriniai/" target="_blank" rel="noopener noreferrer" aria-label="Visit Ask Santorini AI on Instagram" data-i18n="instagramUpdates" data-i18n-attr="aria-label:instagramAria">Follow updates on Instagram</a>
+          </div>
         </div>
       </section>
 
@@ -268,17 +272,20 @@
 
     <footer class="site-footer">
       <div class="footer-inner section-shell">
-        <div>
+        <div class="footer-brand-group">
           <a class="footer-brand" href="#top">asksantorini.ai</a>
           <p data-i18n="footerDisclaimer">Independent visitor guide. Not affiliated with Google or any official tourism authority.</p>
-          <p>&copy; <span id="current-year">2026</span> AskSantorini.ai. <span data-i18n="allRights">All rights reserved.</span></p>
         </div>
         <div class="footer-links">
           <a href="#privacy-modal" data-modal="privacy-modal" data-i18n="privacyLink">Privacy &amp; Cookies</a>
           <button type="button" data-modal="terms-modal" data-i18n="termsLink">Terms</button>
-          <a href="mailto:hello@asksantorini.ai">hello@asksantorini.ai</a>
+          <a href="mailto:hello@asksantorini.ai" data-i18n="navContact">Contact</a>
+          <a href="https://www.instagram.com/asksantoriniai/" target="_blank" rel="noopener noreferrer" aria-label="Visit Ask Santorini AI on Instagram" data-i18n-attr="aria-label:instagramAria">Instagram</a>
+        </div>
+        <div class="footer-credit-group">
           <a class="footer-credit" href="https://noustelos.gr" target="_blank" rel="noopener">A NOUSTELOS_STUDIO /&gt; project</a>
         </div>
+        <p class="footer-copyright">&copy; <span id="current-year">2026</span> AskSantorini.ai. <span data-i18n="allRights">All rights reserved.</span></p>
       </div>
     </footer>
 
@@ -315,4 +322,3 @@
     <script src="script.min.js" defer></script>
   </body>
 </html>
-
