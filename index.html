@@ -30,6 +30,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.min.css">
+    <link rel="stylesheet" href="styles-override.css">
   </head>
   <body id="top">
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -66,15 +67,13 @@
           <p class="eyebrow">ASK SANTORINI AI</p>
           <h1 data-i18n="heroTitle">Your smart guide to Santorini.</h1>
           <p class="hero-subtitle" data-i18n="heroSubtitle">Ask about beaches, sunsets, tours, food, transport, and what to do today.</p>
+          <div class="hero-value-strip" aria-label="Free, no app, no sign-up">
+            <span data-i18n="heroValueStrip">Free. No app. No sign-up.</span>
+          </div>
           <div class="hero-actions" role="group" aria-label="Primary actions">
             <a class="button button-primary" href="#chatbot" data-i18n="startAsking">Start Asking</a>
             <a class="button button-secondary" href="#questions" data-i18n="seeQuestions">See Example Questions</a>
           </div>
-          <p class="hero-promise">
-            <span data-i18n="noAppPart">Free.</span>
-            <span data-i18n="noSignupPart">No app.</span>
-            <span data-i18n="justAskPart">No sign-up.</span>
-          </p>
         </div>
 
         <aside class="chat-card" aria-label="Sample Ask Santorini AI conversation">
@@ -137,6 +136,7 @@
               <h3 id="preview-question">Best sunset spot tonight</h3>
             </div>
             <p id="preview-answer">Oia is iconic but very crowded. Imerovigli and Firostefani are calmer alternatives with beautiful caldera views. For a premium experience, consider a sunset catamaran cruise.</p>
+            <p class="preview-value-reinforce" data-i18n="valueReinforce">Start instantly — free, with no app and no sign-up.</p>
             <div class="preview-actions" aria-label="Suggested next steps">
               <a href="#tours" data-i18n="viewTourOptions">View tour options</a>
               <a href="#questions" data-i18n="askAnother">Ask another question</a>
