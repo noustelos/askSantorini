@@ -1075,16 +1075,20 @@ h3 {
 }
 
 .concierge-card {
-  min-height: 210px;
+  min-height: 220px;
   position: relative;
   overflow: hidden;
-  padding: 22px;
-  border: 1px solid rgba(79, 143, 138, 0.14);
-  border-radius: 22px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 28px 24px 26px 24px;
+  border: 1.5px solid rgba(79, 143, 138, 0.14);
+  border-radius: 24px;
   background:
     radial-gradient(circle at 92% 8%, rgba(159, 216, 210, 0.20), transparent 36%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.80), rgba(255, 248, 236, 0.72));
-  box-shadow: 0 16px 38px rgba(82, 54, 24, 0.07);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(255, 248, 236, 0.78));
+  box-shadow: 0 18px 44px rgba(82, 54, 24, 0.08);
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
@@ -1095,42 +1099,53 @@ h3 {
   bottom: -72px;
   width: 150px;
   height: 150px;
-  border: 1px solid rgba(216, 154, 115, 0.14);
+  border: 1.5px solid rgba(216, 154, 115, 0.13);
   border-radius: 50%;
   pointer-events: none;
 }
 
 .concierge-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px) scale(1.012);
   border-color: rgba(79, 143, 138, 0.28);
-  box-shadow: 0 22px 48px rgba(82, 54, 24, 0.10), 0 0 34px rgba(159, 216, 210, 0.16);
+  box-shadow: 0 26px 54px rgba(82, 54, 24, 0.12), 0 0 38px rgba(159, 216, 210, 0.18);
 }
 
 .concierge-icon {
   display: inline-grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  margin-bottom: 26px;
-  border: 1px solid rgba(79, 143, 138, 0.20);
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin-top: 2px;
+  margin-bottom: 0;
+  border: 1.5px solid rgba(79, 143, 138, 0.20);
   border-radius: 50%;
-  background: rgba(255, 248, 236, 0.70);
+  background: rgba(255, 248, 236, 0.74);
   color: var(--teal);
-  font-size: 1rem;
+  font-size: 1.22rem;
   font-weight: 900;
   line-height: 1;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.68), 0 8px 18px rgba(82, 54, 24, 0.06);
 }
 
-.concierge-card h3 {
-  margin-bottom: 10px;
-  color: var(--navy);
-  font-size: 1.12rem;
+
+.concierge-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.concierge-card p {
+.concierge-card-content h3 {
+  margin-bottom: 6px;
+  color: var(--navy);
+  font-size: 1.13rem;
+  font-weight: 700;
+}
+
+.concierge-card-content p {
   margin-bottom: 0;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
+  color: var(--muted);
 }
 
 .concierge-footer {
@@ -1530,12 +1545,13 @@ h3 {
 }
 
 @media (min-width: 981px) and (max-width: 1180px) {
-  .questions-experience {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .question-grid {
-    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  .questions-experience,
+  .question-grid,
+  .steps-grid,
+  .tour-grid,
+  .concierge-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
   }
 
   .question-card {
@@ -1795,6 +1811,7 @@ h3 {
   .concierge-grid,
   .feature-row {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .concierge-footer {
