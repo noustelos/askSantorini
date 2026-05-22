@@ -9,7 +9,7 @@ const translations = {
     navTours: "Tours",
     navPartners: "Partners",
     navContact: "Contact",
-    navEarlyAccess: "Early Access",
+    navEarlyAccess: "Live AI",
     startAsking: "Start Chat",
     seeQuestions: "See Suggestions",
     heroTitle: "Your smart guide to Santorini.",
@@ -20,7 +20,7 @@ const translations = {
     valueStrip: "Free. No app. No sign-up.",
     heroValueStrip: "Free. No app. No sign-up.",
     valueReinforce: "Start instantly — free, with no app and no sign-up.",
-    previewMode: "Preview mode",
+    previewMode: "Live AI",
     chatGreeting: "Hi! I'm your local Santorini AI. Ask me anything.",
     chatPlaceholder: "Ask about beaches, sunsets, buses...",
     sendButton: "Send",
@@ -35,19 +35,19 @@ const translations = {
     chatSampleAnswer1: "Tell me your area, time available and mood: beach, sunset, food, tour or something easy. I’ll suggest a simple plan.",
     chatSampleQuestion2: "Best sunset spot tonight?",
     chatSampleAnswer2: "Oia is famous but crowded. Imerovigli and Firostefani are calmer, while a sunset catamaran is a more relaxed premium option.",
-    geminiNote: "AI assistant using Google Gemini technology.",
-    demoFeature: "Demo feature",
+    geminiNote: "AI answers may need verification for schedules, prices and availability.",
+    demoFeature: "Live feature",
     questionsTitle: "Try a useful Santorini question.",
-    questionsIntro: "Click a question to see an instant preview. The full AI guide is launching soon, but these answers are useful today.",
+    questionsIntro: "Click a question or ask your own. The AI guide is live and ready to help.",
     starterLine: "Choose a starting point",
-    previewLabel: "Live Preview",
+    previewLabel: "Live AI",
     worksToday: "Works today",
     questionLabel: "Question",
     viewTourOptions: "View tour options",
     askAnother: "Ask another question",
     seeTips: "See practical tips",
-    realGuideSoon: "Real AI guide launching soon.",
-    joinEarlyAccess: "Join early access",
+    realGuideSoon: "Live AI guide",
+    joinEarlyAccess: "Ask now",
     featureBeaches: "Beaches",
     featureSunsets: "Sunsets",
     featureTours: "Tours",
@@ -77,7 +77,7 @@ const translations = {
     tourWineText: "Local vineyards, volcanic soil and Santorini wine routes.",
     tourTransfersTitle: "Airport / Port Transfers",
     tourTransfersText: "Simple transfer options for arrivals, departures and day plans.",
-    tourStatus: "Launching with AI guide",
+    tourStatus: "Ask AI for options",
     partnerDisclosure: "Some links may be partner recommendations.",
     toBeFeatured: "To be featured, contact",
     conciergeEyebrow: "Concierge",
@@ -104,14 +104,14 @@ const translations = {
     becomePartner: "Become a partner",
     instagramUpdates: "Follow updates on Instagram",
     instagramAria: "Visit Ask Santorini AI on Instagram",
-    earlyAccessEyebrow: "Early access",
-    earlyAccessTitle: "The full AI guide is launching soon.",
-    earlyAccessIntro: "Get notified when the live Santorini AI assistant is ready.",
-    earlyAccessText: "We’re preparing a practical guide for beaches, sunsets, tours, transport, food and local tips.",
+    earlyAccessEyebrow: "Live now",
+    earlyAccessTitle: "Ask Santorini AI is ready.",
+    earlyAccessIntro: "Use the live AI guide for practical Santorini questions, or contact us for partnerships and local recommendations.",
+    earlyAccessText: "No app. No sign-up. Just ask and get practical Santorini guidance instantly.",
     emailLabel: "Email address",
     companyLabel: "Company",
-    notifyMe: "Notify me",
-    contactForNow: "For now, contact us at",
+    notifyMe: "Contact us",
+    contactForNow: "For partnerships or questions, contact us at",
     footerDisclaimer: "Independent visitor guide. Not affiliated with Google or any official tourism authority.",
     allRights: "All rights reserved.",
     privacyLink: "Privacy & Cookies",
@@ -124,7 +124,7 @@ const translations = {
     privacyCloseAria: "Close privacy notice",
     privacyTitle: "Privacy Policy",
     privacyP1: "Your privacy matters.",
-    privacyP2: "We may collect your email address when you contact us or request early access.",
+    privacyP2: "We may collect your email address when you contact us.",
     privacyP3: "We use this information only to respond to your request or send relevant AskSantorini.ai updates.",
     privacyP4: "The site may use necessary cookies for basic functionality and, with consent, analytics cookies to improve the user experience.",
     privacyP5: "You can request access, correction or deletion of your data by contacting",
@@ -138,9 +138,9 @@ const translations = {
     languageToggleLabel: "Language",
     questionAction: "✦",
     invalidEmail: "Enter a valid email address.",
-    openingEmail: "Opening your email app to request early access.",
-    mailSubject: "AskSantorini.ai Early Access",
-    mailBody: (email) => `Please add me to the AskSantorini.ai early access list.\n\nEmail: ${email}`,
+    openingEmail: "Opening your email app.",
+    mailSubject: "AskSantorini.ai Contact",
+    mailBody: (email) => `Hello AskSantorini.ai,\n\nI would like to get in touch.\n\nEmail: ${email}`,
     questions: {
       sunset: "Best sunset spot tonight",
       catamaran: "Catamaran sunset cruise",
@@ -172,7 +172,7 @@ const translations = {
     navTours: "Εκδρομές",
     navPartners: "Συνεργάτες",
     navContact: "Επικοινωνία",
-    navEarlyAccess: "Πρώτη πρόσβαση",
+    navEarlyAccess: "Live AI",
     startAsking: "Ξεκίνα συνομιλία",
     seeQuestions: "Δες προτάσεις",
     heroTitle: "Ο έξυπνος οδηγός σου για τη Σαντορίνη.",
@@ -183,7 +183,7 @@ const translations = {
     valueStrip: "Δωρεάν. Χωρίς εφαρμογή. Χωρίς εγγραφή.",
     heroValueStrip: "Δωρεάν. Χωρίς εφαρμογή. Χωρίς εγγραφή.",
     valueReinforce: "Ξεκίνα άμεσα — δωρεάν, χωρίς εφαρμογή και χωρίς εγγραφή.",
-    previewMode: "Λειτουργία preview",
+    previewMode: "Live AI",
     chatGreeting: "Γεια! Είμαι ο τοπικός AI οδηγός σου για τη Σαντορίνη. Ρώτησέ με ό,τι θέλεις.",
     chatPlaceholder: "Ρώτησε για παραλίες, ηλιοβασίλεμα, λεωφορεία...",
     sendButton: "Αποστολή",
@@ -198,19 +198,19 @@ const translations = {
     chatSampleAnswer1: "Πες μου περιοχή, διαθέσιμο χρόνο και διάθεση: παραλία, ηλιοβασίλεμα, φαγητό, εκδρομή ή κάτι χαλαρό. Θα σου προτείνω ένα απλό πλάνο.",
     chatSampleQuestion2: "Καλύτερο ηλιοβασίλεμα απόψε;",
     chatSampleAnswer2: "Η Οία είναι διάσημη αλλά γεμάτη κόσμο. Το Ημεροβίγλι και το Φηροστεφάνι είναι πιο ήρεμα, ενώ το καταμαράν στο ηλιοβασίλεμα είναι πιο χαλαρή premium επιλογή.",
-    geminiNote: "AI βοηθός με τεχνολογία Google Gemini.",
-    demoFeature: "Demo λειτουργία",
+    geminiNote: "Οι AI απαντήσεις μπορεί να χρειάζονται επιβεβαίωση για δρομολόγια, τιμές και διαθεσιμότητα.",
+    demoFeature: "Live λειτουργία",
     questionsTitle: "Διάλεξε τι θέλεις να ανακαλύψεις.",
-    questionsIntro: "Πάτησε μια ερώτηση και δες μια άμεση προεπισκόπηση. Ο πλήρης AI οδηγός ετοιμάζεται, αλλά οι πρώτες απαντήσεις είναι ήδη χρήσιμες.",
+    questionsIntro: "Πάτησε μια ερώτηση ή γράψε τη δική σου. Ο AI οδηγός είναι live και έτοιμος να βοηθήσει.",
     starterLine: "Ξεκίνα με κάτι απλό",
-    previewLabel: "Προεπισκόπηση",
+    previewLabel: "Live AI",
     worksToday: "Χρήσιμο σήμερα",
     questionLabel: "Ερώτηση",
     viewTourOptions: "Δες επιλογές εκδρομών",
     askAnother: "Άλλη ερώτηση",
     seeTips: "Δες πρακτικές συμβουλές",
-    realGuideSoon: "Ο πλήρης AI οδηγός ετοιμάζεται.",
-    joinEarlyAccess: "Μπες στη λίστα",
+    realGuideSoon: "Ο AI οδηγός είναι live",
+    joinEarlyAccess: "Ρώτησε τώρα",
     featureBeaches: "Παραλίες",
     featureSunsets: "Ηλιοβασιλέματα",
     featureTours: "Εκδρομές",
@@ -240,7 +240,7 @@ const translations = {
     tourWineText: "Τοπικοί αμπελώνες, ηφαιστειακό έδαφος και διαδρομές κρασιού στη Σαντορίνη.",
     tourTransfersTitle: "Μεταφορές από αεροδρόμιο / λιμάνι",
     tourTransfersText: "Απλές επιλογές μεταφοράς για αφίξεις, αναχωρήσεις και ημερήσια πλάνα.",
-    tourStatus: "Έρχεται με τον AI οδηγό",
+    tourStatus: "Ρώτησε τον AI οδηγό",
     partnerDisclosure: "Ορισμένοι σύνδεσμοι μπορεί να είναι συνεργατικές προτάσεις.",
     toBeFeatured: "Για προβολή, επικοινωνήστε στο",
     conciergeEyebrow: "Concierge",
@@ -267,14 +267,14 @@ const translations = {
     becomePartner: "Γίνετε συνεργάτης",
     instagramUpdates: "Ακολούθησε τα νέα στο Instagram",
     instagramAria: "Άνοιγμα του Ask Santorini AI στο Instagram",
-    earlyAccessEyebrow: "Πρώτη πρόσβαση",
-    earlyAccessTitle: "Ο πλήρης AI οδηγός ετοιμάζεται.",
-    earlyAccessIntro: "Ενημερώσου όταν ο ζωντανός AI βοηθός για τη Σαντορίνη είναι έτοιμος.",
-    earlyAccessText: "Ετοιμάζουμε έναν πρακτικό οδηγό για παραλίες, ηλιοβασιλέματα, εκδρομές, μετακινήσεις, φαγητό και τοπικές συμβουλές.",
+    earlyAccessEyebrow: "Live τώρα",
+    earlyAccessTitle: "Το Ask Santorini AI είναι έτοιμο.",
+    earlyAccessIntro: "Χρησιμοποίησε τον live AI οδηγό για πρακτικές ερωτήσεις για τη Σαντορίνη ή επικοινώνησε μαζί μας για συνεργασίες και τοπικές προτάσεις.",
+    earlyAccessText: "Χωρίς εφαρμογή. Χωρίς εγγραφή. Απλώς ρώτα και πάρε πρακτική καθοδήγηση για τη Σαντορίνη.",
     emailLabel: "Email",
     companyLabel: "Εταιρεία",
-    notifyMe: "Ενημέρωσέ με",
-    contactForNow: "Προς το παρόν, επικοινώνησε μαζί μας στο",
+    notifyMe: "Επικοινωνία",
+    contactForNow: "Για συνεργασίες ή ερωτήσεις, επικοινώνησε μαζί μας στο",
     footerDisclaimer: "Ανεξάρτητος οδηγός επισκεπτών. Δεν συνδέεται με την Google ή με επίσημο τουριστικό φορέα.",
     allRights: "Με επιφύλαξη παντός δικαιώματος.",
     privacyLink: "Απόρρητο & Cookies",
@@ -287,7 +287,7 @@ const translations = {
     privacyCloseAria: "Κλείσιμο πολιτικής απορρήτου",
     privacyTitle: "Πολιτική Απορρήτου",
     privacyP1: "Η ιδιωτικότητά σου είναι σημαντική.",
-    privacyP2: "Μπορεί να συλλέξουμε το email σου όταν επικοινωνείς μαζί μας ή ζητάς ενημέρωση για early access.",
+    privacyP2: "Μπορεί να συλλέξουμε το email σου όταν επικοινωνείς μαζί μας.",
     privacyP3: "Το χρησιμοποιούμε μόνο για να απαντήσουμε στο αίτημά σου ή να στείλουμε σχετικές ενημερώσεις για το AskSantorini.ai.",
     privacyP4: "Ο ιστότοπος μπορεί να χρησιμοποιεί απαραίτητα cookies για τη βασική λειτουργία του και, εφόσον δοθεί συγκατάθεση, cookies ανάλυσης για τη βελτίωση της εμπειρίας χρήστη.",
     privacyP5: "Μπορείς να ζητήσεις πρόσβαση, διόρθωση ή διαγραφή των δεδομένων σου επικοινωνώντας στο",
@@ -301,9 +301,9 @@ const translations = {
     languageToggleLabel: "Γλώσσα",
     questionAction: "✦",
     invalidEmail: "Πληκτρολόγησε ένα έγκυρο email.",
-    openingEmail: "Ανοίγει η εφαρμογή email για να ζητήσεις early access.",
-    mailSubject: "AskSantorini.ai Early Access",
-    mailBody: (email) => `Παρακαλώ προσθέστε με στη λίστα early access του AskSantorini.ai.\n\nEmail: ${email}`,
+    openingEmail: "Ανοίγει η εφαρμογή email.",
+    mailSubject: "AskSantorini.ai Επικοινωνία",
+    mailBody: (email) => `Γεια σας AskSantorini.ai,\n\nΘα ήθελα να επικοινωνήσω μαζί σας.\n\nEmail: ${email}`,
     questions: {
       sunset: "Καλύτερο ηλιοβασίλεμα απόψε",
       catamaran: "Καταμαράν στο ηλιοβασίλεμα",
@@ -826,6 +826,19 @@ if (micBtn && userInput && SpeechRecognition) {
 
   recognition.continuous = false;
   recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  function getCurrentSpeechLanguage() {
+    const htmlLang = document.documentElement.lang || "en";
+    const savedLang = getStoredValue(languageStorageKey) || "";
+    const currentLang = savedLang || htmlLang;
+
+    if (currentLang.toLowerCase().startsWith("el")) {
+      return "el-GR";
+    }
+
+    return "en-US";
+  }
 
   function resetMicButton() {
     const copy = translations[currentLanguage];
@@ -833,11 +846,6 @@ if (micBtn && userInput && SpeechRecognition) {
     micBtn.classList.remove("recording");
     micBtn.setAttribute("aria-label", copy.micAria);
     micBtn.textContent = "🎤";
-  }
-
-  function getCurrentSpeechLanguage() {
-    const htmlLang = document.documentElement.lang || "en";
-    return htmlLang.startsWith("el") ? "el-GR" : "en-US";
   }
 
   micBtn.addEventListener("click", () => {
@@ -850,6 +858,7 @@ if (micBtn && userInput && SpeechRecognition) {
       micBtn.textContent = "■";
     } catch (error) {
       console.warn("Speech recognition could not start:", error);
+      resetMicButton();
     }
   });
 
@@ -868,7 +877,9 @@ if (micBtn && userInput && SpeechRecognition) {
     recognition.stop();
   };
 
-  recognition.onend = resetMicButton;
+  recognition.onend = () => {
+    resetMicButton();
+  };
 
   recognition.onerror = (event) => {
     console.warn("Speech recognition error:", event.error);

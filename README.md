@@ -1,14 +1,14 @@
-# AskSantorini.ai Landing Page
+# AskSantorini.ai
 
-Static version 0.1 landing page for **ASK SANTORINI AI**, a free AI guide for Santorini visitors.
+Static site for **ASK SANTORINI AI**, a free live AI guide for Santorini visitors.
 
-This MVP is designed to go live before the chatbot is ready. It includes a premium coming-soon landing page, example question previews, partner CTA, lightweight legal notices, and an early-access mailto workflow.
+The site includes the live chat interface, useful starter questions, partner CTA, lightweight legal notices, and a contact mailto workflow.
 
 ## Project Structure
 
 - `index.html` - page structure, SEO metadata, Open Graph tags, content sections
 - `styles.css` / `styles.min.css` - responsive styling, CSS variables, layout, cards, forms, modals
-- `script.js` / `script.min.js` - example answer previews, early-access mailto workflow, privacy/terms modals
+- `script.js` / `script.min.js` - starter question interactions, contact mailto workflow, privacy/terms modals, live chat
 - `robots.txt` / `sitemap.xml` - search engine crawl directives
 - `_headers` - Cloudflare Pages security headers
 - `404.html` - static not-found fallback
@@ -73,8 +73,8 @@ CSP:
 
 ## Next Updates
 
-- Connect the `Start Asking` section to the real chatbot when ready.
-- Replace the early-access mailto flow with a real privacy-friendly email capture service or backend.
+- Add richer live-chat guidance based on visitor context.
+- Replace the contact mailto flow with a privacy-friendly contact backend if needed.
 - Add real privacy and terms pages before collecting data.
 - Add real partner links only after partnerships are confirmed.
 - Add analytics only if privacy-friendly and clearly disclosed.
