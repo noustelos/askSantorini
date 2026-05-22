@@ -27,6 +27,35 @@ Then visit:
 http://localhost:8787
 ```
 
+## Live AI Chat Architecture
+
+The live chat flow is:
+
+```text
+Frontend -> Cloudflare Worker -> Gemini API
+```
+
+Worker endpoint:
+
+```text
+https://white-fog-d126.avatar68.workers.dev
+```
+
+The frontend expects the Worker to return:
+
+```json
+{ "reply": "..." }
+```
+
+Security:
+
+- No API keys are stored in the frontend.
+- The Gemini API key is stored as the Cloudflare Worker secret `GEMINI_API_KEY`.
+
+CSP:
+
+- `connect-src` allows `https://white-fog-d126.avatar68.workers.dev`.
+
 ## Deploy to Cloudflare Pages
 
 1. Push these files to a Git repository.
