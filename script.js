@@ -623,33 +623,37 @@ document.querySelectorAll('a[href="#top"]').forEach((link) => {
   });
 });
 
-document.querySelectorAll('a[href="#ask-ai"]').forEach((link) => {
-  link.addEventListener("click", (event) => {
-    const chatTarget = document.getElementById("ask-ai");
+document.addEventListener("click", (event) => {
+  const link = event.target.closest('a[href="#ask-ai"]');
 
-    if (!chatTarget) {
-      return;
-    }
+  if (!link) {
+    return;
+  }
 
-    event.preventDefault();
-    closeMenu();
+  const chatTarget = document.getElementById("ask-ai");
 
-    const prefill = link.dataset[`chatPrefill${currentLanguage === "el" ? "El" : "En"}`];
+  if (!chatTarget) {
+    return;
+  }
 
-    if (prefill && userInput) {
-      userInput.value = prefill;
-    }
+  event.preventDefault();
+  closeMenu();
 
-    chatTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+  const prefill = link.dataset[`chatPrefill${currentLanguage === "el" ? "El" : "En"}`];
 
-    if (window.location.hash !== "#ask-ai") {
-      window.history.pushState(null, "", "#ask-ai");
-    }
+  if (prefill && userInput) {
+    userInput.value = prefill;
+  }
 
-    if (userInput && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-      window.setTimeout(() => userInput.focus({ preventScroll: true }), 450);
-    }
-  });
+  chatTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  if (window.location.hash !== "#ask-ai") {
+    window.history.pushState(null, "", "#ask-ai");
+  }
+
+  if (userInput && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    window.setTimeout(() => userInput.focus({ preventScroll: true }), 450);
+  }
 });
 
 function showAnswerPreview(card, shouldScroll = true) {

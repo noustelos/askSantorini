@@ -76,6 +76,15 @@
   z-index: 1;
 }
 
+.tour-card::before {
+  pointer-events: none;
+}
+
+.tour-status {
+  position: relative;
+  z-index: 1;
+}
+
 @media (max-width: 1180px) {
   .network-panel {
     align-items: stretch;
