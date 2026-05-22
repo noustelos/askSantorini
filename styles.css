@@ -523,12 +523,41 @@ h3 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 18px;
+  margin-bottom: 8px;
   color: var(--navy);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   white-space: nowrap;
+}
+
+.chat-language-note {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 18px;
+  padding: 6px 10px;
+  border: 1px solid rgba(79, 143, 138, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.46);
+  color: #35636b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.chat-language-note::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(79, 143, 138, 0.72);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(159, 216, 210, 0.14);
 }
 
 .status-dot,
