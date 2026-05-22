@@ -67,6 +67,10 @@
   scroll-behavior: smooth;
 }
 
+#ask-ai {
+  scroll-margin-top: 110px;
+}
+
 .chat-card > * {
   position: relative;
   z-index: 1;

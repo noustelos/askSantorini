@@ -38,9 +38,9 @@ const translations = {
     chatSampleQuestion2: "Best sunset spot tonight?",
     chatSampleAnswer2: "Oia is famous but crowded. Imerovigli and Firostefani are calmer, while a sunset catamaran is a more relaxed premium option.",
     geminiNote: "AI answers may need verification for schedules, prices and availability.",
-    demoFeature: "Live feature",
+    demoFeature: "Live AI feature",
     questionsTitle: "Try a useful Santorini question.",
-    questionsIntro: "Click a question or ask your own. The AI guide is live and ready to help.",
+    questionsIntro: "Click a question or ask your own. The live AI guide is ready to help with practical Santorini tips.",
     starterLine: "Choose a starting point",
     previewLabel: "Live Ask Santorini AI",
     worksToday: "Ready now",
@@ -100,6 +100,7 @@ const translations = {
     conciergeBeautyText: "Hair and makeup services for weddings, photoshoots, proposals and special evenings in Santorini.",
     conciergeProposalTitle: "Proposal Planning",
     conciergeProposalText: "Romantic proposal planning, sunset setups, private moments and special experiences in Santorini.",
+    conciergeAskOptions: "Ask AI for options",
     conciergeCta: "Interested in being featured?",
     conciergeDisclosure: "Featured services may include partner recommendations.",
     partnersEyebrow: "Partners",
@@ -120,7 +121,8 @@ const translations = {
     earlyAccessText: "No app. No sign-up. Just ask and get practical Santorini guidance instantly.",
     emailLabel: "Email address",
     companyLabel: "Company",
-    notifyMe: "Contact us",
+    notifyMe: "Ask now",
+    contactCta: "Contact us",
     contactForNow: "For partnerships or questions, contact us at",
     footerNetworkLine: "Part of the ASK AI Travel Network",
     footerDisclaimer: "Independent visitor guide. Not affiliated with Google or any official tourism authority.",
@@ -212,9 +214,9 @@ const translations = {
     chatSampleQuestion2: "Καλύτερο ηλιοβασίλεμα απόψε;",
     chatSampleAnswer2: "Η Οία είναι διάσημη αλλά γεμάτη κόσμο. Το Ημεροβίγλι και το Φηροστεφάνι είναι πιο ήρεμα, ενώ το καταμαράν στο ηλιοβασίλεμα είναι πιο χαλαρή premium επιλογή.",
     geminiNote: "Οι AI απαντήσεις μπορεί να χρειάζονται επιβεβαίωση για δρομολόγια, τιμές και διαθεσιμότητα.",
-    demoFeature: "Live λειτουργία",
+    demoFeature: "Live AI λειτουργία",
     questionsTitle: "Διάλεξε τι θέλεις να ανακαλύψεις.",
-    questionsIntro: "Πάτησε μια ερώτηση ή γράψε τη δική σου. Ο AI οδηγός είναι live και έτοιμος να βοηθήσει.",
+    questionsIntro: "Πάτησε μια ερώτηση ή γράψε τη δική σου. Ο live AI οδηγός είναι έτοιμος να βοηθήσει με πρακτικές συμβουλές για τη Σαντορίνη.",
     starterLine: "Ξεκίνα με κάτι απλό",
     previewLabel: "Live Ask Santorini AI",
     worksToday: "Έτοιμο τώρα",
@@ -255,7 +257,7 @@ const translations = {
     tourWineText: "Τοπικοί αμπελώνες, ηφαιστειακό έδαφος και διαδρομές κρασιού στη Σαντορίνη.",
     tourTransfersTitle: "Μεταφορές από αεροδρόμιο / λιμάνι",
     tourTransfersText: "Απλές επιλογές μεταφοράς για αφίξεις, αναχωρήσεις και ημερήσια πλάνα.",
-    tourStatus: "Ρώτησε τον AI οδηγό",
+    tourStatus: "Ρώτησε το AI για επιλογές",
     partnerDisclosure: "Ορισμένοι σύνδεσμοι μπορεί να είναι συνεργατικές προτάσεις.",
     toBeFeatured: "Για προβολή, επικοινωνήστε στο",
     conciergeEyebrow: "Concierge",
@@ -274,6 +276,7 @@ const translations = {
     conciergeBeautyText: "Υπηρεσίες hair και makeup για γάμους, φωτογραφίσεις, προτάσεις γάμου και ξεχωριστές βραδιές στη Σαντορίνη.",
     conciergeProposalTitle: "Οργάνωση πρότασης γάμου",
     conciergeProposalText: "Ρομαντική οργάνωση πρότασης γάμου, sunset setups, ιδιωτικές στιγμές και ξεχωριστές εμπειρίες στη Σαντορίνη.",
+    conciergeAskOptions: "Ρώτησε το AI για επιλογές",
     conciergeCta: "Θέλεις να εμφανιστείς εδώ;",
     conciergeDisclosure: "Οι προτεινόμενες υπηρεσίες μπορεί να περιλαμβάνουν συνεργατικές προτάσεις.",
     partnersEyebrow: "Συνεργάτες",
@@ -294,7 +297,8 @@ const translations = {
     earlyAccessText: "Χωρίς εφαρμογή. Χωρίς εγγραφή. Απλώς ρώτα και πάρε πρακτική καθοδήγηση για τη Σαντορίνη.",
     emailLabel: "Email",
     companyLabel: "Εταιρεία",
-    notifyMe: "Επικοινωνία",
+    notifyMe: "Ρώτησε τώρα",
+    contactCta: "Επικοινωνία",
     contactForNow: "Για συνεργασίες ή ερωτήσεις, επικοινώνησε μαζί μας στο",
     footerNetworkLine: "Μέρος του ASK AI Travel Network",
     footerDisclaimer: "Ανεξάρτητος οδηγός επισκεπτών. Δεν συνδέεται με την Google ή με επίσημο τουριστικό φορέα.",
@@ -615,6 +619,35 @@ document.querySelectorAll('a[href="#top"]').forEach((link) => {
 
     if (window.location.hash !== "#top") {
       window.history.pushState(null, "", "#top");
+    }
+  });
+});
+
+document.querySelectorAll('a[href="#ask-ai"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
+    const chatTarget = document.getElementById("ask-ai");
+
+    if (!chatTarget) {
+      return;
+    }
+
+    event.preventDefault();
+    closeMenu();
+
+    const prefill = link.dataset[`chatPrefill${currentLanguage === "el" ? "El" : "En"}`];
+
+    if (prefill && userInput) {
+      userInput.value = prefill;
+    }
+
+    chatTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    if (window.location.hash !== "#ask-ai") {
+      window.history.pushState(null, "", "#ask-ai");
+    }
+
+    if (userInput && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      window.setTimeout(() => userInput.focus({ preventScroll: true }), 450);
     }
   });
 });
