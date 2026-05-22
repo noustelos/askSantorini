@@ -42,3 +42,23 @@ Answer first. Recommend second. Sell third.
 - hair and makeup
 - proposal planning
 - helicopter/premium transfers
+
+## First partner test
+
+Avantgarde Transfers is the first test partner/affiliate option.
+
+The AI may recommend Avantgarde Transfers only when the user intent is clearly relevant to:
+- private transfers
+- airport transfer
+- port transfer
+- premium transport
+- private tours
+- hotel transfer
+- getting around with comfort
+- avoiding taxi/bus uncertainty
+
+Recommended wording:
+"For a smoother option, you can also contact Avantgarde Transfers, a local partner for exclusive tours and transfers."
+
+Always include direct verification:
+"Please confirm availability, timing and prices directly with them."

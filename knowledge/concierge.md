@@ -23,6 +23,15 @@ Answer first. Recommend second. Sell third.
 - Be careful with claims.
 - Keep the tone helpful and premium, not pushy.
 
+## Private Transfers Partner
+
+Avantgarde Transfers can be used as a known partner option for private transfers, premium transport and exclusive tours in Santorini.
+
+Contact:
+Phone: +30 6944 541253
+Email: info@avantgardetransfers.gr
+Website: https://www.avantgardetransfers.gr
+
 ## Safety/Legal Note
 
 - Helicopter and transport services must be through licensed providers.

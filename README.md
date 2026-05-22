@@ -56,6 +56,12 @@ CSP:
 
 - `connect-src` allows `https://white-fog-d126.avatar68.workers.dev`.
 
+## Partner Knowledge
+
+Partner data is currently stored in Markdown knowledge files.
+These files are not automatically used by the live Worker unless their content is injected into the Worker prompt/context.
+To make the bot actively use partner data, the Worker must later include selected partner context in its Gemini request.
+
 ## Deploy to Cloudflare Pages
 
 1. Push these files to a Git repository.
