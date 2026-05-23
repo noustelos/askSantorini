@@ -645,37 +645,64 @@ document.querySelectorAll('a[href="#top"]').forEach((link) => {
   });
 });
 
-document.addEventListener("click", (event) => {
-  const link = event.target.closest('a[href="#ask-ai"]');
+const askAiHash = "#ask-ai";
 
-  if (!link) {
-    return;
-  }
+const getAskAiLink = (target) => target?.closest?.(`a[href="${askAiHash}"], a[href$="${askAiHash}"]`);
 
+const getAskAiScrollTop = (target) => {
+  const scrollMargin = Number.parseFloat(window.getComputedStyle(target).scrollMarginTop) || 0;
+  return Math.max(0, target.getBoundingClientRect().top + window.pageYOffset - scrollMargin);
+};
+
+const scrollToAskAi = (link) => {
   const chatTarget = document.getElementById("ask-ai");
 
   if (!chatTarget) {
-    return;
+    return false;
   }
 
-  event.preventDefault();
   closeMenu();
 
-  const prefill = link.dataset[`chatPrefill${currentLanguage === "el" ? "El" : "En"}`];
+  const prefill = link?.dataset[`chatPrefill${currentLanguage === "el" ? "El" : "En"}`];
 
   if (prefill && userInput) {
     userInput.value = prefill;
   }
 
-  chatTarget.scrollIntoView({ behavior: "smooth", block: "start" });
+  const targetTop = getAskAiScrollTop(chatTarget);
+  window.scrollTo({ top: targetTop, behavior: "smooth" });
 
-  if (window.location.hash !== "#ask-ai") {
-    window.history.pushState(null, "", "#ask-ai");
+  window.setTimeout(() => {
+    const distance = Math.abs(chatTarget.getBoundingClientRect().top);
+
+    if (distance > 140) {
+      window.scrollTo({ top: getAskAiScrollTop(chatTarget), behavior: "auto" });
+    }
+  }, 520);
+
+  if (window.location.hash !== askAiHash) {
+    window.history.pushState(null, "", askAiHash);
   }
 
   if (userInput && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-    window.setTimeout(() => userInput.focus({ preventScroll: true }), 450);
+    window.setTimeout(() => userInput.focus({ preventScroll: true }), 560);
   }
+
+  return true;
+};
+
+document.addEventListener("click", (event) => {
+  const link = getAskAiLink(event.target);
+
+  if (!link) {
+    return;
+  }
+
+  if (!scrollToAskAi(link)) {
+    return;
+  }
+
+  event.preventDefault();
 });
 
 function showAnswerPreview(card, shouldScroll = true) {
