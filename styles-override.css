@@ -346,6 +346,38 @@
   transform: none;
 }
 
+@keyframes statusDotSoftPulse {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: scale(1);
+    box-shadow:
+      0 0 0 3px rgba(159, 216, 210, 0.12),
+      0 0 10px rgba(79, 143, 138, 0.20);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.16);
+    box-shadow:
+      0 0 0 5px rgba(159, 216, 210, 0.18),
+      0 0 16px rgba(79, 143, 138, 0.30);
+  }
+}
+
+@keyframes statusDotAura {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 0.34;
+    transform: scale(1.34);
+  }
+}
+
 .chat-card-top {
   margin-bottom: 8px;
 }
@@ -530,5 +562,23 @@
   .legal-page .legal-nav a {
     min-height: 36px;
     padding: 8px 10px;
+  }
+}
+
+.chat-card-top .status-dot {
+  transform-origin: center;
+  animation: statusDotSoftPulse 3.4s ease-in-out infinite;
+}
+
+.chat-card-top .status-dot::after {
+  inset: -7px;
+  border-color: rgba(79, 143, 138, 0.30);
+  animation: statusDotAura 3.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-card-top .status-dot,
+  .chat-card-top .status-dot::after {
+    animation: none;
   }
 }
