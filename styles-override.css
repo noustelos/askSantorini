@@ -244,12 +244,39 @@
   color: #8f2f2f;
 }
 
+@keyframes inputSoftPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 16px 34px rgba(82, 54, 24, 0.08),
+      0 0 0 0 rgba(255, 248, 236, 0),
+      0 1px 0 rgba(255, 255, 255, 0.78) inset;
+  }
+
+  50% {
+    box-shadow:
+      0 18px 38px rgba(82, 54, 24, 0.10),
+      0 0 22px rgba(255, 248, 236, 0.62),
+      0 1px 0 rgba(255, 255, 255, 0.86) inset;
+  }
+}
+
 .input-area {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 46px auto;
   gap: 8px;
   align-items: center;
-  margin-top: 16px;
+  margin-top: 18px;
+  padding: 7px;
+  border: 1px solid rgba(22, 59, 92, 0.10);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow:
+    0 16px 34px rgba(82, 54, 24, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.78) inset;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: inputSoftPulse 4.8s ease-in-out infinite;
 }
 
 .input-area input {
