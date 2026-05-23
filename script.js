@@ -891,10 +891,14 @@ if (micBtn && userInput && SpeechRecognition) {
 
   function getCurrentSpeechLanguage() {
     const htmlLang = document.documentElement.lang || "en";
-    const savedLang = getStoredValue(languageStorageKey) || "";
-    const currentLang = savedLang || htmlLang;
+    const savedLang =
+      getStoredValue(languageStorageKey) ||
+      getStoredValue("askSantoriniLang") ||
+      getStoredValue("language") ||
+      "";
+    const currentLang = (htmlLang || savedLang || "en").toLowerCase();
 
-    if (currentLang.toLowerCase().startsWith("el")) {
+    if (currentLang.startsWith("el")) {
       return "el-GR";
     }
 
