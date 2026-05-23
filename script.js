@@ -1,10 +1,10 @@
 const translations = {
   en: {
-    pageTitle: "Ask Santorini AI | Smart Guide to Santorini",
-    metaDescription: "Ask Santorini AI is a smart guide for Santorini visitors. Ask about beaches, sunsets, tours, food, transport and what to do today.",
-    ogTitle: "Ask Santorini AI",
-    ogDescription: "Your smart guide to Santorini.",
-    twitterDescription: "Ask about Santorini beaches, sunsets, tours, food, transport and daily plans.",
+    pageTitle: "AskSantorini.ai – Just Ask Your Santorini AI Guide",
+    metaDescription: "Ask Santorini in real time. Get instant AI answers about beaches, sunsets, tours, food, transport and local experiences in Santorini. No app. No sign-up. Just ask.",
+    ogTitle: "AskSantorini.ai – Just Ask Your Santorini AI Guide",
+    ogDescription: "Ask Santorini in real time. Get instant AI answers about beaches, sunsets, tours, food, transport and local experiences. No app. No sign-up.",
+    twitterDescription: "Ask Santorini in real time. Get instant AI answers about beaches, sunsets, tours, food, transport and local experiences.",
     navHow: "How it works",
     navTours: "Tours",
     navConcierge: "Concierge",
@@ -188,11 +188,11 @@ const translations = {
     }
   },
   el: {
-    pageTitle: "Ask Santorini AI | Έξυπνος Οδηγός για τη Σαντορίνη",
-    metaDescription: "Το Ask Santorini AI είναι ένας έξυπνος οδηγός για επισκέπτες της Σαντορίνης. Ρώτησε για παραλίες, ηλιοβασιλέματα, εκδρομές, φαγητό, μετακινήσεις και τι να κάνεις σήμερα.",
-    ogTitle: "Ask Santorini AI",
-    ogDescription: "Ο έξυπνος οδηγός σου για τη Σαντορίνη.",
-    twitterDescription: "Ρώτησε για παραλίες, ηλιοβασιλέματα, εκδρομές, φαγητό, μετακινήσεις και καθημερινές ιδέες στη Σαντορίνη.",
+    pageTitle: "AskSantorini.ai – Ρώτησε τον AI οδηγό σου για τη Σαντορίνη",
+    metaDescription: "Ρώτησε για τη Σαντορίνη σε πραγματικό χρόνο. Πάρε άμεσες AI απαντήσεις για παραλίες, ηλιοβασιλέματα, εκδρομές, φαγητό, μετακινήσεις και τοπικές εμπειρίες. Χωρίς εφαρμογή. Χωρίς εγγραφή.",
+    ogTitle: "AskSantorini.ai – Ρώτησε τον AI οδηγό σου για τη Σαντορίνη",
+    ogDescription: "Ρώτησε για τη Σαντορίνη σε πραγματικό χρόνο και πάρε άμεσες AI απαντήσεις για παραλίες, ηλιοβασιλέματα, εκδρομές, φαγητό και μετακινήσεις.",
+    twitterDescription: "Ρώτησε για τη Σαντορίνη σε πραγματικό χρόνο και πάρε άμεσες AI απαντήσεις για παραλίες, ηλιοβασιλέματα, εκδρομές και τοπικές εμπειρίες.",
     navHow: "Πώς λειτουργεί",
     navTours: "Εκδρομές",
     navConcierge: "Concierge",
