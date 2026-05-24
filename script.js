@@ -931,12 +931,15 @@ if (sendBtn && userInput) {
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-if (micBtn && userInput && SpeechRecognition) {
-  const recognition = new SpeechRecognition();
 
-  recognition.continuous = false;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
+// WhatsApp-level continuous voice input UX
+if (micBtn && userInput && SpeechRecognition) {
+  // --- State Machine ---
+  const STATE = { idle: 0, listening: 1, processing: 2 };
+  let state = STATE.idle;
+  let recognition = null;
+  let autoRestartTimeout = null;
+  let lastStableTranscript = "";
 
   function getCurrentSpeechLanguage() {
     const htmlLang = document.documentElement.lang || "en";
@@ -946,59 +949,136 @@ if (micBtn && userInput && SpeechRecognition) {
       getStoredValue("language") ||
       "";
     const currentLang = (htmlLang || savedLang || "en").toLowerCase();
-
-    if (currentLang.startsWith("el")) {
-      return "el-GR";
-    }
-
+    if (currentLang.startsWith("el")) return "el-GR";
     return "en-US";
+  }
+
+  function setState(newState) {
+    state = newState;
   }
 
   function resetMicButton() {
     const copy = translations[currentLanguage];
-
     micBtn.classList.remove("recording");
     micBtn.setAttribute("aria-label", copy.micAria);
     micBtn.textContent = "🎤";
   }
 
-  micBtn.addEventListener("click", () => {
-    try {
-      recognition.lang = getCurrentSpeechLanguage();
-      recognition.start();
+  function setMicListening() {
+    micBtn.classList.add("recording");
+    micBtn.setAttribute("aria-label", translations[currentLanguage].listeningAria);
+    micBtn.textContent = "■";
+  }
 
-      micBtn.classList.add("recording");
-      micBtn.setAttribute("aria-label", translations[currentLanguage].listeningAria);
-      micBtn.textContent = "■";
-    } catch (error) {
-      console.warn("Speech recognition could not start:", error);
+  function startRecognition() {
+    if (recognition) {
+      recognition.onend = null;
+      recognition.onerror = null;
+      recognition.onresult = null;
+      recognition.onaudioend = null;
+      recognition.onnomatch = null;
+      try { recognition.stop(); } catch {}
+    }
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    recognition.lang = getCurrentSpeechLanguage();
+
+    let finalTranscript = "";
+    let lastResultTime = Date.now();
+
+    recognition.onstart = () => {
+      setState(STATE.listening);
+      setMicListening();
+      lastStableTranscript = userInput.value;
+    };
+
+    recognition.onresult = (event) => {
+      let interim = "";
+      finalTranscript = "";
+      for (let i = 0; i < event.results.length; ++i) {
+        const res = event.results[i];
+        if (res.isFinal) {
+          finalTranscript += res[0].transcript;
+        } else {
+          interim += res[0].transcript;
+        }
+      }
+      // Stream interim + final into input
+      userInput.value = (finalTranscript + interim).trim();
+      lastResultTime = Date.now();
+    };
+
+    recognition.onend = () => {
+      // If user was speaking, finalize transcript
+      setState(STATE.processing);
+      resetMicButton();
+      // Keep the last transcript in the input
+      if (userInput.value.trim()) {
+        lastStableTranscript = userInput.value;
+      }
+      // Auto-recovery: restart if not idle
+      if (state !== STATE.idle) {
+        autoRestartTimeout = setTimeout(() => {
+          if (state !== STATE.idle) startRecognition();
+        }, 350);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      // Silently auto-recover on error
+      setState(STATE.processing);
+      resetMicButton();
+      if (state !== STATE.idle) {
+        autoRestartTimeout = setTimeout(() => {
+          if (state !== STATE.idle) startRecognition();
+        }, 350);
+      }
+    };
+
+    recognition.onspeechend = () => {
+      // User stopped speaking, finalize
+      setState(STATE.processing);
+      try { recognition.stop(); } catch {}
+      resetMicButton();
+      // Keep transcript in input, ready to send
+      if (userInput.value.trim()) {
+        lastStableTranscript = userInput.value;
+      }
+    };
+  }
+
+  micBtn.addEventListener("click", () => {
+    if (state === STATE.idle) {
+      setState(STATE.listening);
+      setMicListening();
+      startRecognition();
+    } else {
+      // Stop listening
+      setState(STATE.idle);
+      if (recognition) try { recognition.stop(); } catch {}
+      resetMicButton();
+      // Keep transcript in input
+      if (userInput.value.trim()) {
+        lastStableTranscript = userInput.value;
+      }
+    }
+  });
+
+  // If user types or edits input, cancel voice
+  userInput.addEventListener("input", () => {
+    if (state !== STATE.idle) {
+      setState(STATE.idle);
+      if (recognition) try { recognition.stop(); } catch {}
       resetMicButton();
     }
   });
 
-  recognition.onresult = (event) => {
-    const transcript = event.results?.[0]?.[0]?.transcript || "";
-
-    userInput.value = transcript;
-    resetMicButton();
-
-    if (transcript.trim()) {
-      sendMessage(transcript);
-    }
-  };
-
-  recognition.onspeechend = () => {
-    recognition.stop();
-  };
-
-  recognition.onend = () => {
-    resetMicButton();
-  };
-
-  recognition.onerror = (event) => {
-    console.warn("Speech recognition error:", event.error);
-    resetMicButton();
-  };
+  // On page unload, cleanup
+  window.addEventListener("beforeunload", () => {
+    if (recognition) try { recognition.stop(); } catch {}
+  });
 
 } else if (micBtn) {
   micBtn.style.display = "none";
