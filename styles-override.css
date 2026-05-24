@@ -483,8 +483,7 @@
   letter-spacing: 0;
 }
 
-.chat-card-top .status-dot,
-.preview-status .preview-status-dot {
+.chat-card-top .status-dot {
   width: 11px;
   height: 11px;
   background: #5a9f96;
@@ -687,7 +686,6 @@
   }
 
   .chat-card-top .status-dot,
-  .preview-status .preview-status-dot,
   .chat-card-top .status-dot::after {
     animation: none;
   }
@@ -832,7 +830,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .chat-card-top .status-dot,
-  .preview-status .preview-status-dot,
   .chat-card-top .status-dot::after {
     animation: none;
   }
