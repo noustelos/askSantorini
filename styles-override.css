@@ -457,59 +457,59 @@
 @keyframes statusDotSoftPulse {
   0%,
   100% {
-    opacity: 0.82;
+    opacity: 0.86;
     transform: scale(1);
     box-shadow:
-      0 0 0 3px rgba(159, 216, 210, 0.12),
-      0 0 10px rgba(79, 143, 138, 0.20);
+      0 0 0 3px rgba(139, 196, 188, 0.10),
+      0 0 12px rgba(72, 136, 128, 0.18);
   }
 
   50% {
-    opacity: 1;
-    transform: scale(1.16);
+    opacity: 0.98;
+    transform: scale(1.08);
     box-shadow:
-      0 0 0 5px rgba(159, 216, 210, 0.18),
-      0 0 16px rgba(79, 143, 138, 0.30);
+      0 0 0 5px rgba(139, 196, 188, 0.15),
+      0 0 18px rgba(72, 136, 128, 0.24);
   }
 }
 
 @keyframes statusDotAura {
   0%,
   100% {
-    opacity: 0.18;
-    transform: scale(0.92);
+    opacity: 0.12;
+    transform: scale(0.96);
   }
 
   50% {
-    opacity: 0.34;
-    transform: scale(1.34);
+    opacity: 0.24;
+    transform: scale(1.24);
   }
 }
 
 .chat-card-top {
   gap: 9px;
   margin-bottom: 9px;
-  color: var(--navy);
+  color: rgba(22, 59, 92, 0.72);
   font-size: 0.92rem;
-  font-weight: 850;
+  font-weight: 760;
   letter-spacing: 0;
 }
 
 .chat-card-top .status-dot {
   width: 11px;
   height: 11px;
-  background: #3f9b91;
+  background: #5a9f96;
   transform-origin: center;
   box-shadow:
-    0 0 0 4px rgba(159, 216, 210, 0.18),
-    0 0 18px rgba(79, 143, 138, 0.32);
-  animation: statusDotSoftPulse 3.4s ease-in-out infinite;
+    0 0 0 4px rgba(139, 196, 188, 0.13),
+    0 0 18px rgba(72, 136, 128, 0.24);
+  animation: statusDotSoftPulse 3.2s ease-in-out infinite;
 }
 
 .chat-card-top .status-dot::after {
   inset: -7px;
-  border-color: rgba(79, 143, 138, 0.30);
-  animation: statusDotAura 3.4s ease-in-out infinite;
+  border-color: rgba(72, 136, 128, 0.24);
+  animation: statusDotAura 3.2s ease-in-out infinite;
 }
 
 .chat-instruction-line {
@@ -841,13 +841,13 @@
 
 .chat-card-top .status-dot {
   transform-origin: center;
-  animation: statusDotSoftPulse 3.4s ease-in-out infinite;
+  animation: statusDotSoftPulse 3.2s ease-in-out infinite;
 }
 
 .chat-card-top .status-dot::after {
   inset: -7px;
-  border-color: rgba(79, 143, 138, 0.30);
-  animation: statusDotAura 3.4s ease-in-out infinite;
+  border-color: rgba(72, 136, 128, 0.24);
+  animation: statusDotAura 3.2s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
