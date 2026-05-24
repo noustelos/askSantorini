@@ -571,6 +571,13 @@ h3 {
   box-shadow: 0 0 0 0 rgba(79, 143, 138, 0.45);
 }
 
+.chat-card-top .status-dot,
+.preview-status .preview-status-dot {
+  animation: livePulse 2.8s ease-in-out infinite;
+  transform-origin: center;
+  will-change: opacity, transform, box-shadow;
+}
+
 .chat-thread {
   display: grid;
   gap: 14px;
@@ -881,23 +888,26 @@ section[id] {
   border-radius: inherit;
   opacity: 0;
   transform: scale(0.75);
-  animation: livePulse 2.1s ease-out infinite;
+  animation: none;
 }
 
 @keyframes livePulse {
   0% {
-    opacity: 0.55;
-    transform: scale(0.75);
+    opacity: 0.45;
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   }
 
-  70% {
-    opacity: 0;
-    transform: scale(1.75);
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(0, 255, 160, 0.30);
   }
 
   100% {
-    opacity: 0;
-    transform: scale(1.75);
+    opacity: 0.45;
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   }
 }
 
