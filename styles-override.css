@@ -454,35 +454,23 @@
   transform: none;
 }
 
-@keyframes statusDotSoftPulse {
-  0%,
-  100% {
-    opacity: 0.86;
+@keyframes livePulse {
+  0% {
+    opacity: 0.45;
     transform: scale(1);
-    box-shadow:
-      0 0 0 3px rgba(139, 196, 188, 0.10),
-      0 0 12px rgba(72, 136, 128, 0.18);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   }
 
   50% {
-    opacity: 0.98;
-    transform: scale(1.08);
-    box-shadow:
-      0 0 0 5px rgba(139, 196, 188, 0.15),
-      0 0 18px rgba(72, 136, 128, 0.24);
+    opacity: 1;
+    transform: scale(1.2);
+    box-shadow: 0 0 8px rgba(0, 255, 160, 0.25);
   }
-}
 
-@keyframes statusDotAura {
-  0%,
   100% {
-    opacity: 0.12;
-    transform: scale(0.96);
-  }
-
-  50% {
-    opacity: 0.24;
-    transform: scale(1.24);
+    opacity: 0.45;
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   }
 }
 
@@ -503,13 +491,14 @@
   box-shadow:
     0 0 0 4px rgba(139, 196, 188, 0.13),
     0 0 18px rgba(72, 136, 128, 0.24);
-  animation: statusDotSoftPulse 3.2s ease-in-out infinite;
+  animation: livePulse 2.8s ease-in-out infinite;
+  will-change: opacity, transform, box-shadow;
 }
 
 .chat-card-top .status-dot::after {
   inset: -7px;
   border-color: rgba(72, 136, 128, 0.24);
-  animation: statusDotAura 3.2s ease-in-out infinite;
+  animation: none;
 }
 
 .chat-instruction-line {
@@ -841,13 +830,13 @@
 
 .chat-card-top .status-dot {
   transform-origin: center;
-  animation: statusDotSoftPulse 3.2s ease-in-out infinite;
+  animation: livePulse 2.8s ease-in-out infinite;
 }
 
 .chat-card-top .status-dot::after {
   inset: -7px;
   border-color: rgba(72, 136, 128, 0.24);
-  animation: statusDotAura 3.2s ease-in-out infinite;
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
