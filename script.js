@@ -934,6 +934,17 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 
 // WhatsApp-level continuous voice input UX
 if (micBtn && userInput && SpeechRecognition) {
+    const micStatus = document.getElementById("mic-status");
+    function setMicStatus(state) {
+      // Lightweight, non-intrusive status
+      if (!micStatus) return;
+      let txt = "";
+      if (state === STATE.listening) txt = translations[currentLanguage]?.listeningAria || "Listening…";
+      else if (state === STATE.processing) txt = "Processing…";
+      else txt = "Ready";
+      micStatus.textContent = txt;
+      micStatus.className = "mic-status mic-status-" + (state === STATE.listening ? "listening" : state === STATE.processing ? "processing" : "ready");
+    }
   // --- State Machine ---
   const STATE = { idle: 0, listening: 1, processing: 2 };
   let state = STATE.idle;
@@ -958,6 +969,7 @@ if (micBtn && userInput && SpeechRecognition) {
   }
 
   function resetMicButton() {
+      setMicStatus(STATE.idle);
     const copy = translations[currentLanguage];
     micBtn.classList.remove("recording");
     micBtn.setAttribute("aria-label", copy.micAria);
@@ -965,12 +977,14 @@ if (micBtn && userInput && SpeechRecognition) {
   }
 
   function setMicListening() {
+      setMicStatus(STATE.listening);
     micBtn.classList.add("recording");
     micBtn.setAttribute("aria-label", translations[currentLanguage].listeningAria);
     micBtn.textContent = "■";
   }
 
   function startRecognition() {
+      let recognitionHadResult = false;
     if (recognition) {
       recognition.onend = null;
       recognition.onerror = null;
@@ -995,6 +1009,7 @@ if (micBtn && userInput && SpeechRecognition) {
     };
 
     recognition.onresult = (event) => {
+        recognitionHadResult = true;
       let interim = "";
       finalTranscript = "";
       for (let i = 0; i < event.results.length; ++i) {
@@ -1008,14 +1023,22 @@ if (micBtn && userInput && SpeechRecognition) {
       // Stream interim + final into input
       userInput.value = (finalTranscript + interim).trim();
       lastResultTime = Date.now();
+      // Show partials instantly
+      if (userInput.value.trim()) {
+        lastStableTranscript = userInput.value;
+      }
     };
 
     recognition.onend = () => {
-      // If user was speaking, finalize transcript
       setState(STATE.processing);
+      setMicStatus(STATE.processing);
       resetMicButton();
-      // Keep the last transcript in the input
-      if (userInput.value.trim()) {
+      // If no result and Greek, fallback to last stable
+      const isGreek = recognition && recognition.lang && recognition.lang.startsWith("el");
+      if (!recognitionHadResult && isGreek) {
+        // No error, just fallback
+        userInput.value = lastStableTranscript;
+      } else if (userInput.value.trim()) {
         lastStableTranscript = userInput.value;
       }
       // Auto-recovery: restart if not idle
@@ -1027,9 +1050,14 @@ if (micBtn && userInput && SpeechRecognition) {
     };
 
     recognition.onerror = (event) => {
-      // Silently auto-recover on error
+      // Silently auto-recover on error, fallback for Greek
       setState(STATE.processing);
+      setMicStatus(STATE.processing);
       resetMicButton();
+      const isGreek = recognition && recognition.lang && recognition.lang.startsWith("el");
+      if (isGreek && userInput.value.trim() === "") {
+        userInput.value = lastStableTranscript;
+      }
       if (state !== STATE.idle) {
         autoRestartTimeout = setTimeout(() => {
           if (state !== STATE.idle) startRecognition();
@@ -1038,11 +1066,10 @@ if (micBtn && userInput && SpeechRecognition) {
     };
 
     recognition.onspeechend = () => {
-      // User stopped speaking, finalize
       setState(STATE.processing);
+      setMicStatus(STATE.processing);
       try { recognition.stop(); } catch {}
       resetMicButton();
-      // Keep transcript in input, ready to send
       if (userInput.value.trim()) {
         lastStableTranscript = userInput.value;
       }
@@ -1053,13 +1080,13 @@ if (micBtn && userInput && SpeechRecognition) {
     if (state === STATE.idle) {
       setState(STATE.listening);
       setMicListening();
+      setMicStatus(STATE.listening);
       startRecognition();
     } else {
-      // Stop listening
       setState(STATE.idle);
+      setMicStatus(STATE.idle);
       if (recognition) try { recognition.stop(); } catch {}
       resetMicButton();
-      // Keep transcript in input
       if (userInput.value.trim()) {
         lastStableTranscript = userInput.value;
       }
@@ -1070,6 +1097,7 @@ if (micBtn && userInput && SpeechRecognition) {
   userInput.addEventListener("input", () => {
     if (state !== STATE.idle) {
       setState(STATE.idle);
+      setMicStatus(STATE.idle);
       if (recognition) try { recognition.stop(); } catch {}
       resetMicButton();
     }
