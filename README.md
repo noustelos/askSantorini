@@ -63,12 +63,12 @@ Frontend affiliate data comes from the published Google Sheets CSV:
 https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0
 ```
 
-Required columns: `active`, `name`, `type`, `priority`, `tags`, `clicks`, `impressions`, `url`.
+Required columns: `active`, `name`, `type`, `priority`, `tags`, `clicks`, `impressions`, `intent_strength`, `context_boost`, `url`.
 Supported affiliate `type` values are `transport`, `hotel`, and `tour`.
 The frontend loads active affiliates from the published Google Sheets CSV and ranks them with:
 
 ```text
-score = priority + (clicks / (impressions + 1))
+score = priority + (clicks / (impressions + 1)) + intent_strength + context_boost
 ```
 
 CSP:

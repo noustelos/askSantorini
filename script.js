@@ -870,8 +870,8 @@ async function fetchGoogleSheetAffiliates(sheetUrl) {
   const headers = headerLine.split(",").map((header) => header.trim().toLowerCase());
   return lines.map((line) => line.split(",").reduce((row, value, index) => ({ ...row, [headers[index]]: value.trim() }), {}))
     .filter((row) => String(row.active).toLowerCase() === "true")
-    .map((row) => ({ name: row.name, type: row.type, tags: String(row.tags || "").split("|").map((tag) => tag.trim()).filter(Boolean), priority: Number(row.priority) || 0, clicks: Number(row.clicks) || 0, impressions: Number(row.impressions) || 0, url: row.url }))
-    .map((affiliate) => ({ ...affiliate, score: affiliate.priority + (affiliate.clicks / (affiliate.impressions + 1)) }))
+    .map((row) => ({ name: row.name, type: row.type, tags: String(row.tags || "").split("|").map((tag) => tag.trim()).filter(Boolean), priority: Number(row.priority) || 0, clicks: Number(row.clicks) || 0, impressions: Number(row.impressions) || 0, intentStrength: Number(row.intent_strength) || 0, contextBoost: Number(row.context_boost) || 0, url: row.url }))
+    .map((affiliate) => ({ ...affiliate, score: affiliate.priority + (affiliate.clicks / (affiliate.impressions + 1)) + affiliate.intentStrength + affiliate.contextBoost }))
     .sort((a, b) => b.score - a.score);
 }
 
