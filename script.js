@@ -822,7 +822,7 @@ function appendMessage(text, className) {
 }
 
 const conciergeMonetizationSheetUrl = "https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0";
-const conciergeEventsEndpointUrl = "";
+const conciergeEventsEndpointUrl = "https://script.google.com/macros/s/AKfycbwBFtQrQ4bfoBXnf6w98T5wPAMVp0XVE_HaaecboelI76RzmykNNlU-lq-a3oFfoZNJ/exec";
 const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
 const conciergeSessionStorageKey = "askSantoriniConciergeSession";
 let conciergeAffiliates = [];

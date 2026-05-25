@@ -85,7 +85,7 @@ The Worker does not detect intent, rank affiliates, or construct concierge rules
 ## Affiliate Event Write Layer
 
 `apps-script/affiliate-events.gs` contains the Google Apps Script Web App endpoint for appending affiliate events to the `events` sheet tab.
-Deploy it as a Web App attached to the monetization spreadsheet, then set `conciergeEventsEndpointUrl` in `script.js` to the deployed Web App URL.
+The deployed Web App URL is configured as `conciergeEventsEndpointUrl` in `script.js`.
 
 Expected event columns:
 
