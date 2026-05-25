@@ -822,11 +822,14 @@ function appendMessage(text, className) {
 }
 
 const conciergeMonetizationSheetUrl = "https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0";
-const conciergeEventsEndpointUrl = "https://script.google.com/macros/s/AKfycbwBFtQrQ4bfoBXnf6w98T5wPAMVp0XVE_HaaecboelI76RzmykNNlU-lq-a3oFfoZNJ/exec";
+const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbwBFtQrQ4bfoBXnf6w98T5wPAMVp0XVE_HaaecboelI76RzmykNNlU-lq-a3oFfoZNJ/exec";
+const ANALYTICS_WEBHOOK_URL = `${eventWebhookUrl}?sink=analytics`;
+const MONETIZATION_WEBHOOK_URL = `${eventWebhookUrl}?sink=monetization`;
 const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
 const conciergeSessionStorageKey = "askSantoriniConciergeSession";
 let conciergeAffiliates = [];
 let conciergeAffiliateLoadPromise = null;
+let latestInteractionEvent = null;
 
 const conciergeIntentPatterns = {
   transport: /\b(airport|air port|taxi|taxis|transfer|transfers|transport|transportation|pickup|pickups|pick-up|driver|chauffeur|port|ferry|arrival|departure)\b/i,
@@ -968,24 +971,42 @@ function getConciergeSessionId() {
   return sessionId;
 }
 
-function trackAffiliateEvent(affiliate, intentType, eventType) {
-  if (!conciergeEventsEndpointUrl || !affiliate?.name) return;
+function normalizeAffiliateName(affiliate) {
+  if (!affiliate) return "";
+  if (typeof affiliate === "string") return affiliate;
+  return String(affiliate.name || "").trim();
+}
 
-  const payload = {
+function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate = "", eventType = "message" } = {}) {
+  const event = {
     timestamp: new Date().toISOString(),
-    affiliate: affiliate.name,
-    event_type: eventType,
-    intent_type: intentType || affiliate.type || "",
-    session_id: getConciergeSessionId()
+    session_id: getConciergeSessionId(),
+    user_message: String(userMessage || ""),
+    bot_response: String(botResponse || ""),
+    intent: String(intent || ""),
+    event_type: String(eventType || "message").toLowerCase()
   };
 
-  fetch(conciergeEventsEndpointUrl, {
+  const affiliateName = normalizeAffiliateName(affiliate);
+
+  if (affiliateName) {
+    event.affiliate = affiliateName;
+  }
+
+  return event;
+}
+
+async function sendEvent(event) {
+  const endpoints = [ANALYTICS_WEBHOOK_URL, MONETIZATION_WEBHOOK_URL].filter(Boolean);
+  if (!endpoints.length) return;
+
+  await Promise.all(endpoints.map((endpoint) => fetch(endpoint, {
     method: "POST",
-    mode: "no-cors",
-    keepalive: true,
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify(payload)
-  }).catch(() => {});
+    body: JSON.stringify(event),
+    headers: { "Content-Type": "application/json" }
+  }))).catch((error) => {
+    console.warn("AskSantorini event delivery failed:", error);
+  });
 }
 
 function getAffiliateForUrl(url) {
@@ -1130,9 +1151,16 @@ async function sendMessage(text) {
 
     const reply = data?.reply || copy.noReplyMessage;
     appendMessage(reply, "bot-message");
-    if (selectedAffiliate && (reply.includes(selectedAffiliate.name) || reply.includes(selectedAffiliate.url))) {
-      trackAffiliateEvent(selectedAffiliate, selectedIntent, "impression");
-    }
+    const hasAffiliateImpression = Boolean(selectedAffiliate && (reply.includes(selectedAffiliate.name) || reply.includes(selectedAffiliate.url)));
+    latestInteractionEvent = buildEvent({
+      userMessage: cleanText,
+      botResponse: reply,
+      intent: selectedIntent,
+      affiliate: selectedAffiliate,
+      eventType: hasAffiliateImpression ? "impression" : "message"
+    });
+
+    await sendEvent(latestInteractionEvent);
 
   } catch (error) {
     console.error("AskSantorini chat error:", error);
@@ -1141,6 +1169,13 @@ async function sendMessage(text) {
     if (loadingEl) loadingEl.remove();
 
     appendMessage(copy.disconnectedMessage, "bot-message error");
+    latestInteractionEvent = buildEvent({
+      userMessage: cleanText,
+      botResponse: copy.disconnectedMessage,
+      intent: detectConciergeIntent(cleanText),
+      eventType: "message"
+    });
+    await sendEvent(latestInteractionEvent).catch(() => {});
 
   } finally {
     userInput.disabled = false;
@@ -1168,7 +1203,15 @@ document.addEventListener("click", (event) => {
 
   const affiliate = getAffiliateForUrl(affiliateLink.href);
   if (affiliate) {
-    trackAffiliateEvent(affiliate, affiliate.type, "click");
+    const eventPayload = buildEvent({
+      userMessage: latestInteractionEvent?.user_message || "",
+      botResponse: latestInteractionEvent?.bot_response || "",
+      intent: latestInteractionEvent?.intent || affiliate.type,
+      affiliate,
+      eventType: "click"
+    });
+
+    sendEvent(eventPayload).catch(() => {});
   }
 });
 

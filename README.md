@@ -82,15 +82,27 @@ If the Sheet is unavailable, the frontend fails gracefully with no affiliate sug
 The frontend selects a single relevant affiliate and sends the final structured prompt to the Worker.
 The Worker does not detect intent, rank affiliates, or construct concierge rules.
 
-## Affiliate Event Write Layer
+## Single Event Write Layer
 
-`apps-script/affiliate-events.gs` contains the Google Apps Script Web App endpoint for appending affiliate events to the `events` sheet tab.
-The deployed Web App URL is configured as `conciergeEventsEndpointUrl` in `script.js`.
+`apps-script/affiliate-events.gs` contains the Google Apps Script Web App endpoint for appending the single canonical event to analytics and monetization sheet tabs.
+The deployed Web App URL is configured as `eventWebhookUrl` in `script.js`, then fanned out to `?sink=analytics` and `?sink=monetization`.
 
-Expected event columns:
+Canonical frontend event:
 
 ```text
-timestamp, affiliate_name, event_type, intent_type, session_id
+timestamp, session_id, user_message, bot_response, intent, affiliate, event_type
+```
+
+Analytics columns:
+
+```text
+timestamp, session_id, user_message, bot_response, intent, affiliate, event_type
+```
+
+Monetization columns:
+
+```text
+timestamp, affiliate, event_type, intent
 ```
 
 ## Deploy to Cloudflare Pages

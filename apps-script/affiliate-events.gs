@@ -1,26 +1,25 @@
-const EVENTS_SHEET_NAME = "events";
-const EVENTS_HEADERS = ["timestamp", "affiliate_name", "event_type", "intent_type", "session_id"];
-const VALID_EVENT_TYPES = ["click", "impression"];
+const ANALYTICS_SHEET_NAME = "analytics_events";
+const MONETIZATION_SHEET_NAME = "monetization_events";
+const ANALYTICS_HEADERS = ["timestamp", "session_id", "user_message", "bot_response", "intent", "affiliate", "event_type"];
+const MONETIZATION_HEADERS = ["timestamp", "affiliate", "event_type", "intent"];
+const VALID_EVENT_TYPES = ["message", "impression", "click"];
+const VALID_SINKS = ["analytics", "monetization"];
 
 function doPost(event) {
   try {
     const payload = JSON.parse(event?.postData?.contents || "{}");
-    const eventType = String(payload.event_type || "").trim().toLowerCase();
-    const affiliateName = String(payload.affiliate || "").trim();
-    const intentType = String(payload.intent_type || "").trim().toLowerCase();
+    const sink = String(event?.parameter?.sink || "").trim().toLowerCase();
+    const canonicalEvent = normalizeCanonicalEvent(payload);
 
-    if (!affiliateName || !VALID_EVENT_TYPES.includes(eventType)) {
+    if (!VALID_SINKS.includes(sink) || !VALID_EVENT_TYPES.includes(canonicalEvent.event_type)) {
       return jsonResponse({ ok: false, error: "Invalid event payload." });
     }
 
-    const sheet = getEventsSheet();
-    sheet.appendRow([
-      String(payload.timestamp || new Date().toISOString()),
-      affiliateName,
-      eventType,
-      intentType,
-      String(payload.session_id || "")
-    ]);
+    if (sink === "analytics") {
+      appendAnalyticsEvent(canonicalEvent);
+    } else {
+      appendMonetizationEvent(canonicalEvent);
+    }
 
     return jsonResponse({ ok: true });
   } catch (error) {
@@ -36,12 +35,45 @@ function doOptions() {
   return jsonResponse({ ok: true });
 }
 
-function getEventsSheet() {
+function normalizeCanonicalEvent(payload) {
+  return {
+    timestamp: String(payload.timestamp || new Date().toISOString()),
+    session_id: String(payload.session_id || ""),
+    user_message: String(payload.user_message || ""),
+    bot_response: String(payload.bot_response || ""),
+    intent: String(payload.intent || ""),
+    affiliate: String(payload.affiliate || ""),
+    event_type: String(payload.event_type || "").trim().toLowerCase()
+  };
+}
+
+function appendAnalyticsEvent(event) {
+  getEventSheet(ANALYTICS_SHEET_NAME, ANALYTICS_HEADERS).appendRow([
+    event.timestamp,
+    event.session_id,
+    event.user_message,
+    event.bot_response,
+    event.intent,
+    event.affiliate,
+    event.event_type
+  ]);
+}
+
+function appendMonetizationEvent(event) {
+  getEventSheet(MONETIZATION_SHEET_NAME, MONETIZATION_HEADERS).appendRow([
+    event.timestamp,
+    event.affiliate,
+    event.event_type,
+    event.intent
+  ]);
+}
+
+function getEventSheet(sheetName, headers) {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = spreadsheet.getSheetByName(EVENTS_SHEET_NAME) || spreadsheet.insertSheet(EVENTS_SHEET_NAME);
+  const sheet = spreadsheet.getSheetByName(sheetName) || spreadsheet.insertSheet(sheetName);
 
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(EVENTS_HEADERS);
+    sheet.appendRow(headers);
   }
 
   return sheet;
