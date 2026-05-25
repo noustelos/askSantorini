@@ -956,8 +956,9 @@ function collectConciergeAction(actions, label, href) {
   }
 }
 
-function renderBotMessageContent(messageElement, text) {
+function transformBotMessageToSafeFragment(text) {
   const sourceText = String(text || "");
+  const fragment = document.createDocumentFragment();
   const textContainer = document.createElement("div");
   const actions = new Map();
   let cursor = 0;
@@ -982,10 +983,10 @@ function renderBotMessageContent(messageElement, text) {
   });
 
   appendTextWithRawLinks(textContainer, sourceText.slice(cursor), actions);
-  messageElement.appendChild(textContainer);
+  fragment.appendChild(textContainer);
 
   if (!actions.size) {
-    return;
+    return fragment;
   }
 
   const actionList = document.createElement("div");
@@ -1007,7 +1008,31 @@ function renderBotMessageContent(messageElement, text) {
     actionList.appendChild(actionLink);
   });
 
-  messageElement.appendChild(actionList);
+  fragment.appendChild(actionList);
+
+  return fragment;
+}
+
+function processMessage(text, className) {
+  const fragment = document.createDocumentFragment();
+  const isInteractiveBotMessage = String(className).includes("bot-message")
+    && !String(className).includes("loading")
+    && !String(className).includes("error");
+
+  if (isInteractiveBotMessage) {
+    return transformBotMessageToSafeFragment(text);
+  }
+
+  fragment.appendChild(document.createTextNode(String(text || "")));
+
+  return fragment;
+}
+
+function getFragmentHtml(fragment) {
+  const debugWrapper = document.createElement("div");
+  debugWrapper.appendChild(fragment.cloneNode(true));
+
+  return debugWrapper.innerHTML;
 }
 
 function appendMessage(text, className) {
@@ -1018,13 +1043,13 @@ function appendMessage(text, className) {
 
   msgDiv.id = id;
   msgDiv.className = className;
+  const processedMessage = processMessage(text, className);
 
-  if (String(className).includes("bot-message") && !String(className).includes("loading") && !String(className).includes("error")) {
-    renderBotMessageContent(msgDiv, text);
-  } else {
-    msgDiv.innerText = text;
+  if (String(className).includes("bot-message")) {
+    console.log("AskSantorini final rendered message HTML:", getFragmentHtml(processedMessage));
   }
 
+  msgDiv.replaceChildren(processedMessage);
   chatBox.appendChild(msgDiv);
   chatBox.scrollTop = chatBox.scrollHeight;
 
