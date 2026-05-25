@@ -74,14 +74,20 @@ Frontend affiliate data:
 ```
 
 Supported affiliate `type` values are `transport`, `hotel`, and `tour`.
+When `window.askSantoriniMonetizationSheetUrl` or `conciergeMonetizationSheetUrl` points to the published Google Sheets CSV, the frontend loads active affiliates and ranks them with:
+
+```text
+score = priority + (clicks / (impressions + 1))
+```
 
 CSP:
 
-- `connect-src` allows `https://white-fog-d126.avatar68.workers.dev`.
+- `connect-src` allows `https://white-fog-d126.avatar68.workers.dev` and `https://docs.google.com`.
 
 ## Partner Knowledge
 
-Partner data lives only in `/data/affiliates.json`.
+Partner data can be updated live from the published Google Sheets monetization log.
+`/data/affiliates.json` remains a local fallback for development or unavailable Sheets data.
 The frontend selects a single relevant affiliate and sends the final structured prompt to the Worker.
 The Worker does not detect intent, rank affiliates, or construct concierge rules.
 

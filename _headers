@@ -2,7 +2,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://white-fog-d126.avatar68.workers.dev; base-uri 'self'; form-action 'self' mailto:; upgrade-insecure-requests; frame-ancestors 'self';
+  Content-Security-Policy: default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://white-fog-d126.avatar68.workers.dev https://docs.google.com; base-uri 'self'; form-action 'self' mailto:; upgrade-insecure-requests; frame-ancestors 'self';
 
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Frame-Options: SAMEORIGIN

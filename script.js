@@ -822,6 +822,7 @@ function appendMessage(text, className) {
 }
 
 const conciergeAffiliateDataUrl = "data/affiliates.json";
+const conciergeMonetizationSheetUrl = window.askSantoriniMonetizationSheetUrl || "";
 const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
 let conciergeAffiliates = [];
 let conciergeAffiliateLoadPromise = null;
@@ -847,13 +848,14 @@ Concierge behavior rules:
 
 function loadConciergeAffiliates() {
   if (!conciergeAffiliateLoadPromise) {
-    conciergeAffiliateLoadPromise = fetch(conciergeAffiliateDataUrl)
+    conciergeAffiliateLoadPromise = fetchGoogleSheetAffiliates(conciergeMonetizationSheetUrl)
+      .then((sheetAffiliates) => sheetAffiliates.length ? { affiliates: sheetAffiliates } : fetch(conciergeAffiliateDataUrl)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Affiliate data could not be loaded.");
         }
         return response.json();
-      })
+      }))
       .then((data) => {
         conciergeAffiliates = Array.isArray(data?.affiliates) ? data.affiliates : [];
         return conciergeAffiliates;
@@ -866,6 +868,19 @@ function loadConciergeAffiliates() {
   }
 
   return conciergeAffiliateLoadPromise;
+}
+
+async function fetchGoogleSheetAffiliates(sheetUrl) {
+  if (!sheetUrl) return [];
+  const csv = await fetch(sheetUrl).then((response) => response.ok ? response.text() : "").catch(() => "");
+  if (!csv.trim()) return [];
+  const [headerLine, ...lines] = csv.trim().split(/\r?\n/);
+  const headers = headerLine.split(",").map((header) => header.trim().toLowerCase());
+  return lines.map((line) => line.split(",").reduce((row, value, index) => ({ ...row, [headers[index]]: value.trim() }), {}))
+    .filter((row) => String(row.active).toLowerCase() === "true")
+    .map((row) => ({ name: row.name, type: row.type, tags: String(row.tags || "").split("|").map((tag) => tag.trim()).filter(Boolean), priority: Number(row.priority) || 0, clicks: Number(row.clicks) || 0, impressions: Number(row.impressions) || 0, url: row.url }))
+    .map((affiliate) => ({ ...affiliate, score: affiliate.priority + (affiliate.clicks / (affiliate.impressions + 1)) }))
+    .sort((a, b) => b.score - a.score);
 }
 
 function detectConciergeIntent(message) {
@@ -920,7 +935,7 @@ function chooseConciergeAffiliate(intentType, userMessage) {
 
       return {
         affiliate,
-        score: (Number(affiliate.priority) || 0) * 100 + tagScore
+        score: (Number(affiliate.score ?? affiliate.priority) || 0) * 100 + tagScore
       };
     })
     .sort((a, b) => {
