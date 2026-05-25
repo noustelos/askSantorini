@@ -814,6 +814,194 @@ document.querySelectorAll("dialog").forEach((modal) => {
   });
 });
 
+const markdownLinkPattern = /\[([^\]]+)\]\(([^)\s]+)\)/g;
+const rawUrlPattern = /\b(?:https?:\/\/[^\s<>()]+|tel:\+?[0-9().\-\s]+[0-9])/gi;
+
+function normalizeUrl(rawUrl) {
+  const cleanUrl = String(rawUrl || "").trim();
+
+  if (!cleanUrl) {
+    return "";
+  }
+
+  try {
+    if (/^tel:/i.test(cleanUrl)) {
+      const phoneNumber = cleanUrl.replace(/^tel:/i, "").replace(/[^\d+]/g, "");
+
+      return phoneNumber ? `tel:${phoneNumber}` : "";
+    }
+
+    const url = new URL(cleanUrl, window.location.href);
+
+    if (url.protocol === "http:" || url.protocol === "https:") {
+      return url.href;
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function isTelephoneUrl(url) {
+  return /^tel:\+?\d/i.test(url);
+}
+
+function isGoogleMapsUrl(url) {
+  try {
+    const parsedUrl = new URL(url);
+    const host = parsedUrl.hostname.replace(/^www\./, "").toLowerCase();
+    const path = parsedUrl.pathname.toLowerCase();
+
+    return (
+      host === "maps.app.goo.gl" ||
+      host === "maps.google.com" ||
+      (host === "google.com" && path.startsWith("/maps"))
+    );
+  } catch {
+    return false;
+  }
+}
+
+function trimTrailingUrlPunctuation(url) {
+  const trailingMatch = url.match(/[.,!?;:]+$/);
+
+  if (!trailingMatch) {
+    return { url, trailingText: "" };
+  }
+
+  return {
+    url: url.slice(0, -trailingMatch[0].length),
+    trailingText: trailingMatch[0]
+  };
+}
+
+function appendTextWithRawLinks(parent, text, actions) {
+  const sourceText = String(text || "");
+  let cursor = 0;
+
+  sourceText.replace(rawUrlPattern, (match, offset) => {
+    const before = sourceText.slice(cursor, offset);
+
+    if (before) {
+      parent.appendChild(document.createTextNode(before));
+    }
+
+    const { url: displayUrl, trailingText } = trimTrailingUrlPunctuation(match);
+    const safeUrl = normalizeUrl(displayUrl);
+
+    if (safeUrl) {
+      const link = createChatLink(displayUrl, safeUrl);
+      parent.appendChild(link);
+      collectConciergeAction(actions, displayUrl, safeUrl);
+    } else {
+      parent.appendChild(document.createTextNode(match));
+    }
+
+    if (trailingText) {
+      parent.appendChild(document.createTextNode(trailingText));
+    }
+
+    cursor = offset + match.length;
+    return match;
+  });
+
+  const rest = sourceText.slice(cursor);
+
+  if (rest) {
+    parent.appendChild(document.createTextNode(rest));
+  }
+}
+
+function createChatLink(label, href) {
+  const link = document.createElement("a");
+
+  link.href = href;
+  link.textContent = label;
+  link.className = "chat-inline-link";
+  link.dataset.chatAction = "link";
+
+  if (!isTelephoneUrl(href)) {
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+  }
+
+  return link;
+}
+
+function collectConciergeAction(actions, label, href) {
+  if (isTelephoneUrl(href)) {
+    actions.set(href, {
+      href,
+      label: "📞 Καλέστε για Κράτηση",
+      type: "call"
+    });
+    return;
+  }
+
+  if (isGoogleMapsUrl(href)) {
+    actions.set(href, {
+      href,
+      label: "📍 Δείτε στο Google Maps",
+      type: "maps"
+    });
+  }
+}
+
+function renderBotMessageContent(messageElement, text) {
+  const sourceText = String(text || "");
+  const textContainer = document.createElement("div");
+  const actions = new Map();
+  let cursor = 0;
+
+  textContainer.className = "chat-message-text";
+
+  sourceText.replace(markdownLinkPattern, (match, label, rawUrl, offset) => {
+    appendTextWithRawLinks(textContainer, sourceText.slice(cursor, offset), actions);
+
+    const safeUrl = normalizeUrl(rawUrl);
+
+    if (safeUrl) {
+      const link = createChatLink(label, safeUrl);
+      textContainer.appendChild(link);
+      collectConciergeAction(actions, label, safeUrl);
+    } else {
+      textContainer.appendChild(document.createTextNode(match));
+    }
+
+    cursor = offset + match.length;
+    return match;
+  });
+
+  appendTextWithRawLinks(textContainer, sourceText.slice(cursor), actions);
+  messageElement.appendChild(textContainer);
+
+  if (!actions.size) {
+    return;
+  }
+
+  const actionList = document.createElement("div");
+  actionList.className = "chat-action-layer";
+
+  actions.forEach((action) => {
+    const actionLink = document.createElement("a");
+
+    actionLink.href = action.href;
+    actionLink.className = `chat-action-button chat-action-${action.type}`;
+    actionLink.textContent = action.label;
+    actionLink.dataset.chatAction = action.type;
+
+    if (!isTelephoneUrl(action.href)) {
+      actionLink.target = "_blank";
+      actionLink.rel = "noopener noreferrer";
+    }
+
+    actionList.appendChild(actionLink);
+  });
+
+  messageElement.appendChild(actionList);
+}
+
 function appendMessage(text, className) {
   if (!chatBox) return null;
 
@@ -822,7 +1010,12 @@ function appendMessage(text, className) {
 
   msgDiv.id = id;
   msgDiv.className = className;
-  msgDiv.innerText = text;
+
+  if (String(className).includes("bot-message") && !String(className).includes("loading") && !String(className).includes("error")) {
+    renderBotMessageContent(msgDiv, text);
+  } else {
+    msgDiv.innerText = text;
+  }
 
   chatBox.appendChild(msgDiv);
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -1211,17 +1404,26 @@ document.addEventListener("click", (event) => {
   if (!affiliateLink) return;
 
   const affiliate = getAffiliateForUrl(affiliateLink.href);
-  if (affiliate) {
-    const eventPayload = buildEvent({
-      userMessage: latestInteractionEvent?.user_message || "",
-      botResponse: latestInteractionEvent?.bot_response || "",
-      intent: latestInteractionEvent?.intent || affiliate.type,
-      affiliate,
-      eventType: "click"
-    });
+  const chatAction = affiliateLink.dataset?.chatAction;
 
-    sendEvent(eventPayload).catch(() => {});
+  if (!affiliate && !chatAction) {
+    return;
   }
+
+  const eventPayload = buildEvent({
+    userMessage: latestInteractionEvent?.user_message || "",
+    botResponse: latestInteractionEvent?.bot_response || "",
+    intent: latestInteractionEvent?.intent || chatAction || affiliate?.type || "",
+    affiliate,
+    eventType: "click"
+  });
+
+  if (chatAction) {
+    eventPayload.action_type = chatAction;
+    eventPayload.action_url = affiliateLink.href;
+  }
+
+  sendEvent(eventPayload).catch(() => {});
 });
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
