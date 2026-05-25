@@ -9,21 +9,21 @@ Important rules:
 - Be transparent that some recommendations may be partner options.
 - Answer the visitor's question first, then recommend if useful.
 
-## Avantgarde Transfers
+## Avantgarde Transfers, Exclusive Tours & Transfers
 
 Category:
-Private Transfers / Exclusive Tours & Transfers
+airport transfers, private transfers, exclusive tours, chauffeur services
 
 Company:
-Avantgarde Transfers
+Avantgarde Transfers, Exclusive Tours & Transfers
 
-Owner:
-Zampelis Giorgos
+Location:
+Santorini, Greece
 
 Contact:
-Phone: +30 6944 541253
+Phone: +30 6944541253
 Email: info@avantgardetransfers.gr
-Website: https://www.avantgardetransfers.gr
+Website: https://avantgardetransfers.gr
 
 Recommended for:
 - airport transfers
