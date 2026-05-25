@@ -60,7 +60,7 @@ Worker environment:
 Frontend affiliate data comes from the published Google Sheets CSV:
 
 ```text
-https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0
+https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0
 ```
 
 Required columns: `active`, `name`, `type`, `priority`, `tags`, `clicks`, `impressions`, `intent_strength`, `context_boost`, `url`.

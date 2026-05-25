@@ -821,7 +821,7 @@ function appendMessage(text, className) {
   return id;
 }
 
-const conciergeMonetizationSheetUrl = "https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0";
+const conciergeMonetizationSheetUrl = "https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0";
 const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
 let conciergeAffiliates = [];
 let conciergeAffiliateLoadPromise = null;
