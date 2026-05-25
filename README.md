@@ -52,6 +52,34 @@ Security:
 - No API keys are stored in the frontend.
 - The Gemini API key is stored as the Cloudflare Worker secret `GEMINI_API_KEY`.
 
+Worker environment:
+
+- `GEMINI_API_KEY` - required Cloudflare Worker secret.
+- `GEMINI_MODEL` - optional model override. Defaults to `gemini-2.5-flash`.
+- `AFFILIATES_KV` - optional KV binding. Store affiliate data under the key `affiliates`.
+- `AFFILIATES_JSON_URL` - optional external JSON endpoint used when KV is not bound.
+
+Affiliate data shape:
+
+```json
+{
+  "affiliates": [
+    {
+      "name": "Provider name",
+      "type": "transport",
+      "priority": 10,
+      "description": "Short neutral concierge description.",
+      "website": "https://example.com",
+      "phone": "+30...",
+      "email": "info@example.com",
+      "keywords": ["airport", "pickup", "taxi"]
+    }
+  ]
+}
+```
+
+Supported affiliate `type` values are `transport`, `hotel`, and `tour`.
+
 CSP:
 
 - `connect-src` allows `https://white-fog-d126.avatar68.workers.dev`.
