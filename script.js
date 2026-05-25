@@ -635,12 +635,6 @@ const scrollToAskAi = (link) => {
 
   closeMenu();
 
-  const prefill = link?.dataset[`chatPrefill${currentLanguage === "el" ? "El" : "En"}`];
-
-  if (prefill && userInput) {
-    userInput.value = prefill;
-  }
-
   const targetTop = getAskAiScrollTop(chatTarget);
   window.scrollTo({ top: targetTop, behavior: "smooth" });
 
@@ -663,6 +657,21 @@ const scrollToAskAi = (link) => {
   return true;
 };
 
+const getChatPromptFromLink = (link) => {
+  const languageKey = currentLanguage === "el" ? "chatPrefillEl" : "chatPrefillEn";
+  return String(link?.dataset?.[languageKey] || link?.dataset?.chatPrefillEn || "").trim();
+};
+
+function submitPromptToChat(prompt) {
+  const cleanPrompt = String(prompt || "").trim();
+
+  if (!cleanPrompt) {
+    return;
+  }
+
+  sendMessage(cleanPrompt);
+}
+
 document.addEventListener("click", (event) => {
   const link = getAskAiLink(event.target);
 
@@ -675,6 +684,7 @@ document.addEventListener("click", (event) => {
   }
 
   event.preventDefault();
+  submitPromptToChat(getChatPromptFromLink(link));
 });
 
 function setActiveQuestionCard(card) {
@@ -690,14 +700,13 @@ function setActiveQuestionCard(card) {
 function submitQuestionCard(card) {
   const question = String(card.dataset.question || card.querySelector("[data-question-text]")?.textContent || "").trim();
 
-  if (!question || !userInput) {
+  if (!question) {
     return;
   }
 
   setActiveQuestionCard(card);
-  userInput.value = question;
   scrollToAskAi();
-  sendMessage(question);
+  submitPromptToChat(question);
 }
 
 questionCards.forEach((card, index) => {
