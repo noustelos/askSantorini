@@ -937,11 +937,20 @@ function extractPhoneCandidates(text) {
   const sourceText = String(text || "");
   const candidates = [];
   const seen = new Set();
+  const detectedBeforeGate = [];
 
   sourceText.replace(phoneCandidatePattern, (match, offset) => {
     const href = normalizePhoneCandidate(match);
+    const status = {
+      raw: match,
+      href,
+      index: offset,
+      hasPhoneContext: isPhoneContext(sourceText, offset, match)
+    };
 
-    if (!href || seen.has(href) || !isPhoneContext(sourceText, offset, match)) {
+    detectedBeforeGate.push(status);
+
+    if (!href || seen.has(href)) {
       return match;
     }
 
@@ -949,11 +958,15 @@ function extractPhoneCandidates(text) {
     candidates.push({
       raw: match,
       href,
-      index: offset
+      index: offset,
+      hasPhoneContext: status.hasPhoneContext
     });
 
     return match;
   });
+
+  console.log("AskSantorini CTA debug - phone detected before gate:", detectedBeforeGate);
+  console.log("AskSantorini CTA debug - phone status after gate:", candidates);
 
   return candidates;
 }
@@ -1265,11 +1278,12 @@ function runPhoneCtaExtractionDiagnosticTest() {
   });
   console.log("Pipeline comparison notes:", {
     phoneRegex: String(phoneCandidatePattern),
-    phoneRequiresContext: String(callIntentPattern),
+    phoneRequiresContext: false,
+    phoneContextPatternRetainedForDebug: String(callIntentPattern),
     emergencyBypass: String(emergencyIntentPattern),
     urlRegex: String(rawUrlPattern),
     mapsIntent: String(mapsIntentPattern),
-    likelyDifference: "URLs/maps become actions directly from URL or maps intent; standalone non-emergency phone numbers require nearby call/contact/emergency context before becoming tel actions."
+    likelyDifference: "Phone, URL, and maps candidates now become actions after normalization without requiring phone-specific intent permission."
   });
   console.groupEnd();
 }
