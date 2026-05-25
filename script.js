@@ -374,6 +374,7 @@ const essentialCookies = document.querySelector("#essential-cookies");
 const languageButtons = document.querySelectorAll("[data-language]");
 const languageToggle = document.querySelector(".language-toggle");
 const workerUrl = "https://white-fog-d126.avatar68.workers.dev";
+const workerEventUrl = `${workerUrl}/event`;
 const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
@@ -1312,7 +1313,7 @@ function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate
 }
 
 async function sendEvent(event) {
-  await fetch("/event", {
+  await fetch(workerEventUrl, {
     method: "POST",
     body: JSON.stringify(event),
     headers: { "Content-Type": "application/json" }
