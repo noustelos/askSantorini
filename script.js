@@ -1131,9 +1131,6 @@ function appendMessage(text, className) {
 }
 
 const conciergeMonetizationSheetUrl = "https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0";
-const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbwEqy4SSGX1U_n4KAfa33zFlYAobweU2tYLR-_B3NcH6FYceplSwPDWvTrSoEhV5_RG/exec";
-const ANALYTICS_WEBHOOK_URL = `${eventWebhookUrl}?sink=analytics`;
-const MONETIZATION_WEBHOOK_URL = `${eventWebhookUrl}?sink=monetization`;
 const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
 const conciergeSessionStorageKey = "askSantoriniConciergeSession";
 let conciergeAffiliates = [];
@@ -1306,14 +1303,11 @@ function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate
 }
 
 async function sendEvent(event) {
-  const endpoints = [ANALYTICS_WEBHOOK_URL, MONETIZATION_WEBHOOK_URL].filter(Boolean);
-  if (!endpoints.length) return;
-
-  await Promise.all(endpoints.map((endpoint) => fetch(endpoint, {
+  await fetch("/event", {
     method: "POST",
     body: JSON.stringify(event),
     headers: { "Content-Type": "application/json" }
-  }))).catch((error) => {
+  }).catch((error) => {
     console.warn("AskSantorini event delivery failed:", error);
   });
 }

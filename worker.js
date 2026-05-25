@@ -15,7 +15,14 @@ export default {
     }
 
     try {
+      const url = new URL(request.url);
       const body = await request.json();
+
+      if (url.pathname === "/event") {
+        await forwardEvent(body);
+        return jsonResponse({ ok: true });
+      }
+
       const prompt = String(body?.prompt || body?.message || "").trim();
 
       if (!prompt) {
@@ -31,6 +38,51 @@ export default {
     }
   }
 };
+
+const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbwEqy4SSGX1U_n4KAfa33zFlYAobweU2tYLR-_B3NcH6FYceplSwPDWvTrSoEhV5_RG/exec";
+const eventForwardUrls = [
+  `${eventWebhookUrl}?sink=analytics`,
+  `${eventWebhookUrl}?sink=monetization`
+];
+
+function normalizeEventPayload(payload) {
+  const event = {
+    ...(payload && typeof payload === "object" ? payload : {})
+  };
+
+  event.timestamp = String(event.timestamp || new Date().toISOString());
+  event.session_id = String(event.session_id || "");
+  event.user_message = String(event.user_message || "");
+  event.bot_response = String(event.bot_response || "");
+  event.intent = String(event.intent || "");
+  event.event_type = String(event.event_type || "message").toLowerCase();
+
+  return event;
+}
+
+async function forwardEvent(payload) {
+  const event = normalizeEventPayload(payload);
+
+  await Promise.allSettled(eventForwardUrls.map(async (url) => {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(event)
+    });
+
+    if (!response.ok) {
+      console.warn("AskSantorini event proxy received non-OK response:", url, response.status);
+    }
+  })).then((results) => {
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        console.warn("AskSantorini event proxy failed:", eventForwardUrls[index], result.reason);
+      }
+    });
+  });
+}
 
 async function callGemini(env, prompt) {
   if (!env.GEMINI_API_KEY) {
