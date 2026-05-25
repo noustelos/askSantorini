@@ -1,0 +1,53 @@
+{
+  "affiliates": [
+    {
+      "name": "Avantgarde Transfers",
+      "type": "transport",
+      "tags": [
+        "airport",
+        "taxi",
+        "transfer",
+        "transfers",
+        "port",
+        "pickup",
+        "private driver",
+        "hotel pickup",
+        "transport"
+      ],
+      "priority": 100,
+      "url": "https://avantgardetransfers.gr"
+    },
+    {
+      "name": "Hotels",
+      "type": "hotel",
+      "tags": [
+        "hotel",
+        "hotels",
+        "stay",
+        "villa",
+        "villas",
+        "accommodation",
+        "room",
+        "booking"
+      ],
+      "priority": 50,
+      "url": "https://asksantorini.ai/#partners"
+    },
+    {
+      "name": "Tours",
+      "type": "tour",
+      "tags": [
+        "sunset",
+        "experience",
+        "tour",
+        "tours",
+        "catamaran",
+        "volcano",
+        "wine",
+        "activity"
+      ],
+      "priority": 50,
+      "url": "https://asksantorini.ai/#partners"
+    }
+  ]
+}
