@@ -1163,6 +1163,119 @@ function collectFuzzyConciergeActions(actions, text) {
   };
 }
 
+function getRawPhoneRegexMatches(text) {
+  const matches = [];
+  const sourceText = String(text || "");
+
+  sourceText.replace(phoneCandidatePattern, (match, offset) => {
+    matches.push({
+      raw: match,
+      index: offset,
+      normalized: normalizePhoneCandidate(match),
+      hasPhoneContext: isPhoneContext(sourceText, offset, match)
+    });
+
+    return match;
+  });
+
+  return matches;
+}
+
+function diagnosePhoneCtaFailure(text, phoneRegexMatches, phoneCandidates, actions) {
+  const telActions = actions.filter((action) => action.type === "tel");
+
+  if (!phoneRegexMatches.length) {
+    return "A) phone regex mismatch";
+  }
+
+  if (phoneRegexMatches.every((match) => !match.normalized)) {
+    return "B) normalization failure";
+  }
+
+  if (!phoneCandidates.length) {
+    return "C) post-processing skip";
+  }
+
+  if (!actions.length) {
+    return "D) action array overwrite";
+  }
+
+  if (!telActions.length) {
+    return "E) type filtering issue";
+  }
+
+  return "Phone CTA extraction OK";
+}
+
+function buildCtaDiagnosticResult(text) {
+  const sourceText = String(text || "");
+  const actions = new Map();
+  const phoneRegexMatches = getRawPhoneRegexMatches(sourceText);
+  const phoneCandidates = extractPhoneCandidates(sourceText);
+  const urlCandidates = extractUrlCandidates(sourceText);
+  const mapsCandidates = extractMapsCandidates(sourceText, urlCandidates);
+
+  urlCandidates.forEach((candidate) => {
+    collectConciergeAction(actions, candidate.raw, candidate.href);
+  });
+
+  phoneCandidates.forEach((candidate) => {
+    collectConciergeAction(actions, candidate.raw, candidate.href);
+  });
+
+  mapsCandidates.forEach((candidate) => {
+    collectConciergeAction(actions, candidate.raw, candidate.href);
+  });
+
+  const actionOutput = Array.from(actions.values());
+
+  return {
+    rawInput: sourceText,
+    phoneRegexMatches,
+    detectedPhoneCandidates: phoneCandidates,
+    normalizedPhoneFormats: phoneRegexMatches.map((match) => match.normalized).filter(Boolean),
+    extractedUrls: urlCandidates,
+    extractedMaps: mapsCandidates,
+    finalCtaActionOutput: actionOutput,
+    diagnosis: diagnosePhoneCtaFailure(sourceText, phoneRegexMatches, phoneCandidates, actionOutput)
+  };
+}
+
+function runPhoneCtaExtractionDiagnosticTest() {
+  const phoneInputs = [
+    "+30 22860 353000",
+    "22860 353000",
+    "112",
+    "166",
+    "call 22860 353000",
+    "emergency number 112"
+  ];
+  const comparisonInputs = [
+    "https://www.google.com/maps/place/Fira+Santorini",
+    "www.google.com/maps/place/Fira+Santorini",
+    "https://asksantorini.ai"
+  ];
+
+  console.group("AskSantorini phone CTA extraction diagnostic");
+  phoneInputs.forEach((input) => {
+    console.log("Phone CTA diagnostic case:", buildCtaDiagnosticResult(input));
+  });
+  comparisonInputs.forEach((input) => {
+    console.log("Maps/URL comparison diagnostic case:", buildCtaDiagnosticResult(input));
+  });
+  console.log("Pipeline comparison notes:", {
+    phoneRegex: String(phoneCandidatePattern),
+    phoneRequiresContext: String(callIntentPattern),
+    emergencyBypass: String(emergencyIntentPattern),
+    urlRegex: String(rawUrlPattern),
+    mapsIntent: String(mapsIntentPattern),
+    likelyDifference: "URLs/maps become actions directly from URL or maps intent; standalone non-emergency phone numbers require nearby call/contact/emergency context before becoming tel actions."
+  });
+  console.groupEnd();
+}
+
+runPhoneCtaExtractionDiagnosticTest();
+
 function parseCtaDebugData(text) {
   const sourceText = String(text || "");
   const markdownLinks = [];
