@@ -816,6 +816,13 @@ document.querySelectorAll("dialog").forEach((modal) => {
 
 const markdownLinkPattern = /\[([^\]]+)\]\(([^)\s]+)\)/g;
 const rawUrlPattern = /\b(?:https?:\/\/[^\s<>()]+|tel:\+?[0-9().\-\s]+[0-9])/gi;
+const safeLinkProtocols = new Set(["http:", "https:"]);
+
+function sanitizeLinkLabel(label, fallback = "Open link") {
+  const cleanLabel = String(label || "").replace(/\s+/g, " ").trim();
+
+  return cleanLabel || fallback;
+}
 
 function normalizeUrl(rawUrl) {
   const cleanUrl = String(rawUrl || "").trim();
@@ -833,7 +840,7 @@ function normalizeUrl(rawUrl) {
 
     const url = new URL(cleanUrl, window.location.href);
 
-    if (url.protocol === "http:" || url.protocol === "https:") {
+    if (safeLinkProtocols.has(url.protocol)) {
       return url.href;
     }
   } catch {
@@ -854,6 +861,7 @@ function isGoogleMapsUrl(url) {
     const path = parsedUrl.pathname.toLowerCase();
 
     return (
+      host === "goo.gl" && path.startsWith("/maps") ||
       host === "maps.app.goo.gl" ||
       host === "maps.google.com" ||
       (host === "google.com" && path.startsWith("/maps"))
@@ -917,7 +925,7 @@ function createChatLink(label, href) {
   const link = document.createElement("a");
 
   link.href = href;
-  link.textContent = label;
+  link.appendChild(document.createTextNode(sanitizeLinkLabel(label, href)));
   link.className = "chat-inline-link";
   link.dataset.chatAction = "link";
 
@@ -988,7 +996,7 @@ function renderBotMessageContent(messageElement, text) {
 
     actionLink.href = action.href;
     actionLink.className = `chat-action-button chat-action-${action.type}`;
-    actionLink.textContent = action.label;
+    actionLink.appendChild(document.createTextNode(sanitizeLinkLabel(action.label, action.href)));
     actionLink.dataset.chatAction = action.type;
 
     if (!isTelephoneUrl(action.href)) {
