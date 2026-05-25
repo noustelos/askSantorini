@@ -57,24 +57,15 @@ Worker environment:
 - `GEMINI_API_KEY` - required Cloudflare Worker secret.
 - `GEMINI_MODEL` - optional model override. Defaults to `gemini-2.5-flash`.
 
-Frontend affiliate data:
+Frontend affiliate data comes from the published Google Sheets CSV:
 
-```json
-{
-  "affiliates": [
-    {
-      "name": "Provider name",
-      "type": "transport",
-      "priority": 10,
-      "tags": ["airport", "pickup", "taxi"],
-      "url": "https://example.com"
-    }
-  ]
-}
+```text
+https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0
 ```
 
+Required columns: `active`, `name`, `type`, `priority`, `tags`, `clicks`, `impressions`, `url`.
 Supported affiliate `type` values are `transport`, `hotel`, and `tour`.
-When `window.askSantoriniMonetizationSheetUrl` or `conciergeMonetizationSheetUrl` points to the published Google Sheets CSV, the frontend loads active affiliates and ranks them with:
+The frontend loads active affiliates from the published Google Sheets CSV and ranks them with:
 
 ```text
 score = priority + (clicks / (impressions + 1))
@@ -86,8 +77,8 @@ CSP:
 
 ## Partner Knowledge
 
-Partner data can be updated live from the published Google Sheets monetization log.
-`/data/affiliates.json` remains a local fallback for development or unavailable Sheets data.
+Partner data is updated live from the published Google Sheets monetization log.
+If the Sheet is unavailable, the frontend fails gracefully with no affiliate suggestion.
 The frontend selects a single relevant affiliate and sends the final structured prompt to the Worker.
 The Worker does not detect intent, rank affiliates, or construct concierge rules.
 

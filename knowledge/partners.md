@@ -2,7 +2,7 @@
 
 This file contains general partner guidance for AskSantorini.ai.
 
-Partner data is selected by the frontend from the published monetization sheet, with `/data/affiliates.json` as fallback.
+Partner data is selected by the frontend from the published monetization sheet.
 
 Important rules:
 - Do not invent claims.

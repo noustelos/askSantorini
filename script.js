@@ -821,8 +821,7 @@ function appendMessage(text, className) {
   return id;
 }
 
-const conciergeAffiliateDataUrl = "data/affiliates.json";
-const conciergeMonetizationSheetUrl = window.askSantoriniMonetizationSheetUrl || "";
+const conciergeMonetizationSheetUrl = "https://docs.google.com/spreadsheets/d/SHEET_ID/export?format=csv&gid=0";
 const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
 let conciergeAffiliates = [];
 let conciergeAffiliateLoadPromise = null;
@@ -849,15 +848,8 @@ Concierge behavior rules:
 function loadConciergeAffiliates() {
   if (!conciergeAffiliateLoadPromise) {
     conciergeAffiliateLoadPromise = fetchGoogleSheetAffiliates(conciergeMonetizationSheetUrl)
-      .then((sheetAffiliates) => sheetAffiliates.length ? { affiliates: sheetAffiliates } : fetch(conciergeAffiliateDataUrl)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Affiliate data could not be loaded.");
-        }
-        return response.json();
-      }))
-      .then((data) => {
-        conciergeAffiliates = Array.isArray(data?.affiliates) ? data.affiliates : [];
+      .then((sheetAffiliates) => {
+        conciergeAffiliates = sheetAffiliates;
         return conciergeAffiliates;
       })
       .catch((error) => {
