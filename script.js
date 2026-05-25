@@ -822,7 +822,9 @@ function appendMessage(text, className) {
 }
 
 const conciergeMonetizationSheetUrl = "https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0";
+const conciergeEventsEndpointUrl = "";
 const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
+const conciergeSessionStorageKey = "askSantoriniConciergeSession";
 let conciergeAffiliates = [];
 let conciergeAffiliateLoadPromise = null;
 
@@ -955,6 +957,47 @@ function getConciergeIntent(message) {
   return detectConciergeIntent(message);
 }
 
+function getConciergeSessionId() {
+  let sessionId = getStoredValue(conciergeSessionStorageKey);
+
+  if (!sessionId) {
+    sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    setStoredValue(conciergeSessionStorageKey, sessionId);
+  }
+
+  return sessionId;
+}
+
+function trackAffiliateEvent(affiliate, intentType, eventType) {
+  if (!conciergeEventsEndpointUrl || !affiliate?.name) return;
+
+  const payload = {
+    timestamp: new Date().toISOString(),
+    affiliate: affiliate.name,
+    event_type: eventType,
+    intent_type: intentType || affiliate.type || "",
+    session_id: getConciergeSessionId()
+  };
+
+  fetch(conciergeEventsEndpointUrl, {
+    method: "POST",
+    mode: "no-cors",
+    keepalive: true,
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  }).catch(() => {});
+}
+
+function getAffiliateForUrl(url) {
+  return conciergeAffiliates.find((affiliate) => {
+    try {
+      return affiliate.url && new URL(affiliate.url, window.location.href).href === url;
+    } catch {
+      return false;
+    }
+  }) || null;
+}
+
 function getAffiliateTags(affiliate) {
   return Array.isArray(affiliate?.tags) ? affiliate.tags.map((tag) => String(tag).toLowerCase()) : [];
 }
@@ -1055,7 +1098,8 @@ async function sendMessage(text) {
 
   try {
     const affiliates = await loadConciergeAffiliates();
-    const selectedAffiliate = affiliates.length ? getConciergeAffiliate(cleanText) : null;
+    const selectedIntent = detectConciergeIntent(cleanText);
+    const selectedAffiliate = affiliates.length ? chooseConciergeAffiliate(selectedIntent, cleanText) : null;
     const workerMessage = buildConciergePrompt(cleanText, selectedAffiliate);
 
     const response = await fetch(workerUrl, {
@@ -1086,6 +1130,9 @@ async function sendMessage(text) {
 
     const reply = data?.reply || copy.noReplyMessage;
     appendMessage(reply, "bot-message");
+    if (selectedAffiliate && (reply.includes(selectedAffiliate.name) || reply.includes(selectedAffiliate.url))) {
+      trackAffiliateEvent(selectedAffiliate, selectedIntent, "impression");
+    }
 
   } catch (error) {
     console.error("AskSantorini chat error:", error);
@@ -1114,6 +1161,16 @@ if (sendBtn && userInput) {
     }
   });
 }
+
+document.addEventListener("click", (event) => {
+  const affiliateLink = event.target?.closest?.("a[href]");
+  if (!affiliateLink) return;
+
+  const affiliate = getAffiliateForUrl(affiliateLink.href);
+  if (affiliate) {
+    trackAffiliateEvent(affiliate, affiliate.type, "click");
+  }
+});
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 

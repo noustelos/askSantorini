@@ -73,7 +73,7 @@ score = priority + (clicks / (impressions + 1)) + intent_strength + context_boos
 
 CSP:
 
-- `connect-src` allows `https://white-fog-d126.avatar68.workers.dev` and `https://docs.google.com`.
+- `connect-src` allows `https://white-fog-d126.avatar68.workers.dev`, `https://docs.google.com`, `https://script.google.com` and `https://script.googleusercontent.com`.
 
 ## Partner Knowledge
 
@@ -81,6 +81,17 @@ Partner data is updated live from the published Google Sheets monetization log.
 If the Sheet is unavailable, the frontend fails gracefully with no affiliate suggestion.
 The frontend selects a single relevant affiliate and sends the final structured prompt to the Worker.
 The Worker does not detect intent, rank affiliates, or construct concierge rules.
+
+## Affiliate Event Write Layer
+
+`apps-script/affiliate-events.gs` contains the Google Apps Script Web App endpoint for appending affiliate events to the `events` sheet tab.
+Deploy it as a Web App attached to the monetization spreadsheet, then set `conciergeEventsEndpointUrl` in `script.js` to the deployed Web App URL.
+
+Expected event columns:
+
+```text
+timestamp, affiliate_name, event_type, intent_type, session_id
+```
 
 ## Deploy to Cloudflare Pages
 
