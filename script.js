@@ -956,6 +956,63 @@ function collectConciergeAction(actions, label, href) {
   }
 }
 
+function parseCtaDebugData(text) {
+  const sourceText = String(text || "");
+  const markdownLinks = [];
+  const rawUrls = [];
+  const urls = [];
+  const telLinks = [];
+  const mapsLinks = [];
+  const seen = new Set();
+
+  const collectUrl = (rawUrl, label = "") => {
+    const { url: displayUrl } = trimTrailingUrlPunctuation(rawUrl);
+    const safeUrl = normalizeUrl(displayUrl);
+
+    if (!safeUrl || seen.has(safeUrl)) {
+      return;
+    }
+
+    seen.add(safeUrl);
+
+    const item = {
+      raw: rawUrl,
+      href: safeUrl,
+      label: sanitizeLinkLabel(label, displayUrl)
+    };
+
+    if (isTelephoneUrl(safeUrl)) {
+      telLinks.push(item);
+    } else {
+      urls.push(item);
+    }
+
+    if (isGoogleMapsUrl(safeUrl)) {
+      mapsLinks.push(item);
+    }
+  };
+
+  sourceText.replace(markdownLinkPattern, (match, label, rawUrl) => {
+    markdownLinks.push({ match, label, rawUrl });
+    collectUrl(rawUrl, label);
+    return match;
+  });
+
+  sourceText.replace(rawUrlPattern, (match) => {
+    rawUrls.push(match);
+    collectUrl(match);
+    return match;
+  });
+
+  return {
+    markdownLinks,
+    rawUrls,
+    urls,
+    telLinks,
+    mapsLinks
+  };
+}
+
 function transformBotMessageToSafeFragment(text) {
   const sourceText = String(text || "");
   const fragment = document.createDocumentFragment();
@@ -985,7 +1042,13 @@ function transformBotMessageToSafeFragment(text) {
   appendTextWithRawLinks(textContainer, sourceText.slice(cursor), actions);
   fragment.appendChild(textContainer);
 
+  console.log("AskSantorini CTA debug - after parsing:", parseCtaDebugData(sourceText));
+
   if (!actions.size) {
+    console.log("AskSantorini CTA debug - after transformation:", {
+      actions: [],
+      html: getFragmentHtml(fragment)
+    });
     return fragment;
   }
 
@@ -1009,6 +1072,11 @@ function transformBotMessageToSafeFragment(text) {
   });
 
   fragment.appendChild(actionList);
+
+  console.log("AskSantorini CTA debug - after transformation:", {
+    actions: Array.from(actions.values()),
+    html: getFragmentHtml(fragment)
+  });
 
   return fragment;
 }
@@ -1046,6 +1114,12 @@ function appendMessage(text, className) {
   const processedMessage = processMessage(text, className);
 
   if (String(className).includes("bot-message")) {
+    console.log("AskSantorini CTA debug - before render:", {
+      id,
+      className,
+      rawText: String(text || ""),
+      html: getFragmentHtml(processedMessage)
+    });
     console.log("AskSantorini final rendered message HTML:", getFragmentHtml(processedMessage));
   }
 
@@ -1385,6 +1459,7 @@ async function sendMessage(text) {
     if (loadingEl) loadingEl.remove();
 
     const reply = data?.reply || copy.noReplyMessage;
+    console.log("AskSantorini CTA debug - raw bot response:", reply);
     appendMessage(reply, "bot-message");
     const hasAffiliateImpression = Boolean(selectedAffiliate && (reply.includes(selectedAffiliate.name) || reply.includes(selectedAffiliate.url)));
     latestInteractionEvent = buildEvent({
