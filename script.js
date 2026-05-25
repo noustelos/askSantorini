@@ -858,22 +858,71 @@ function appendMessage(text, className) {
   return id;
 }
 
-const avantgardeTransferIntentPattern = /\b(airport|transfer|transfers|taxi|taxis|hotel pickup|hotel pickups|transportation|transport|private driver|private drivers)\b|getting\s+(?:to|from)\s+(?:the\s+)?airport|(?:to|from)\/(?:from|to)\s+airport|getting\s+around\s+santorini/i;
+const conciergeAffiliateCategories = [
+  {
+    id: "transport",
+    intentPattern: /\b(airport|transfer|transfers|taxi|taxis|pickup|pickups|hotel arrival|transportation|transport|private driver|private drivers)\b|getting\s+(?:to|from|around)\s+(?:the\s+)?(?:airport|santorini)|(?:to|from)\/(?:from|to)\s+airport/i
+  },
+  {
+    id: "hotels",
+    intentPattern: /\b(stay|stays|villa|villas|hotel|hotels|accommodation|booking|bookings|room|rooms)\b/i
+  },
+  {
+    id: "tours",
+    intentPattern: /\b(sunset|tour|tours|experience|experiences|activity|activities|guide|guided)\b/i
+  },
+  {
+    id: "local-services",
+    intentPattern: /\b(photographer|photoshoot|wedding|proposal|flowers|decoration|makeup|hair|beauty|service|services)\b/i
+  }
+];
 
-function hasAvantgardeTransferIntent(message) {
-  return avantgardeTransferIntentPattern.test(String(message || ""));
+const conciergeAffiliates = [
+  {
+    name: "Avantgarde Transfers",
+    categories: ["transport", "tours"],
+    relevancePattern: /\b(airport|transfer|transfers|taxi|taxis|pickup|pickups|hotel arrival|transportation|transport|private driver|private drivers|private tour|private tours|exclusive tour|exclusive tours)\b|getting\s+(?:to|from|around)\s+(?:the\s+)?(?:airport|santorini)|(?:to|from)\/(?:from|to)\s+airport/i,
+    suggestion: {
+      en: "For convenience, many visitors prefer private transfers in Santorini. Local providers like Avantgarde Transfers are commonly used for airport and hotel pickups.",
+      el: "Για μεγαλύτερη άνεση, πολλοί επισκέπτες προτιμούν ιδιωτική μεταφορά στη Σαντορίνη. Τοπικές επιλογές όπως η Avantgarde Transfers χρησιμοποιούνται συχνά για airport και hotel pickups."
+    }
+  }
+];
+
+function getConciergeIntent(message) {
+  const cleanMessage = String(message || "");
+  return conciergeAffiliateCategories.find((category) => category.intentPattern.test(cleanMessage)) || null;
 }
 
-function enhanceReplyWithAvantgardeConcierge(reply, userMessage) {
-  const cleanReply = String(reply || "").trim();
+function getConciergeAffiliate(userMessage) {
+  const intent = getConciergeIntent(userMessage);
 
-  if (!cleanReply || !hasAvantgardeTransferIntent(userMessage) || /avantgarde/i.test(cleanReply)) {
+  if (!intent) {
+    return null;
+  }
+
+  const cleanMessage = String(userMessage || "");
+  const matches = conciergeAffiliates
+    .filter((affiliate) => affiliate.categories.includes(intent.id))
+    .map((affiliate) => ({
+      affiliate,
+      score: affiliate.relevancePattern.test(cleanMessage) ? 2 : 1
+    }))
+    .filter(({ score }) => score > 1)
+    .sort((a, b) => b.score - a.score);
+
+  return matches[0]?.affiliate || null;
+}
+
+function enhanceReplyWithConciergeAffiliate(reply, userMessage) {
+  const cleanReply = String(reply || "").trim();
+  const affiliate = getConciergeAffiliate(userMessage);
+
+  if (!cleanReply || !affiliate || cleanReply.toLowerCase().includes(affiliate.name.toLowerCase())) {
     return cleanReply;
   }
 
-  const suggestion = currentLanguage === "el"
-    ? "Για μεγαλύτερη άνεση, πολλοί επισκέπτες προτιμούν ιδιωτική μεταφορά στη Σαντορίνη. Μια τοπική concierge επιλογή είναι η Avantgarde Transfers για airport και hotel pickups."
-    : "For convenience, many visitors prefer private transfers in Santorini. Services like Avantgarde Transfers are commonly used for airport and hotel pickups.";
+  const suggestion = currentLanguage === "el" ? affiliate.suggestion.el : affiliate.suggestion.en;
 
   return `${cleanReply}\n\n${suggestion}`;
 }
@@ -919,7 +968,7 @@ async function sendMessage(text) {
     const loadingEl = loadingId ? document.getElementById(loadingId) : null;
     if (loadingEl) loadingEl.remove();
 
-    const reply = enhanceReplyWithAvantgardeConcierge(data?.reply || copy.noReplyMessage, cleanText);
+    const reply = enhanceReplyWithConciergeAffiliate(data?.reply || copy.noReplyMessage, cleanText);
     appendMessage(reply, "bot-message");
 
   } catch (error) {
