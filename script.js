@@ -866,13 +866,83 @@ async function fetchGoogleSheetAffiliates(sheetUrl) {
   if (!sheetUrl) return [];
   const csv = await fetch(sheetUrl).then((response) => response.ok ? response.text() : "").catch(() => "");
   if (!csv.trim()) return [];
-  const [headerLine, ...lines] = csv.trim().split(/\r?\n/);
-  const headers = headerLine.split(",").map((header) => header.trim().toLowerCase());
-  return lines.map((line) => line.split(",").reduce((row, value, index) => ({ ...row, [headers[index]]: value.trim() }), {}))
-    .filter((row) => String(row.active).toLowerCase() === "true")
-    .map((row) => ({ name: row.name, type: row.type, tags: String(row.tags || "").split("|").map((tag) => tag.trim()).filter(Boolean), priority: Number(row.priority) || 0, clicks: Number(row.clicks) || 0, impressions: Number(row.impressions) || 0, intentStrength: Number(row.intent_strength) || 0, contextBoost: Number(row.context_boost) || 0, url: row.url }))
-    .map((affiliate) => ({ ...affiliate, score: affiliate.priority + (affiliate.clicks / (affiliate.impressions + 1)) + affiliate.intentStrength + affiliate.contextBoost }))
+  const [headerRow, ...rows] = parseCsvRows(csv.trim());
+  const headers = (headerRow || []).map((header) => header.trim().toLowerCase());
+  return rows.map((values) => values.reduce((row, value, index) => ({ ...row, [headers[index]]: value.trim() }), {}))
+    .filter((row) => isActiveAffiliateRow(row))
+    .map(normalizeAffiliateRow)
+    .filter(Boolean)
     .sort((a, b) => b.score - a.score);
+}
+
+function parseCsvRows(csv) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let quoted = false;
+
+  for (let index = 0; index < csv.length; index += 1) {
+    const char = csv[index];
+    const nextChar = csv[index + 1];
+    if (char === '"' && quoted && nextChar === '"') {
+      field += char;
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      row.push(field);
+      field = "";
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && nextChar === "\n") index += 1;
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += char;
+    }
+  }
+
+  row.push(field);
+  rows.push(row);
+  return rows;
+}
+
+function clampNumber(value, min, max) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return min;
+  return Math.min(Math.max(number, min), max);
+}
+
+function isActiveAffiliateRow(row) {
+  return ["true", "1"].includes(String(row?.active || "").trim().toLowerCase());
+}
+
+function normalizeAffiliateRow(row) {
+  const type = String(row.type || "").trim().toLowerCase();
+  const url = String(row.url || "").trim();
+
+  if (!row.name || !conciergeIntentPatterns[type] || !/^https?:\/\/\S+$/i.test(url)) return null;
+
+  const priority = clampNumber(row.priority, 0, 10);
+  const clicks = clampNumber(row.clicks, 0, Number.MAX_SAFE_INTEGER);
+  const impressions = clampNumber(row.impressions, 0, Number.MAX_SAFE_INTEGER);
+  const ctr = Math.min(clicks / (impressions + 1), 1);
+  const intentStrength = clampNumber(row.intent_strength, 0, 5);
+  const contextBoost = clampNumber(row.context_boost, 0, 3);
+
+  return {
+    name: String(row.name).trim(),
+    type,
+    tags: String(row.tags || "").split(/[|,]/).map((tag) => tag.trim()).filter(Boolean),
+    priority,
+    clicks,
+    impressions,
+    intentStrength,
+    contextBoost,
+    url,
+    score: priority + ctr + intentStrength + contextBoost
+  };
 }
 
 function detectConciergeIntent(message) {
@@ -937,8 +1007,7 @@ function chooseConciergeAffiliate(intentType, userMessage) {
 
   if (!matches.length) return null;
 
-  const highestScore = matches[0].score;
-  const topMatches = matches.filter((match) => match.score === highestScore);
+  const topMatches = matches.slice(0, Math.min(3, matches.length));
   const selectedIndex = getNextConciergeRotationIndex(intentType, topMatches.length);
 
   return topMatches[selectedIndex]?.affiliate || null;
