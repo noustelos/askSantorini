@@ -858,6 +858,26 @@ function appendMessage(text, className) {
   return id;
 }
 
+const avantgardeTransferIntentPattern = /\b(airport|transfer|transfers|taxi|taxis|hotel pickup|hotel pickups|transportation|transport|private driver|private drivers)\b|getting\s+(?:to|from)\s+(?:the\s+)?airport|(?:to|from)\/(?:from|to)\s+airport|getting\s+around\s+santorini/i;
+
+function hasAvantgardeTransferIntent(message) {
+  return avantgardeTransferIntentPattern.test(String(message || ""));
+}
+
+function enhanceReplyWithAvantgardeConcierge(reply, userMessage) {
+  const cleanReply = String(reply || "").trim();
+
+  if (!cleanReply || !hasAvantgardeTransferIntent(userMessage) || /avantgarde/i.test(cleanReply)) {
+    return cleanReply;
+  }
+
+  const suggestion = currentLanguage === "el"
+    ? "Για μεγαλύτερη άνεση, πολλοί επισκέπτες προτιμούν ιδιωτική μεταφορά στη Σαντορίνη. Μια τοπική concierge επιλογή είναι η Avantgarde Transfers για airport και hotel pickups."
+    : "For convenience, many visitors prefer private transfers in Santorini. Services like Avantgarde Transfers are commonly used for airport and hotel pickups.";
+
+  return `${cleanReply}\n\n${suggestion}`;
+}
+
 async function sendMessage(text) {
   const cleanText = String(text || "").trim();
 
@@ -899,7 +919,8 @@ async function sendMessage(text) {
     const loadingEl = loadingId ? document.getElementById(loadingId) : null;
     if (loadingEl) loadingEl.remove();
 
-    appendMessage(data?.reply || copy.noReplyMessage, "bot-message");
+    const reply = enhanceReplyWithAvantgardeConcierge(data?.reply || copy.noReplyMessage, cleanText);
+    appendMessage(reply, "bot-message");
 
   } catch (error) {
     console.error("AskSantorini chat error:", error);
