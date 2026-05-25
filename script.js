@@ -937,23 +937,32 @@ function createChatLink(label, href) {
   return link;
 }
 
-function collectConciergeAction(actions, label, href) {
+function getConciergeAction(label, href) {
   if (isTelephoneUrl(href)) {
-    actions.set(href, {
+    return {
       href,
-      label: "📞 Καλέστε για Κράτηση",
-      type: "call"
-    });
-    return;
+      label: "📞 Call Now",
+      type: "tel"
+    };
   }
 
   if (isGoogleMapsUrl(href)) {
-    actions.set(href, {
+    return {
       href,
-      label: "📍 Δείτε στο Google Maps",
+      label: "📍 Open in Maps",
       type: "maps"
-    });
+    };
   }
+
+  return {
+    href,
+    label: sanitizeLinkLabel(label, href),
+    type: "link"
+  };
+}
+
+function collectConciergeAction(actions, label, href) {
+  actions.set(href, getConciergeAction(label, href));
 }
 
 function parseCtaDebugData(text) {
@@ -1063,7 +1072,7 @@ function transformBotMessageToSafeFragment(text) {
     actionLink.appendChild(document.createTextNode(sanitizeLinkLabel(action.label, action.href)));
     actionLink.dataset.chatAction = action.type;
 
-    if (!isTelephoneUrl(action.href)) {
+    if (action.type !== "tel") {
       actionLink.target = "_blank";
       actionLink.rel = "noopener noreferrer";
     }
