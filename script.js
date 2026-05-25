@@ -687,11 +687,24 @@ function setActiveQuestionCard(card) {
   card.setAttribute("aria-pressed", "true");
 }
 
+function submitQuestionCard(card) {
+  const question = String(card.dataset.question || card.querySelector("[data-question-text]")?.textContent || "").trim();
+
+  if (!question || !userInput) {
+    return;
+  }
+
+  setActiveQuestionCard(card);
+  userInput.value = question;
+  scrollToAskAi();
+  sendMessage(question);
+}
+
 questionCards.forEach((card, index) => {
   card.setAttribute("aria-pressed", "false");
 
   card.addEventListener("click", () => {
-    setActiveQuestionCard(card);
+    submitQuestionCard(card);
   });
 
   if (index === 0) {
