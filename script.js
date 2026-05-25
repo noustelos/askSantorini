@@ -816,8 +816,12 @@ document.querySelectorAll("dialog").forEach((modal) => {
 });
 
 const markdownLinkPattern = /\[([^\]]+)\]\(([^)\s]+)\)/g;
-const rawUrlPattern = /\b(?:https?:\/\/[^\s<>()]+|tel:\+?[0-9().\-\s]+[0-9])/gi;
+const rawUrlPattern = /\b(?:(?:https?:\/\/|www\.)[^\s<>()]+|tel:\+?[0-9().\-\s]+[0-9])/gi;
 const safeLinkProtocols = new Set(["http:", "https:"]);
+const phoneCandidatePattern = /(?:\+30[\s().-]*)?(?:\d[\s().-]*){3,14}\d/g;
+const callIntentPattern = /\b(call|phone|contact|emergency|dial|number|τηλέφωνο|κάλεσε|επικοινωνία|έκτακτη)\b/i;
+const mapsIntentPattern = /\b(maps?|google\s+maps?|directions?|navigate|navigation|location|address|route|χάρτης|χάρτες|οδηγίες|τοποθεσία|διεύθυνση)\b/i;
+const coordinatePattern = /-?\d{1,2}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}/;
 
 function sanitizeLinkLabel(label, fallback = "Open link") {
   const cleanLabel = String(label || "").replace(/\s+/g, " ").trim();
@@ -839,13 +843,38 @@ function normalizeUrl(rawUrl) {
       return phoneNumber ? `tel:${phoneNumber}` : "";
     }
 
-    const url = new URL(cleanUrl, window.location.href);
+    const url = new URL(
+      /^www\./i.test(cleanUrl) ? `https://${cleanUrl}` : cleanUrl,
+      window.location.href
+    );
 
     if (safeLinkProtocols.has(url.protocol)) {
       return url.href;
     }
   } catch {
     return "";
+  }
+
+  return "";
+}
+
+function normalizePhoneCandidate(rawPhone) {
+  const digits = String(rawPhone || "").replace(/\D/g, "");
+
+  if (!digits) {
+    return "";
+  }
+
+  if (digits.length === 3 && ["100", "112", "166", "199"].includes(digits)) {
+    return `tel:${digits}`;
+  }
+
+  if (digits.startsWith("30") && digits.length >= 10 && digits.length <= 12) {
+    return `tel:+${digits}`;
+  }
+
+  if (digits.length >= 8 && digits.length <= 11) {
+    return `tel:+30${digits}`;
   }
 
   return "";
@@ -883,6 +912,124 @@ function trimTrailingUrlPunctuation(url) {
     url: url.slice(0, -trailingMatch[0].length),
     trailingText: trailingMatch[0]
   };
+}
+
+function isPhoneContext(text, index, rawPhone) {
+  const digits = String(rawPhone || "").replace(/\D/g, "");
+
+  if (["100", "112", "166", "199"].includes(digits)) {
+    return true;
+  }
+
+  const contextStart = Math.max(0, index - 48);
+  const contextEnd = Math.min(text.length, index + String(rawPhone || "").length + 48);
+
+  return callIntentPattern.test(text.slice(contextStart, contextEnd));
+}
+
+function extractPhoneCandidates(text) {
+  const sourceText = String(text || "");
+  const candidates = [];
+  const seen = new Set();
+
+  sourceText.replace(phoneCandidatePattern, (match, offset) => {
+    const href = normalizePhoneCandidate(match);
+
+    if (!href || seen.has(href) || !isPhoneContext(sourceText, offset, match)) {
+      return match;
+    }
+
+    seen.add(href);
+    candidates.push({
+      raw: match,
+      href,
+      index: offset
+    });
+
+    return match;
+  });
+
+  return candidates;
+}
+
+function extractUrlCandidates(text) {
+  const sourceText = String(text || "");
+  const candidates = [];
+  const seen = new Set();
+
+  sourceText.replace(rawUrlPattern, (match, offset) => {
+    const { url: displayUrl } = trimTrailingUrlPunctuation(match);
+    const href = normalizeUrl(displayUrl);
+
+    if (!href || seen.has(href)) {
+      return match;
+    }
+
+    seen.add(href);
+    candidates.push({
+      raw: displayUrl,
+      href,
+      index: offset
+    });
+
+    return match;
+  });
+
+  return candidates;
+}
+
+function buildMapsSearchUrl(query) {
+  const cleanQuery = String(query || "").replace(/\s+/g, " ").trim();
+
+  if (!cleanQuery) {
+    return "";
+  }
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanQuery)}`;
+}
+
+function extractMapsCandidates(text, urlCandidates) {
+  const sourceText = String(text || "");
+  const candidates = [];
+  const seen = new Set();
+
+  urlCandidates.forEach((candidate) => {
+    if (!isGoogleMapsUrl(candidate.href) || seen.has(candidate.href)) {
+      return;
+    }
+
+    seen.add(candidate.href);
+    candidates.push(candidate);
+  });
+
+  const coordinateMatch = sourceText.match(coordinatePattern);
+
+  if (coordinateMatch) {
+    const href = buildMapsSearchUrl(coordinateMatch[0]);
+
+    if (href && !seen.has(href)) {
+      seen.add(href);
+      candidates.push({
+        raw: coordinateMatch[0],
+        href,
+        index: coordinateMatch.index || 0
+      });
+    }
+  }
+
+  if (mapsIntentPattern.test(sourceText) && !candidates.length) {
+    const href = buildMapsSearchUrl(sourceText.slice(0, 160));
+
+    if (href) {
+      candidates.push({
+        raw: "maps intent",
+        href,
+        index: 0
+      });
+    }
+  }
+
+  return candidates;
 }
 
 function appendTextWithRawLinks(parent, text, actions) {
@@ -942,6 +1089,7 @@ function getConciergeAction(label, href) {
   if (isTelephoneUrl(href)) {
     return {
       href,
+      value: href,
       label: "📞 Call Now",
       type: "tel"
     };
@@ -950,6 +1098,7 @@ function getConciergeAction(label, href) {
   if (isGoogleMapsUrl(href)) {
     return {
       href,
+      value: href,
       label: "📍 Open in Maps",
       type: "maps"
     };
@@ -957,6 +1106,7 @@ function getConciergeAction(label, href) {
 
   return {
     href,
+    value: href,
     label: sanitizeLinkLabel(label, href),
     type: "link"
   };
@@ -964,6 +1114,30 @@ function getConciergeAction(label, href) {
 
 function collectConciergeAction(actions, label, href) {
   actions.set(href, getConciergeAction(label, href));
+}
+
+function collectFuzzyConciergeActions(actions, text) {
+  const phoneCandidates = extractPhoneCandidates(text);
+  const urlCandidates = extractUrlCandidates(text);
+  const mapsCandidates = extractMapsCandidates(text, urlCandidates);
+
+  phoneCandidates.forEach((candidate) => {
+    collectConciergeAction(actions, candidate.raw, candidate.href);
+  });
+
+  mapsCandidates.forEach((candidate) => {
+    collectConciergeAction(actions, candidate.raw, candidate.href);
+  });
+
+  console.log("AskSantorini CTA debug - extracted phone candidates:", phoneCandidates);
+  console.log("AskSantorini CTA debug - extracted URLs:", urlCandidates);
+  console.log("AskSantorini CTA debug - generated actions before render:", Array.from(actions.values()));
+
+  return {
+    phoneCandidates,
+    urlCandidates,
+    mapsCandidates
+  };
 }
 
 function parseCtaDebugData(text) {
@@ -1014,12 +1188,19 @@ function parseCtaDebugData(text) {
     return match;
   });
 
+  const phoneCandidates = extractPhoneCandidates(sourceText);
+  const urlCandidates = extractUrlCandidates(sourceText);
+  const mapsCandidates = extractMapsCandidates(sourceText, urlCandidates);
+
   return {
     markdownLinks,
     rawUrls,
     urls,
     telLinks,
-    mapsLinks
+    mapsLinks,
+    phoneCandidates,
+    urlCandidates,
+    mapsCandidates
   };
 }
 
@@ -1050,6 +1231,7 @@ function transformBotMessageToSafeFragment(text) {
   });
 
   appendTextWithRawLinks(textContainer, sourceText.slice(cursor), actions);
+  collectFuzzyConciergeActions(actions, sourceText);
   fragment.appendChild(textContainer);
 
   console.log("AskSantorini CTA debug - after parsing:", parseCtaDebugData(sourceText));
