@@ -459,13 +459,14 @@
 @media (min-width: 981px) {
   .input-area {
     display: flex;
+    width: 100%;
     min-width: 0;
     overflow: visible;
   }
 
   .input-area input {
-    flex: 1 1 0;
-    width: auto;
+    flex: 1 1 auto;
+    width: 100%;
     max-width: 100%;
     min-width: 0;
   }
@@ -1070,13 +1071,15 @@
 
 @media (min-width: 981px) {
   .input-area {
+    display: flex;
+    width: 100%;
     min-width: 0;
     overflow: visible;
   }
 
   .input-area input {
-    flex: 1 1 0;
-    width: auto;
+    flex: 1 1 auto;
+    width: 100%;
     max-width: 100%;
     min-width: 0;
   }
