@@ -20,7 +20,6 @@ const translations = {
     justAskPart: "No sign-up.",
     valueStrip: "Free. No app. No sign-up. Just ask.",
     heroValueStrip: "No app. No sign-up. Just answers.",
-    valueReinforce: "Start instantly — free, with no app and no sign-up.",
     previewMode: "Live · Ask Santorini AI",
     chatInstructionLine: "Ask anything about Santorini",
     chatEmptyHelper: "Start with a question",
@@ -45,14 +44,6 @@ const translations = {
     questionsTitle: "What do you want to know first?",
     questionsIntro: "Ask about hidden beaches, sunset viewpoints, grilled octopus by the sea, boat rides or the easiest plan for today.",
     starterLine: "Choose the question closest to your mood",
-    previewLabel: "Live · Ask Santorini AI",
-    worksToday: "Ready now",
-    questionLabel: "Question",
-    viewTourOptions: "View tour options",
-    askAnother: "Ask another question",
-    seeTips: "See practical tips",
-    realGuideSoon: "Live AI guide",
-    joinEarlyAccess: "Ask now",
     questionsMicroCta: "Ask now",
     featureBeaches: "Which beach fits today?",
     featureSunsets: "Where is sunset best?",
@@ -208,7 +199,6 @@ const translations = {
     justAskPart: "Χωρίς εγγραφή.",
     valueStrip: "Δωρεάν. Χωρίς εφαρμογή. Χωρίς εγγραφή. Απλώς ρώτα.",
     heroValueStrip: "No app. No sign-up. Just answers.",
-    valueReinforce: "Ξεκίνα άμεσα — δωρεάν, χωρίς εφαρμογή και χωρίς εγγραφή.",
     previewMode: "Live · Ask Santorini AI",
     chatInstructionLine: "Ρώτησε ό,τι θέλεις για τη Σαντορίνη",
     chatEmptyHelper: "Ξεκίνα με μια ερώτηση",
@@ -233,14 +223,6 @@ const translations = {
     questionsTitle: "Τι θέλεις να μάθεις πρώτα;",
     questionsIntro: "Ρώτησε για κρυφές παραλίες, σημεία για ηλιοβασίλεμα, χταπόδι δίπλα στη θάλασσα, βόλτες με σκάφος ή το πιο εύκολο πλάνο για σήμερα.",
     starterLine: "Διάλεξε την ερώτηση που ταιριάζει στη διάθεσή σου",
-    previewLabel: "Live · Ask Santorini AI",
-    worksToday: "Έτοιμο τώρα",
-    questionLabel: "Ερώτηση",
-    viewTourOptions: "Δες επιλογές εκδρομών",
-    askAnother: "Άλλη ερώτηση",
-    seeTips: "Δες πρακτικές συμβουλές",
-    realGuideSoon: "Ο AI οδηγός είναι live",
-    joinEarlyAccess: "Ρώτησε τώρα",
     questionsMicroCta: "Ρώτησε τώρα",
     featureBeaches: "Ποια παραλία ταιριάζει σήμερα;",
     featureSunsets: "Πού είναι καλύτερο το ηλιοβασίλεμα;",
@@ -377,9 +359,6 @@ const translations = {
   }
 };
 
-const preview = document.querySelector("#answer-preview");
-const previewQuestion = document.querySelector("#preview-question");
-const previewAnswer = document.querySelector("#preview-answer");
 const questionCards = document.querySelectorAll(".question-card");
 const notifyForm = document.querySelector("#notify-form");
 const modalButtons = document.querySelectorAll("[data-modal]");
@@ -536,14 +515,6 @@ const updateQuestionCards = (language) => {
   });
 };
 
-const updateActivePreview = (language) => {
-  const activeCard = document.querySelector(".question-card.is-active") || questionCards[0];
-
-  if (activeCard) {
-    showAnswerPreview(activeCard, false);
-  }
-};
-
 const updateChatControls = (language) => {
   const copy = translations[language];
 
@@ -575,7 +546,6 @@ const setLanguage = (language, options = {}) => {
   updateSeo(normalizedLanguage);
   updateLanguageToggle(normalizedLanguage);
   updateQuestionCards(normalizedLanguage);
-  updateActivePreview(normalizedLanguage);
   updateChatControls(normalizedLanguage);
   updateMenuLabel();
   setStoredValue(languageStorageKey, normalizedLanguage);
@@ -707,20 +677,7 @@ document.addEventListener("click", (event) => {
   event.preventDefault();
 });
 
-function showAnswerPreview(card, shouldScroll = true) {
-  if (!preview || !previewQuestion || !previewAnswer) {
-    return;
-  }
-
-  const copy = translations[currentLanguage];
-  const questionKey = card.dataset.questionKey;
-  const question = copy.questions[questionKey];
-  const answer = copy.answers[questionKey];
-
-  if (!questionKey || !question || !answer) {
-    return;
-  }
-
+function setActiveQuestionCard(card) {
   questionCards.forEach((item) => {
     item.classList.remove("is-active");
     item.setAttribute("aria-pressed", "false");
@@ -728,20 +685,13 @@ function showAnswerPreview(card, shouldScroll = true) {
 
   card.classList.add("is-active");
   card.setAttribute("aria-pressed", "true");
-
-  previewQuestion.textContent = question;
-  previewAnswer.textContent = answer;
-
-  if (shouldScroll) {
-    preview.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
 }
 
 questionCards.forEach((card, index) => {
   card.setAttribute("aria-pressed", "false");
 
   card.addEventListener("click", () => {
-    showAnswerPreview(card);
+    setActiveQuestionCard(card);
   });
 
   if (index === 0) {
