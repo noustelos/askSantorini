@@ -820,6 +820,7 @@ const rawUrlPattern = /\b(?:(?:https?:\/\/|www\.)[^\s<>()]+|tel:\+?[0-9().\-\s]+
 const safeLinkProtocols = new Set(["http:", "https:"]);
 const phoneCandidatePattern = /(?:\+30[\s().-]*)?(?:\d[\s().-]*){3,14}\d/g;
 const callIntentPattern = /\b(call|phone|contact|emergency|dial|number|τηλέφωνο|κάλεσε|επικοινωνία|έκτακτη)\b/i;
+const emergencyIntentPattern = /\b(hospital|emergency|urgent care|police|ambulance|doctor|clinic|medical|health center|health centre|νοσοκομείο|έκτακτ|επείγον|αστυνομία|ασθενοφόρο|γιατρός|κλινική|κέντρο υγείας)\b/i;
 const mapsIntentPattern = /\b(maps?|google\s+maps?|directions?|navigate|navigation|location|address|route|χάρτης|χάρτες|οδηγίες|τοποθεσία|διεύθυνση)\b/i;
 const coordinatePattern = /-?\d{1,2}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}/;
 
@@ -921,10 +922,15 @@ function isPhoneContext(text, index, rawPhone) {
     return true;
   }
 
+  if (emergencyIntentPattern.test(text)) {
+    return true;
+  }
+
   const contextStart = Math.max(0, index - 48);
   const contextEnd = Math.min(text.length, index + String(rawPhone || "").length + 48);
 
-  return callIntentPattern.test(text.slice(contextStart, contextEnd));
+  return callIntentPattern.test(text.slice(contextStart, contextEnd))
+    || emergencyIntentPattern.test(text.slice(contextStart, contextEnd));
 }
 
 function extractPhoneCandidates(text) {
@@ -1117,9 +1123,12 @@ function collectConciergeAction(actions, label, href) {
 }
 
 function collectFuzzyConciergeActions(actions, text) {
+  const sourceText = String(text || "");
   const phoneCandidates = extractPhoneCandidates(text);
   const urlCandidates = extractUrlCandidates(text);
   const mapsCandidates = extractMapsCandidates(text, urlCandidates);
+  const hasEmergencyIntent = emergencyIntentPattern.test(sourceText);
+  const hasLocationIntent = mapsIntentPattern.test(sourceText) || Boolean(sourceText.match(coordinatePattern));
 
   phoneCandidates.forEach((candidate) => {
     collectConciergeAction(actions, candidate.raw, candidate.href);
@@ -1128,6 +1137,20 @@ function collectFuzzyConciergeActions(actions, text) {
   mapsCandidates.forEach((candidate) => {
     collectConciergeAction(actions, candidate.raw, candidate.href);
   });
+
+  if (hasEmergencyIntent && !phoneCandidates.length) {
+    ["112", "166"].forEach((emergencyNumber) => {
+      collectConciergeAction(actions, emergencyNumber, `tel:${emergencyNumber}`);
+    });
+  }
+
+  if (hasLocationIntent && !mapsCandidates.length) {
+    const href = buildMapsSearchUrl(sourceText.slice(0, 160));
+
+    if (href) {
+      collectConciergeAction(actions, "Maps", href);
+    }
+  }
 
   console.log("AskSantorini CTA debug - extracted phone candidates:", phoneCandidates);
   console.log("AskSantorini CTA debug - extracted URLs:", urlCandidates);
