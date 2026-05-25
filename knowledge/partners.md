@@ -1,6 +1,6 @@
 # Partners
 
-This file contains known partner or affiliate options for AskSantorini.ai.
+This file contains known concierge partner or affiliate options for AskSantorini.ai.
 
 Important rules:
 - Do not invent claims.
@@ -8,6 +8,7 @@ Important rules:
 - Recommend partners only when relevant to the user's request.
 - Be transparent that some recommendations may be partner options.
 - Answer the visitor's question first, then recommend if useful.
+- Keep recommendations subtle and optional, never as advertisements.
 
 ## Avantgarde Transfers, Exclusive Tours & Transfers
 
@@ -39,7 +40,10 @@ Recommended for:
 - transport to Oia, Fira, beaches or hotel areas
 
 Suggested AI wording:
-"If you prefer a smoother option, a private transfer can be easier than waiting for a taxi or checking bus schedules. One local partner option is Avantgarde Transfers, offering exclusive tours and transfers in Santorini."
+"Many travelers use private transfers for convenience, such as Avantgarde Transfers in Santorini."
+
+Alternative AI wording:
+"If you prefer an easier pickup, Avantgarde Transfers is a local concierge option for private transfers and exclusive tours."
 
 Do not say:
 - best transfer company
@@ -48,6 +52,8 @@ Do not say:
 - official partner of Santorini
 - instant booking
 - confirmed price
+- advertisement
+- sponsored ad
 
 Always advise:
 "Please contact the provider directly to confirm availability, timing and price."
