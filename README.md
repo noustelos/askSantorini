@@ -8,7 +8,7 @@ The site includes the live chat interface, useful starter questions, partner CTA
 
 - `index.html` - page structure, SEO metadata, Open Graph tags, content sections
 - `styles.css` / `styles.min.css` - responsive styling, CSS variables, layout, cards, forms, modals
-- `script.js` / `script.min.js` - starter question interactions, contact mailto workflow, privacy/terms modals, live chat
+- `script.js` - starter question interactions, contact mailto workflow, privacy/terms modals, live chat and concierge decision logic
 - `robots.txt` / `sitemap.xml` - search engine crawl directives
 - `_headers` - Cloudflare Pages security headers
 - `404.html` - static not-found fallback
@@ -56,10 +56,8 @@ Worker environment:
 
 - `GEMINI_API_KEY` - required Cloudflare Worker secret.
 - `GEMINI_MODEL` - optional model override. Defaults to `gemini-2.5-flash`.
-- `AFFILIATES_KV` - optional KV binding. Store affiliate data under the key `affiliates`.
-- `AFFILIATES_JSON_URL` - optional external JSON endpoint used when KV is not bound.
 
-Affiliate data shape:
+Frontend affiliate data:
 
 ```json
 {
@@ -68,11 +66,8 @@ Affiliate data shape:
       "name": "Provider name",
       "type": "transport",
       "priority": 10,
-      "description": "Short neutral concierge description.",
-      "website": "https://example.com",
-      "phone": "+30...",
-      "email": "info@example.com",
-      "keywords": ["airport", "pickup", "taxi"]
+      "tags": ["airport", "pickup", "taxi"],
+      "url": "https://example.com"
     }
   ]
 }
@@ -86,9 +81,9 @@ CSP:
 
 ## Partner Knowledge
 
-Partner data is currently stored in Markdown knowledge files.
-These files are not automatically used by the live Worker unless their content is injected into the Worker prompt/context.
-To make the bot actively use partner data, the Worker must later include selected partner context in its Gemini request.
+Partner data lives only in `/data/affiliates.json`.
+The frontend selects a single relevant affiliate and sends the final structured prompt to the Worker.
+The Worker does not detect intent, rank affiliates, or construct concierge rules.
 
 ## Deploy to Cloudflare Pages
 

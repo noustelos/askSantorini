@@ -822,6 +822,7 @@ function appendMessage(text, className) {
 }
 
 const conciergeAffiliateDataUrl = "data/affiliates.json";
+const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
 let conciergeAffiliates = [];
 let conciergeAffiliateLoadPromise = null;
 
@@ -877,34 +878,87 @@ function getConciergeIntent(message) {
   return detectConciergeIntent(message);
 }
 
-function chooseConciergeAffiliate(intentType) {
+function getAffiliateTags(affiliate) {
+  return Array.isArray(affiliate?.tags) ? affiliate.tags.map((tag) => String(tag).toLowerCase()) : [];
+}
+
+function getConciergeRotationState() {
+  try {
+    return JSON.parse(getStoredValue(conciergeRotationStorageKey) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+function setConciergeRotationState(state) {
+  setStoredValue(conciergeRotationStorageKey, JSON.stringify(state || {}));
+}
+
+function getNextConciergeRotationIndex(intentType, matchCount) {
+  if (!intentType || matchCount < 2) return 0;
+
+  const state = getConciergeRotationState();
+  const currentIndex = Number.isFinite(Number(state[intentType])) ? Number(state[intentType]) : 0;
+  const selectedIndex = currentIndex % matchCount;
+
+  state[intentType] = (selectedIndex + 1) % matchCount;
+  setConciergeRotationState(state);
+
+  return selectedIndex;
+}
+
+function chooseConciergeAffiliate(intentType, userMessage) {
   if (!intentType) return null;
 
-  const matches = conciergeAffiliates.filter((affiliate) => affiliate.type === intentType);
+  const normalizedMessage = String(userMessage || "").toLowerCase();
+  const matches = conciergeAffiliates
+    .filter((affiliate) => affiliate.type === intentType)
+    .map((affiliate) => {
+      const tagScore = getAffiliateTags(affiliate).reduce((score, tag) => {
+        return tag && normalizedMessage.includes(tag) ? score + 1 : score;
+      }, 0);
+
+      return {
+        affiliate,
+        score: (Number(affiliate.priority) || 0) * 100 + tagScore
+      };
+    })
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return String(a.affiliate.name || "").localeCompare(String(b.affiliate.name || ""));
+    });
 
   if (!matches.length) return null;
 
-  const highestPriority = Math.max(...matches.map((affiliate) => Number(affiliate.priority) || 0));
-  const priorityMatches = matches.filter((affiliate) => (Number(affiliate.priority) || 0) === highestPriority);
-  const selectedIndex = Math.floor(Math.random() * priorityMatches.length);
+  const highestScore = matches[0].score;
+  const topMatches = matches.filter((match) => match.score === highestScore);
+  const selectedIndex = getNextConciergeRotationIndex(intentType, topMatches.length);
 
-  return priorityMatches[selectedIndex] || null;
+  return topMatches[selectedIndex]?.affiliate || null;
 }
 
 function getConciergeAffiliate(userMessage) {
   const intent = detectConciergeIntent(userMessage);
-  return chooseConciergeAffiliate(intent);
+  return chooseConciergeAffiliate(intent, userMessage);
 }
 
 function buildConciergePrompt(userMessage, affiliate) {
+  const affiliateTags = affiliate ? getAffiliateTags(affiliate).join(", ") : "";
   const selectedAffiliateContext = affiliate
-    ? `Selected affiliate context: ${affiliate.name} (${affiliate.type}) - ${affiliate.url}`
+    ? [
+        "Selected affiliate context:",
+        `Name: ${affiliate.name}`,
+        `Type: ${affiliate.type}`,
+        affiliateTags ? `Tags: ${affiliateTags}` : "",
+        `URL: ${affiliate.url}`
+      ].filter(Boolean).join("\n")
     : "Selected affiliate context: none";
 
   return [
     conciergeSystemPrompt,
     selectedAffiliateContext,
-    `User question: ${userMessage}`
+    "User message:",
+    userMessage
   ].join("\n\n");
 }
 
@@ -934,7 +988,8 @@ async function sendMessage(text) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        message: workerMessage
+        message: cleanText,
+        prompt: workerMessage
       })
     });
 
