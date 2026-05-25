@@ -822,7 +822,7 @@ function appendMessage(text, className) {
 }
 
 const conciergeMonetizationSheetUrl = "https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0";
-const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbwBFtQrQ4bfoBXnf6w98T5wPAMVp0XVE_HaaecboelI76RzmykNNlU-lq-a3oFfoZNJ/exec";
+const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbwEqy4SSGX1U_n4KAfa33zFlYAobweU2tYLR-_B3NcH6FYceplSwPDWvTrSoEhV5_RG/exec";
 const ANALYTICS_WEBHOOK_URL = `${eventWebhookUrl}?sink=analytics`;
 const MONETIZATION_WEBHOOK_URL = `${eventWebhookUrl}?sink=monetization`;
 const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
