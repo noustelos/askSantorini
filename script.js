@@ -383,6 +383,26 @@ const cookieStorageKey = "askSantoriniCookiePreference";
 const languageStorageKey = "preferredLanguage";
 let currentLanguage = "en";
 
+const trafficAwarenessStorageKey = "askSantoriniTrafficAwareness";
+const analyticsModeStorageKey = "askSantoriniAnalyticsMode";
+const activeSessionsStorageKey = "askSantoriniActiveSessions";
+const trafficSessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+const trafficScalingConfig = {
+  windowMs: 60 * 1000,
+  sessionTtlMs: 2 * 60 * 1000,
+  lowEventThreshold: 8,
+  highEventThreshold: 45,
+  highSessionThreshold: 8,
+  highCtrEventThreshold: 12,
+  lowBatchSize: 15,
+  normalBatchSize: 25,
+  highBatchSize: 75,
+  degradedBatchSize: 100,
+  degradedFailureThreshold: 3,
+  recoverySuccessThreshold: 5,
+  criticalEventTypes: new Set(["impression", "click"])
+};
+
 if (currentYear) {
   currentYear.textContent = String(new Date().getFullYear());
 }
@@ -815,6 +835,160 @@ document.querySelectorAll("dialog").forEach((modal) => {
   });
 });
 
+function getJsonStoredValue(key, fallback) {
+  try {
+    return JSON.parse(getStoredValue(key) || "null") || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function setJsonStoredValue(key, value) {
+  setStoredValue(key, JSON.stringify(value));
+}
+
+function pruneTrafficWindow(values, now = Date.now()) {
+  return (Array.isArray(values) ? values : []).filter((timestamp) => now - Number(timestamp) <= trafficScalingConfig.windowMs);
+}
+
+function getActiveSessionCount(now = Date.now()) {
+  const sessions = getJsonStoredValue(activeSessionsStorageKey, {});
+  const activeSessions = Object.fromEntries(Object.entries(sessions).filter(([, timestamp]) => {
+    return now - Number(timestamp) <= trafficScalingConfig.sessionTtlMs;
+  }));
+
+  activeSessions[trafficSessionId] = now;
+  setJsonStoredValue(activeSessionsStorageKey, activeSessions);
+
+  return Object.keys(activeSessions).length;
+}
+
+function getAnalyticsModeState() {
+  return {
+    mode: "normal",
+    consecutiveFailures: 0,
+    consecutiveSuccesses: 0,
+    ...getJsonStoredValue(analyticsModeStorageKey, {})
+  };
+}
+
+function setAnalyticsModeState(state) {
+  setJsonStoredValue(analyticsModeStorageKey, state);
+}
+
+function updateAnalyticsModeFromDelivery(success) {
+  const state = getAnalyticsModeState();
+
+  if (success) {
+    state.consecutiveSuccesses += 1;
+    state.consecutiveFailures = 0;
+
+    if (state.mode === "degraded" && state.consecutiveSuccesses >= trafficScalingConfig.recoverySuccessThreshold) {
+      state.mode = "normal";
+    }
+  } else {
+    state.consecutiveFailures += 1;
+    state.consecutiveSuccesses = 0;
+
+    if (state.consecutiveFailures >= trafficScalingConfig.degradedFailureThreshold) {
+      state.mode = "degraded";
+    }
+  }
+
+  setAnalyticsModeState(state);
+
+  return state;
+}
+
+function recordTrafficEvent(event) {
+  const now = Date.now();
+  const traffic = getJsonStoredValue(trafficAwarenessStorageKey, {
+    events: [],
+    ctrEvents: []
+  });
+
+  traffic.events = pruneTrafficWindow([...pruneTrafficWindow(traffic.events, now), now], now);
+
+  if (event?.event_type === "click") {
+    traffic.ctrEvents = pruneTrafficWindow([...pruneTrafficWindow(traffic.ctrEvents, now), now], now);
+  } else {
+    traffic.ctrEvents = pruneTrafficWindow(traffic.ctrEvents, now);
+  }
+
+  setJsonStoredValue(trafficAwarenessStorageKey, traffic);
+
+  return traffic;
+}
+
+function getTrafficSnapshot() {
+  const now = Date.now();
+  const traffic = getJsonStoredValue(trafficAwarenessStorageKey, {
+    events: [],
+    ctrEvents: []
+  });
+  const events = pruneTrafficWindow(traffic.events, now);
+  const ctrEvents = pruneTrafficWindow(traffic.ctrEvents, now);
+  const activeSessions = getActiveSessionCount(now);
+  const analyticsMode = getAnalyticsModeState().mode;
+  const eventVolumePerMinute = events.length;
+  const ctrEventFrequency = ctrEvents.length;
+  let trafficMode = "normal";
+
+  if (analyticsMode === "degraded") {
+    trafficMode = "degraded";
+  } else if (
+    eventVolumePerMinute >= trafficScalingConfig.highEventThreshold ||
+    activeSessions >= trafficScalingConfig.highSessionThreshold ||
+    ctrEventFrequency >= trafficScalingConfig.highCtrEventThreshold
+  ) {
+    trafficMode = "high";
+  } else if (eventVolumePerMinute <= trafficScalingConfig.lowEventThreshold && activeSessions <= 2) {
+    trafficMode = "low";
+  }
+
+  return {
+    trafficMode,
+    analyticsMode,
+    eventVolumePerMinute,
+    activeSessions,
+    ctrEventFrequency
+  };
+}
+
+function getDynamicOptimizationBatchSize() {
+  const snapshot = getTrafficSnapshot();
+
+  if (snapshot.trafficMode === "degraded") return trafficScalingConfig.degradedBatchSize;
+  if (snapshot.trafficMode === "high") return trafficScalingConfig.highBatchSize;
+  if (snapshot.trafficMode === "low") return trafficScalingConfig.lowBatchSize;
+  return trafficScalingConfig.normalBatchSize;
+}
+
+function isCriticalMonetizationEvent(event) {
+  return trafficScalingConfig.criticalEventTypes.has(String(event?.event_type || "").toLowerCase());
+}
+
+function shouldDropEventForBackpressure(event) {
+  const snapshot = getTrafficSnapshot();
+
+  return (snapshot.trafficMode === "high" || snapshot.trafficMode === "degraded")
+    && !isCriticalMonetizationEvent(event);
+}
+
+function askSantoriniTrafficLog(label, payload) {
+  const snapshot = getTrafficSnapshot();
+
+  if (snapshot.trafficMode === "high" || snapshot.trafficMode === "degraded") {
+    return;
+  }
+
+  console.log(label, payload);
+}
+
+window.setInterval(() => {
+  getActiveSessionCount();
+}, 30 * 1000);
+
 const markdownLinkPattern = /\[([^\]]+)\]\(([^)\s]+)\)/g;
 const rawUrlPattern = /\b(?:(?:https?:\/\/|www\.)[^\s<>()]+|tel:\+?[0-9().\-\s]+[0-9])/gi;
 const safeLinkProtocols = new Set(["http:", "https:"]);
@@ -965,8 +1139,8 @@ function extractPhoneCandidates(text) {
     return match;
   });
 
-  console.log("AskSantorini CTA debug - phone detected before gate:", detectedBeforeGate);
-  console.log("AskSantorini CTA debug - phone status after gate:", candidates);
+  askSantoriniTrafficLog("AskSantorini CTA debug - phone detected before gate:", detectedBeforeGate);
+  askSantoriniTrafficLog("AskSantorini CTA debug - phone status after gate:", candidates);
 
   return candidates;
 }
@@ -1165,9 +1339,9 @@ function collectFuzzyConciergeActions(actions, text) {
     }
   }
 
-  console.log("AskSantorini CTA debug - extracted phone candidates:", phoneCandidates);
-  console.log("AskSantorini CTA debug - extracted URLs:", urlCandidates);
-  console.log("AskSantorini CTA debug - generated actions before render:", Array.from(actions.values()));
+  askSantoriniTrafficLog("AskSantorini CTA debug - extracted phone candidates:", phoneCandidates);
+  askSantoriniTrafficLog("AskSantorini CTA debug - extracted URLs:", urlCandidates);
+  askSantoriniTrafficLog("AskSantorini CTA debug - generated actions before render:", Array.from(actions.values()));
 
   return {
     phoneCandidates,
@@ -1268,6 +1442,10 @@ function runPhoneCtaExtractionDiagnosticTest() {
     "www.google.com/maps/place/Fira+Santorini",
     "https://asksantorini.ai"
   ];
+
+  if (getTrafficSnapshot().trafficMode === "high" || getTrafficSnapshot().trafficMode === "degraded") {
+    return;
+  }
 
   console.group("AskSantorini phone CTA extraction diagnostic");
   phoneInputs.forEach((input) => {
@@ -1384,10 +1562,10 @@ function transformBotMessageToSafeFragment(text) {
   collectFuzzyConciergeActions(actions, sourceText);
   fragment.appendChild(textContainer);
 
-  console.log("AskSantorini CTA debug - after parsing:", parseCtaDebugData(sourceText));
+  askSantoriniTrafficLog("AskSantorini CTA debug - after parsing:", parseCtaDebugData(sourceText));
 
   if (!actions.size) {
-    console.log("AskSantorini CTA debug - after transformation:", {
+    askSantoriniTrafficLog("AskSantorini CTA debug - after transformation:", {
       actions: [],
       html: getFragmentHtml(fragment)
     });
@@ -1415,7 +1593,7 @@ function transformBotMessageToSafeFragment(text) {
 
   fragment.appendChild(actionList);
 
-  console.log("AskSantorini CTA debug - after transformation:", {
+  askSantoriniTrafficLog("AskSantorini CTA debug - after transformation:", {
     actions: Array.from(actions.values()),
     html: getFragmentHtml(fragment)
   });
@@ -1456,13 +1634,13 @@ function appendMessage(text, className) {
   const processedMessage = processMessage(text, className);
 
   if (String(className).includes("bot-message")) {
-    console.log("AskSantorini CTA debug - before render:", {
+    askSantoriniTrafficLog("AskSantorini CTA debug - before render:", {
       id,
       className,
       rawText: String(text || ""),
       html: getFragmentHtml(processedMessage)
     });
-    console.log("AskSantorini final rendered message HTML:", getFragmentHtml(processedMessage));
+    askSantoriniTrafficLog("AskSantorini final rendered message HTML:", getFragmentHtml(processedMessage));
   }
 
   msgDiv.replaceChildren(processedMessage);
@@ -1541,6 +1719,12 @@ const conciergeOptimizationConfig = {
     warmupImpressionThreshold: 10,
     warmupImpactMultiplier: 0.5
   }
+};
+
+const monetizationLearningBoundary = {
+  localLayer: ["ui_behavior", "cta_rendering", "traffic_awareness", "short_term_selection_safety"],
+  globalLayer: ["sheets_ctr_trends", "affiliate_performance", "weight_calibration_signals"],
+  sheetsRole: "delayed_learning_layer_not_realtime_brain"
 };
 
 const conciergeIntentPatterns = {
@@ -1793,7 +1977,7 @@ function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate
     event.selected_affiliate_score_breakdown = JSON.stringify(optimizationContext.scoreBreakdown || {});
   }
 
-  console.log("AskSantorini optimization event context:", {
+  askSantoriniTrafficLog("AskSantorini optimization event context:", {
     eventType: event.event_type,
     messageId: event.message_id,
     variant: event.ab_variant || "",
@@ -1857,14 +2041,40 @@ async function sendAffiliateImpressionOnce({ messageId, userMessage, intent, aff
   return impressionEvent;
 }
 
-async function sendEvent(event) {
-  await fetch(workerEventUrl, {
+function sendEvent(event) {
+  const normalizedEvent = {
+    ...event,
+    event_type: String(event?.event_type || "message").toLowerCase()
+  };
+  const traffic = recordTrafficEvent(normalizedEvent);
+  const snapshot = getTrafficSnapshot();
+
+  if (shouldDropEventForBackpressure(normalizedEvent)) {
+    askSantoriniTrafficLog("AskSantorini analytics backpressure dropped non-critical event:", {
+      eventType: normalizedEvent.event_type,
+      traffic,
+      snapshot
+    });
+    return Promise.resolve({ dropped: true, trafficMode: snapshot.trafficMode });
+  }
+
+  fetch(workerEventUrl, {
     method: "POST",
-    body: JSON.stringify(event),
-    headers: { "Content-Type": "application/json" }
+    body: JSON.stringify(normalizedEvent),
+    headers: { "Content-Type": "application/json" },
+    keepalive: true
+  }).then((response) => {
+    const analyticsMode = updateAnalyticsModeFromDelivery(response.ok);
+
+    if (!response.ok) {
+      console.warn("AskSantorini event delivery returned non-OK status:", response.status, analyticsMode);
+    }
   }).catch((error) => {
-    console.warn("AskSantorini event delivery failed:", error);
+    const analyticsMode = updateAnalyticsModeFromDelivery(false);
+    console.warn("AskSantorini event delivery failed:", error, analyticsMode);
   });
+
+  return Promise.resolve({ queued: true, trafficMode: snapshot.trafficMode });
 }
 
 function getAffiliateForUrl(url) {
@@ -2148,13 +2358,13 @@ function getSafeExplorationRate(intentType) {
 }
 
 function updateAutonomousWeightsForIntent(intentType, intentState) {
-  const config = conciergeOptimizationConfig.autonomous;
   const guardrails = conciergeOptimizationConfig.guardrails;
+  const dynamicBatchSize = getDynamicOptimizationBatchSize();
   const affiliates = Object.values(intentState.affiliates || {});
   const totalClicks = affiliates.reduce((total, affiliate) => total + (Number(affiliate.clicks) || 0), 0);
   const totalImpressions = affiliates.reduce((total, affiliate) => total + (Number(affiliate.impressions) || 0), 0);
 
-  if (totalImpressions < config.batchSize || totalImpressions < guardrails.minimumUpdateSamples) {
+  if (totalImpressions < dynamicBatchSize || totalImpressions < guardrails.minimumUpdateSamples) {
     return;
   }
 
@@ -2174,7 +2384,7 @@ function updateAutonomousWeightsForIntent(intentType, intentState) {
     clicks: Number(value.clicks) || 0,
     ctr: Number(value.impressions) > 0 ? (Number(value.clicks) || 0) / ((Number(value.impressions) || 0) + 1) : 0
   })).sort((a, b) => b.ctr - a.ctr);
-  const adjustment = config.learningRate;
+  const adjustment = conciergeOptimizationConfig.autonomous.learningRate;
   const previousRankingSignature = intentState.lastRankingSignature || "";
   const currentRankingSignature = getRankingSignature(affiliates);
   const rankingShiftScore = getRankingShiftScore(previousRankingSignature, currentRankingSignature);
@@ -2247,7 +2457,7 @@ function updateAutonomousWeightsForIntent(intentType, intentState) {
   intentState.previousAverageCtr = currentAverageCtr;
   intentState.lastRankingSignature = currentRankingSignature;
 
-  console.log("AskSantorini autonomous optimization weights updated:", {
+  askSantoriniTrafficLog("AskSantorini autonomous optimization weights updated:", {
     intent: intentType,
     weights: intentState.weights,
     proposedWeights: weights,
@@ -2268,6 +2478,7 @@ function updateAutonomousWeightsForIntent(intentType, intentState) {
     exploitationRate: 1 - getSafeExplorationRate(intentType),
     dominanceIndex: distributionMetrics.dominanceIndex,
     ctrVariance: distributionMetrics.ctrVariance,
+    dynamicBatchSize,
     rankingShiftScore,
     instabilityDetected,
     safeModeActivated: instabilityDetected
@@ -2338,18 +2549,22 @@ function recordAffiliatePerformance({ intent, affiliate, eventType, optimization
 
   state.eventCount += 1;
 
-  if (state.eventCount % conciergeOptimizationConfig.autonomous.batchSize === 0) {
+  const dynamicBatchSize = getDynamicOptimizationBatchSize();
+
+  if (state.eventCount % dynamicBatchSize === 0) {
     updateAutonomousOptimizationCycle(state);
   }
 
   setAutonomousOptimizationState(state);
 
-  console.log("AskSantorini autonomous affiliate performance memory:", {
+  askSantoriniTrafficLog("AskSantorini autonomous affiliate performance memory:", {
     intent,
     eventType,
     affiliate: current,
     variants: intentState.variants,
-    eventCount: state.eventCount
+    eventCount: state.eventCount,
+    trafficSnapshot: getTrafficSnapshot(),
+    dynamicBatchSize
   });
 }
 
@@ -2411,7 +2626,7 @@ function chooseConciergeAffiliate(intentType, userMessage) {
     latestConciergeSelectionContext.explorationRate = getSafeExplorationRate(intentType);
   }
 
-  console.log("AskSantorini concierge optimization selection:", {
+  askSantoriniTrafficLog("AskSantorini concierge optimization selection:", {
     intent: intentType,
     variant,
     seasonalMode,
@@ -2515,7 +2730,7 @@ async function sendMessage(text) {
     if (loadingEl) loadingEl.remove();
 
     const reply = data?.reply || copy.noReplyMessage;
-    console.log("AskSantorini CTA debug - raw bot response:", reply);
+    askSantoriniTrafficLog("AskSantorini CTA debug - raw bot response:", reply);
     appendMessage(reply, "bot-message");
     latestInteractionEvent = buildEvent({
       userMessage: cleanText,
