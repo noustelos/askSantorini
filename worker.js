@@ -40,10 +40,7 @@ export default {
 };
 
 const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbwEqy4SSGX1U_n4KAfa33zFlYAobweU2tYLR-_B3NcH6FYceplSwPDWvTrSoEhV5_RG/exec";
-const eventForwardUrls = [
-  `${eventWebhookUrl}?sink=analytics`,
-  `${eventWebhookUrl}?sink=monetization`
-];
+const eventForwardUrls = [eventWebhookUrl];
 
 function normalizeEventPayload(payload) {
   const event = {
@@ -52,10 +49,14 @@ function normalizeEventPayload(payload) {
 
   event.timestamp = String(event.timestamp || new Date().toISOString());
   event.session_id = String(event.session_id || "");
-  event.user_message = String(event.user_message || "");
+  event.message_id = String(event.message_id || "");
+  event.user_input = String(event.user_input || event.user_message || "");
+  event.user_message = String(event.user_message || event.user_input || "");
   event.bot_response = String(event.bot_response || "");
   event.intent = String(event.intent || "");
   event.event_type = String(event.event_type || "message").toLowerCase();
+  event.affiliate_id = String(event.affiliate_id || "");
+  event.entity_id = String(event.entity_id || "");
 
   return event;
 }

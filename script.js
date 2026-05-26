@@ -1988,7 +1988,9 @@ function appendMessage(text, className, context = {}) {
   return id;
 }
 
-const conciergeMonetizationSheetUrl = "https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0";
+const truthLayerSpreadsheetId = "1OlhF14hzMGc0jweKgq-3O_PtSKn0E9-wBbZXZBano9E";
+const truthLayerEntitiesSheetName = "entities_truth_layer";
+const truthLayerEntitiesSheetUrl = `https://docs.google.com/spreadsheets/d/${truthLayerSpreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(truthLayerEntitiesSheetName)}`;
 const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
 const conciergeSessionStorageKey = "askSantoriniConciergeSession";
 const conciergeOptimizationStorageKey = "askSantoriniAutonomousOptimization";
@@ -2088,7 +2090,7 @@ Concierge behavior rules:
 
 function loadConciergeAffiliates() {
   if (!conciergeAffiliateLoadPromise) {
-    conciergeAffiliateLoadPromise = fetchGoogleSheetAffiliates(conciergeMonetizationSheetUrl)
+    conciergeAffiliateLoadPromise = fetchGoogleSheetAffiliates(truthLayerEntitiesSheetUrl)
       .then((sheetAffiliates) => {
         conciergeAffiliates = sheetAffiliates;
         return conciergeAffiliates;
@@ -2387,19 +2389,19 @@ function normalizeAffiliateRow(row) {
   }
 
   const priority = clampNumber(row.priority, 0, 10);
-  const clicks = clampNumber(row.clicks, 0, Number.MAX_SAFE_INTEGER);
-  const impressions = clampNumber(row.impressions, 0, Number.MAX_SAFE_INTEGER);
-  const ctr = Math.min(clicks / (impressions + 1), 1);
-  const intentStrength = clampNumber(row.intent_strength, 0, 5);
-  const contextBoost = clampNumber(row.context_boost, 0, 3);
+  const clicks = 0;
+  const impressions = 0;
+  const ctr = 0;
+  const intentStrength = 0;
+  const contextBoost = 0;
   const defaultWeights = getDefaultOptimizationWeights();
   const baseScoreBreakdown = {
     priority: priority * defaultWeights.priority,
-    ctr: ctr * defaultWeights.ctr,
-    intentStrength: intentStrength * defaultWeights.intentStrength,
-    contextBoost: contextBoost * defaultWeights.contextBoost
+    ctr: 0,
+    intentStrength: 0,
+    contextBoost: 0
   };
-  const score = Object.values(baseScoreBreakdown).reduce((total, value) => total + value, 0);
+  const score = baseScoreBreakdown.priority;
 
   return {
     entityId,
@@ -2416,6 +2418,7 @@ function normalizeAffiliateRow(row) {
     baseScoreBreakdown,
     url,
     websiteUrl: url,
+    affiliateId: String(row.affiliate_id || row.affiliate || entityId || "").trim(),
     address: String(row.address || "").trim(),
     mapsUrl,
     phone,
@@ -2428,6 +2431,37 @@ function detectConciergeIntent(message) {
   const cleanMessage = String(message || "");
 
   return Object.entries(conciergeIntentPatterns).find(([, pattern]) => pattern.test(cleanMessage))?.[0] || null;
+}
+
+function normalizeEntityLookupText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9α-ωάέήίόύώϊϋΐΰ]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function findTruthLayerEntityInMessage(message) {
+  const normalizedMessage = normalizeEntityLookupText(message);
+
+  if (!normalizedMessage) return null;
+
+  return conciergeAffiliates
+    .filter((entity) => {
+      const normalizedName = normalizeEntityLookupText(entity.name);
+      const normalizedEntityId = normalizeEntityLookupText(entity.entityId);
+
+      return (normalizedName && normalizedMessage.includes(normalizedName))
+        || (normalizedEntityId && normalizedMessage.includes(normalizedEntityId));
+    })
+    .sort((a, b) => {
+      const lengthDelta = String(b.name || "").length - String(a.name || "").length;
+      if (lengthDelta !== 0) return lengthDelta;
+      if (b.priority !== a.priority) return b.priority - a.priority;
+      return String(a.entityId || "").localeCompare(String(b.entityId || ""));
+    })[0] || null;
 }
 
 function getConciergeIntent(message) {
@@ -2456,17 +2490,21 @@ function createMessageId() {
 }
 
 function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate = "", eventType = "message", messageId = "", optimizationContext = null } = {}) {
+  const affiliateName = normalizeAffiliateName(affiliate);
+  const entityId = String(affiliate?.entityId || affiliate?.entity_id || "").trim();
+  const affiliateId = String(affiliate?.affiliateId || affiliate?.affiliate_id || entityId || "").trim();
   const event = {
     timestamp: new Date().toISOString(),
     session_id: getConciergeSessionId(),
     message_id: String(messageId || ""),
+    user_input: String(userMessage || ""),
     user_message: String(userMessage || ""),
     bot_response: String(botResponse || ""),
     intent: String(intent || ""),
-    event_type: String(eventType || "message").toLowerCase()
+    event_type: String(eventType || "message").toLowerCase(),
+    affiliate_id: affiliateId,
+    entity_id: entityId
   };
-
-  const affiliateName = normalizeAffiliateName(affiliate);
 
   if (affiliateName) {
     event.affiliate = affiliateName;
@@ -2487,6 +2525,8 @@ function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate
     seasonalMode: event.seasonal_mode || "",
     intent: event.intent_category || event.intent,
     affiliate: event.affiliate || "",
+    affiliateId: event.affiliate_id || "",
+    entityId: event.entity_id || "",
     isExplorationPick: Boolean(optimizationContext?.isExplorationPick),
     scoreBreakdown: optimizationContext?.scoreBreakdown || null
   });
@@ -2583,7 +2623,21 @@ function sendEvent(event) {
 function getAffiliateForUrl(url) {
   return conciergeAffiliates.find((affiliate) => {
     try {
-      return affiliate.url && new URL(affiliate.url, window.location.href).href === url;
+      const targetUrl = new URL(url, window.location.href).href;
+      const candidateUrls = [
+        affiliate.url,
+        affiliate.websiteUrl,
+        affiliate.phone,
+        affiliate.mapsUrl
+      ].filter(Boolean);
+
+      return candidateUrls.some((candidateUrl) => {
+        if (isTelephoneUrl(candidateUrl)) {
+          return candidateUrl === url;
+        }
+
+        return new URL(candidateUrl, window.location.href).href === targetUrl;
+      });
     } catch {
       return false;
     }
@@ -3099,29 +3153,31 @@ function chooseConciergeAffiliate(intentType, userMessage) {
 
   const activeEntity = getActiveEntity();
   if (activeEntity?.type === intentType) {
-    latestConciergeSelectionContext = buildAffiliateScoreContext({
+    latestConciergeSelectionContext = {
       affiliate: activeEntity,
       intentType,
-      userMessage,
       variant: getConciergeVariant(intentType),
       seasonalMode: getSeasonalMode(),
-      intentStats: getIntentPerformanceStats(intentType)
-    });
+      scoreBreakdown: { priority: activeEntity.priority || 0 },
+      finalScore: activeEntity.priority || 0,
+      isExplorationPick: false,
+      explorationRate: 0
+    };
     return activeEntity;
   }
 
   const variant = getConciergeVariant(intentType);
   const seasonalMode = getSeasonalMode();
-  const intentStats = getIntentPerformanceStats(intentType);
   const matches = conciergeAffiliates
     .filter((affiliate) => affiliate.type === intentType)
-    .map((affiliate) => buildAffiliateScoreContext({
+    .map((affiliate) => ({
       affiliate,
-      intentType,
-      userMessage,
       variant,
       seasonalMode,
-      intentStats
+      scoreBreakdown: { priority: affiliate.priority || 0 },
+      finalScore: affiliate.priority || 0,
+      isExplorationPick: false,
+      explorationRate: 0
     }))
     .sort((a, b) => {
       if (b.finalScore !== a.finalScore) return b.finalScore - a.finalScore;
@@ -3148,7 +3204,7 @@ function chooseConciergeAffiliate(intentType, userMessage) {
     selectedAffiliate: latestConciergeSelectionContext?.affiliate?.name || "",
     scoreBreakdown: latestConciergeSelectionContext?.scoreBreakdown || {},
     finalScore: latestConciergeSelectionContext?.finalScore || 0,
-    rankedAffiliates: topMatches.map((match) => ({
+    rankedAffiliates: matches.slice(0, 3).map((match) => ({
       name: match.affiliate.name,
       finalScore: match.finalScore,
       scoreBreakdown: match.scoreBreakdown
@@ -3205,8 +3261,14 @@ async function sendMessage(text) {
 
   try {
     const affiliates = await loadConciergeAffiliates();
+    const mentionedEntity = findTruthLayerEntityInMessage(cleanText);
     const activeEntity = getActiveEntity();
-    if (!selectedIntent && activeEntity && isFactualContactIntent(cleanText)) {
+    if (mentionedEntity) {
+      selectedAffiliate = mentionedEntity;
+      selectedIntent = selectedIntent || mentionedEntity.type;
+      setActiveEntity(mentionedEntity);
+      latestConciergeSelectionContext = null;
+    } else if (!selectedIntent && activeEntity && isFactualContactIntent(cleanText)) {
       selectedIntent = activeEntity.type;
       selectedAffiliate = activeEntity;
       latestConciergeSelectionContext = null;

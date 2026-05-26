@@ -57,21 +57,22 @@ Worker environment:
 - `GEMINI_API_KEY` - required Cloudflare Worker secret.
 - `GEMINI_MODEL` - optional model override. Defaults to `gemini-2.5-flash`.
 
-Frontend affiliate data comes from the published Google Sheets CSV:
+Truth Layer entity data comes only from the `entities_truth_layer` tab in the production Google Spreadsheet:
 
 ```text
-https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0
+Spreadsheet ID: 1OlhF14hzMGc0jweKgq-3O_PtSKn0E9-wBbZXZBano9E
+CSV: https://docs.google.com/spreadsheets/d/1OlhF14hzMGc0jweKgq-3O_PtSKn0E9-wBbZXZBano9E/gviz/tq?tqx=out:csv&sheet=entities_truth_layer
 ```
 
 Required governance columns: `entity_id`, `name`, `type`, `phone`, `website`, `maps_url`, `active`.
-Optional columns: `address`, `tags`, `priority`, `clicks`, `impressions`, `intent_strength`, `context_boost`.
+Optional columns: `address`, `tags`, `priority`.
 Supported entity `type` values are `hotel`, `villa`, `restaurant`, `beach`, `club`, `transport`, `service`, and `place`.
 All phone numbers, websites, map links and addresses must come from validated rows in the published Google Sheets CSV. The LLM only writes natural language guidance; factual contact data is resolved by `entity_id` and injected into CTA buttons after generation.
 Rows with missing required fields, invalid phones, broken URLs, invalid map links, unsupported types, inactive status, or duplicate lower-priority entities are rejected before they enter the Truth Layer.
-The frontend loads active affiliates from the published Google Sheets CSV and ranks them deterministically with:
+The frontend loads active entities from `entities_truth_layer` and ranks eligible matches deterministically with only Truth Layer row fields:
 
 ```text
-score = priority + (clicks / (impressions + 1)) + intent_strength + context_boost
+score = priority
 ```
 
 CSP:
@@ -80,32 +81,28 @@ CSP:
 
 ## Partner Knowledge
 
-Partner data is updated live from the published Google Sheets monetization log.
+Partner/entity data is updated live from the `entities_truth_layer` tab.
 If the Sheet is unavailable, the frontend fails gracefully with no affiliate suggestion.
 The frontend selects a single relevant affiliate, stores its active `entity_id` for the session, and sends only non-contact entity context to the Worker.
 The Worker does not detect intent, rank affiliates, or construct concierge rules.
 
+`affiliate_performance` is a derived reporting tab only. It is regenerated from `events_analytics` and is never used as input for Truth Layer resolution, CTA generation, or response generation.
+
 ## Single Event Write Layer
 
-`apps-script/affiliate-events.gs` contains the Google Apps Script Web App endpoint for appending the single canonical event to analytics and monetization sheet tabs.
-The deployed Web App URL is configured as `eventWebhookUrl` in `script.js`, then fanned out to `?sink=analytics` and `?sink=monetization`.
+`apps-script/affiliate-events.gs` contains the Google Apps Script Web App endpoint for appending canonical events to the production spreadsheet `events_analytics` tab.
+The deployed Web App URL is configured as `eventWebhookUrl` in `worker.js`; the Worker forwards one canonical event write per interaction event.
 
 Canonical frontend event:
 
 ```text
-timestamp, session_id, user_message, bot_response, intent, affiliate, event_type
+timestamp, session_id, message_id, user_input, bot_response, intent, event_type, affiliate_id, entity_id
 ```
 
-Analytics columns:
+`events_analytics` columns:
 
 ```text
-timestamp, session_id, user_message, bot_response, intent, affiliate, event_type
-```
-
-Monetization columns:
-
-```text
-timestamp, affiliate, event_type, intent
+timestamp, session_id, message_id, user_input, bot_response, intent, event_type, affiliate_id, entity_id
 ```
 
 ## Deploy to Cloudflare Pages
