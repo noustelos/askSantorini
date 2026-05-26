@@ -16,21 +16,42 @@ const SYSTEM_LOGS_HEADERS = ["timestamp", "event_type", "message"];
 const VALID_EVENT_TYPES = ["message", "impression", "click"];
 
 function doPost(e) {
+  const debug = {
+    executed: true,
+    timestamp: new Date().toISOString(),
+    raw_payload: "",
+    parsed_payload: null,
+    normalized_event: null,
+    sheet_lookup: null,
+    append_row: null,
+    error: null
+  };
+
   try {
-    const payload = parseWorkerPayload(e);
+    const payloadParse = parseWorkerPayload(e);
+    debug.raw_payload = payloadParse.rawBody;
+    debug.parsed_payload = payloadParse.payload;
+
+    console.log("AskSantorini webhook debug incoming payload:", debug.parsed_payload);
+
+    const payload = payloadParse.payload;
     const event = normalizeCanonicalEvent(payload);
+    debug.normalized_event = event;
 
     if (VALID_EVENT_TYPES.indexOf(event.event_type) === -1) {
       appendSystemLog("invalid_event_type", "Rejected event_type: " + event.event_type);
-      return jsonResponse({ ok: false, error: "Invalid event payload." });
+      debug.error = "Invalid event payload.";
+      return jsonResponse({ ok: false, error: "Invalid event payload.", debug: debug });
     }
 
-    appendAnalyticsEvent(event);
+    debug.append_row = appendAnalyticsEvent(event, debug);
 
-    return jsonResponse({ ok: true });
+    return jsonResponse({ ok: true, debug: debug });
   } catch (error) {
+    debug.error = String(error && error.stack ? error.stack : error);
+    console.log("AskSantorini webhook debug error:", debug.error);
     appendSystemLog("event_write_failed", error);
-    return jsonResponse({ ok: false, error: "Event write failed." });
+    return jsonResponse({ ok: false, error: "Event write failed.", debug: debug });
   }
 }
 
@@ -44,7 +65,10 @@ function doOptions() {
 
 function parseWorkerPayload(e) {
   const rawBody = e && e.postData && e.postData.contents ? e.postData.contents : "{}";
-  return JSON.parse(rawBody);
+  return {
+    rawBody: rawBody,
+    payload: JSON.parse(rawBody)
+  };
 }
 
 function normalizeCanonicalEvent(payload) {
@@ -63,9 +87,10 @@ function normalizeCanonicalEvent(payload) {
   };
 }
 
-function appendAnalyticsEvent(event) {
-  withDocumentLock(function () {
-    getSheet(EVENTS_ANALYTICS_SHEET_NAME, EVENTS_ANALYTICS_HEADERS).appendRow([
+function appendAnalyticsEvent(event, debug) {
+  return withDocumentLock(function () {
+    const sheet = getSheet(EVENTS_ANALYTICS_SHEET_NAME, EVENTS_ANALYTICS_HEADERS, debug);
+    const row = [
       event.timestamp,
       event.session_id,
       event.message_id,
@@ -75,7 +100,20 @@ function appendAnalyticsEvent(event) {
       event.event_type,
       event.affiliate_id,
       event.entity_id
-    ]);
+    ];
+
+    sheet.appendRow(row);
+
+    const result = {
+      success: true,
+      sheet_name: sheet.getName(),
+      row_number: sheet.getLastRow(),
+      column_count: row.length
+    };
+
+    console.log("AskSantorini webhook debug appendRow result:", result);
+
+    return result;
   });
 }
 
@@ -104,9 +142,38 @@ function withDocumentLock(callback) {
   }
 }
 
-function getSheet(sheetName, headers) {
-  const spreadsheet = SpreadsheetApp.openById(PRODUCTION_SPREADSHEET_ID);
-  const sheet = spreadsheet.getSheetByName(sheetName) || spreadsheet.insertSheet(sheetName);
+function getSheet(sheetName, headers, debug) {
+  let spreadsheet = null;
+  let sheet = null;
+
+  try {
+    spreadsheet = SpreadsheetApp.openById(PRODUCTION_SPREADSHEET_ID);
+    sheet = spreadsheet.getSheetByName(sheetName) || spreadsheet.insertSheet(sheetName);
+  } catch (error) {
+    if (debug) {
+      debug.sheet_lookup = {
+        success: false,
+        spreadsheet_id: PRODUCTION_SPREADSHEET_ID,
+        sheet_name: sheetName,
+        error: String(error && error.message ? error.message : error)
+      };
+    }
+    console.log("AskSantorini webhook debug sheet lookup failure:", debug ? debug.sheet_lookup : error);
+    throw error;
+  }
+
+  if (debug) {
+    debug.sheet_lookup = {
+      success: true,
+      spreadsheet_id: PRODUCTION_SPREADSHEET_ID,
+      sheet_name: sheetName,
+      actual_sheet_name: sheet.getName(),
+      last_row_before_append: sheet.getLastRow()
+    };
+  }
+
+  console.log("AskSantorini webhook debug sheet lookup success:", debug ? debug.sheet_lookup : sheetName);
+
   ensureHeaders(sheet, headers);
   return sheet;
 }
