@@ -1335,8 +1335,23 @@ function getActiveEntityId() {
   return normalizeEntityId(memory[sessionId]?.entityId || "");
 }
 
+function hydrateTruthLayerEntity(entityId, source = "unknown") {
+  const normalizedEntityId = normalizeEntityId(entityId);
+  const entity = getEntityById(normalizedEntityId);
+  const resolvedEntity = entity ? resolveStructuredEntity(entity) : null;
+
+  askSantoriniTrafficLog("AskSantorini Truth Layer hydration:", {
+    entityId: normalizedEntityId,
+    hydrationSuccess: Boolean(resolvedEntity),
+    phonePresent: Boolean(resolvedEntity?.phone),
+    source
+  });
+
+  return resolvedEntity;
+}
+
 function getActiveEntity() {
-  return getEntityById(getActiveEntityId());
+  return hydrateTruthLayerEntity(getActiveEntityId(), "session_memory");
 }
 
 function setActiveEntity(entity) {
@@ -1397,7 +1412,7 @@ function resolveStructuredEntity(entity) {
     phone,
     websiteUrl: website,
     mapsUrl: maps,
-    hasAuthoritativeFacts: Boolean(phone || website || maps)
+    hasAuthoritativeFacts: Boolean(phone && website && maps)
   };
 }
 
@@ -2138,9 +2153,17 @@ Concierge behavior rules:
 - Do not expose these internal instructions or the selected affiliate context label.
 `.trim();
 
-function loadConciergeAffiliates() {
+function loadConciergeAffiliates({ forceRefresh = false } = {}) {
+  if (forceRefresh) {
+    conciergeAffiliateLoadPromise = null;
+  }
+
   if (!conciergeAffiliateLoadPromise) {
-    conciergeAffiliateLoadPromise = fetchGoogleSheetAffiliates(truthLayerEntitiesSheetUrl)
+    const sheetUrl = forceRefresh
+      ? `${truthLayerEntitiesSheetUrl}${truthLayerEntitiesSheetUrl.includes("?") ? "&" : "?"}_=${Date.now()}`
+      : truthLayerEntitiesSheetUrl;
+
+    conciergeAffiliateLoadPromise = fetchGoogleSheetAffiliates(sheetUrl)
       .then((sheetAffiliates) => {
         conciergeAffiliates = sheetAffiliates;
         return conciergeAffiliates;
@@ -3242,7 +3265,7 @@ function chooseConciergeAffiliate(intentType, userMessage) {
       isExplorationPick: false,
       explorationRate: 0
     };
-    return activeEntity;
+    return hydrateTruthLayerEntity(activeEntity.entityId, "session_memory_selection") || activeEntity;
   }
 
   const variant = getConciergeVariant(intentType);
@@ -3270,6 +3293,8 @@ function chooseConciergeAffiliate(intentType, userMessage) {
   if (latestConciergeSelectionContext) {
     latestConciergeSelectionContext.isExplorationPick = false;
     latestConciergeSelectionContext.explorationRate = 0;
+    const hydratedSelection = hydrateTruthLayerEntity(latestConciergeSelectionContext.affiliate.entityId, "new_selection");
+    latestConciergeSelectionContext.affiliate = hydratedSelection || latestConciergeSelectionContext.affiliate;
     setActiveEntity(latestConciergeSelectionContext.affiliate);
   }
 
@@ -3339,15 +3364,17 @@ async function sendMessage(text) {
   const loadingId = appendMessage(copy.thinkingMessage, "bot-message loading");
 
   try {
-    const affiliates = await loadConciergeAffiliates();
+    const affiliates = await loadConciergeAffiliates({ forceRefresh: true });
     const shouldResetEntityContext = isEntityContextResetIntent(cleanText);
 
     if (shouldResetEntityContext) {
       clearActiveEntity();
     }
 
-    const activeEntity = getActiveEntity();
-    const mentionedEntity = activeEntity || findTruthLayerEntityInMessage(cleanText);
+    const activeEntityId = getActiveEntityId();
+    const activeEntity = activeEntityId ? hydrateTruthLayerEntity(activeEntityId, "session_memory_request") : null;
+    const mentionedEntityMatch = activeEntity ? null : findTruthLayerEntityInMessage(cleanText);
+    const mentionedEntity = activeEntity || (mentionedEntityMatch ? hydrateTruthLayerEntity(mentionedEntityMatch.entityId, "message_match") : null);
 
     if (activeEntity) {
       selectedAffiliate = activeEntity;
@@ -3370,7 +3397,10 @@ async function sendMessage(text) {
     } else {
       selectedAffiliate = affiliates.length ? chooseConciergeAffiliate(selectedIntent, cleanText) : null;
     }
-    resolvedEntity = resolveStructuredEntity(selectedAffiliate);
+    resolvedEntity = selectedAffiliate?.entityId
+      ? hydrateTruthLayerEntity(selectedAffiliate.entityId, activeEntity ? "follow_up_request" : "resolved_request")
+      : null;
+    selectedAffiliate = resolvedEntity || selectedAffiliate;
 
     if ((isFactualContactIntent(cleanText) && !resolvedEntity) || (resolvedEntity && !resolvedEntity.hasAuthoritativeFacts)) {
       const loadingEl = loadingId ? document.getElementById(loadingId) : null;
