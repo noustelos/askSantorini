@@ -386,7 +386,7 @@ let currentLanguage = "en";
 const trafficAwarenessStorageKey = "askSantoriniTrafficAwareness";
 const analyticsModeStorageKey = "askSantoriniAnalyticsMode";
 const activeSessionsStorageKey = "askSantoriniActiveSessions";
-const truthLayerActiveEntityStorageKey = "askSantoriniActiveEntityId";
+const truthLayerSessionEntityStorageKey = "askSantoriniSessionEntityMemory";
 const trafficSessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
 const trafficScalingConfig = {
   windowMs: 60 * 1000,
@@ -1315,8 +1315,24 @@ function getEntityById(entityId) {
   return conciergeAffiliates.find((affiliate) => affiliate.entityId === normalizedId) || null;
 }
 
+function getSessionEntityMemory() {
+  try {
+    const memory = JSON.parse(getStoredValue(truthLayerSessionEntityStorageKey) || "{}") || {};
+    return memory && typeof memory === "object" ? memory : {};
+  } catch {
+    return {};
+  }
+}
+
+function setSessionEntityMemory(memory) {
+  setStoredValue(truthLayerSessionEntityStorageKey, JSON.stringify(memory || {}));
+}
+
 function getActiveEntityId() {
-  return normalizeEntityId(getStoredValue(truthLayerActiveEntityStorageKey));
+  const sessionId = getConciergeSessionId();
+  const memory = getSessionEntityMemory();
+
+  return normalizeEntityId(memory[sessionId]?.entityId || "");
 }
 
 function getActiveEntity() {
@@ -1327,10 +1343,44 @@ function setActiveEntity(entity) {
   const entityId = normalizeEntityId(entity?.entityId);
 
   if (entityId) {
-    setStoredValue(truthLayerActiveEntityStorageKey, entityId);
+    const sessionId = getConciergeSessionId();
+    const memory = getSessionEntityMemory();
+
+    memory[sessionId] = {
+      entityId,
+      updatedAt: new Date().toISOString()
+    };
+    setSessionEntityMemory(memory);
+
+    askSantoriniTrafficLog("AskSantorini Session-State v1 entity sync:", {
+      sessionId,
+      currentEntityId: entityId,
+      inheritedEntitySource: "new"
+    });
   }
 
   return entityId;
+}
+
+function clearActiveEntity() {
+  const sessionId = getConciergeSessionId();
+  const memory = getSessionEntityMemory();
+  const previousEntityId = normalizeEntityId(memory[sessionId]?.entityId || "");
+
+  delete memory[sessionId];
+  setSessionEntityMemory(memory);
+  const nextSessionId = rotateConciergeSessionId();
+
+  askSantoriniTrafficLog("AskSantorini Session-State v1 entity reset:", {
+    sessionId,
+    nextSessionId,
+    currentEntityId: "",
+    previousEntityId
+  });
+}
+
+function isEntityContextResetIntent(text) {
+  return /\b(reset|start over|new topic|clear context|forget this|άκυρο|ακυρο|επανεκκίνηση|νεο θέμα|νέο θέμα)\b/i.test(String(text || ""));
 }
 
 function resolveStructuredEntity(entity) {
@@ -2472,10 +2522,20 @@ function getConciergeSessionId() {
   let sessionId = getStoredValue(conciergeSessionStorageKey);
 
   if (!sessionId) {
-    sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    sessionId = createConciergeSessionId();
     setStoredValue(conciergeSessionStorageKey, sessionId);
   }
 
+  return sessionId;
+}
+
+function createConciergeSessionId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function rotateConciergeSessionId() {
+  const sessionId = createConciergeSessionId();
+  setStoredValue(conciergeSessionStorageKey, sessionId);
   return sessionId;
 }
 
@@ -2491,12 +2551,31 @@ function createMessageId() {
 
 function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate = "", eventType = "message", messageId = "", optimizationContext = null } = {}) {
   const affiliateName = normalizeAffiliateName(affiliate);
-  const entityId = String(affiliate?.entityId || affiliate?.entity_id || "").trim();
-  const affiliateId = String(affiliate?.affiliateId || affiliate?.affiliate_id || entityId || "").trim();
+  const sessionId = getConciergeSessionId();
+  const directEntityId = normalizeEntityId(affiliate?.entityId || affiliate?.entity_id || "");
+  const inheritedEntityId = getActiveEntityId();
+  const entityId = directEntityId || inheritedEntityId;
+  const inheritedEntity = !directEntityId && entityId ? getEntityById(entityId) : null;
+  const eventAffiliate = affiliate || inheritedEntity || null;
+  const affiliateId = String(eventAffiliate?.affiliateId || eventAffiliate?.affiliate_id || entityId || "").trim();
+  const entitySource = directEntityId ? "new" : entityId ? "reused" : "none";
+
+  if (directEntityId) {
+    setActiveEntity(affiliate);
+  }
+
+  askSantoriniTrafficLog("AskSantorini Session-State v1 event entity context:", {
+    sessionId,
+    messageId: String(messageId || ""),
+    eventType: String(eventType || "message").toLowerCase(),
+    currentEntityId: entityId,
+    inheritedEntitySource: entitySource
+  });
+
   const event = {
     timestamp: new Date().toISOString(),
-    session_id: getConciergeSessionId(),
-    message_id: String(messageId || ""),
+    session_id: sessionId,
+    message_id: String(messageId || createMessageId()),
     user_input: String(userMessage || ""),
     user_message: String(userMessage || ""),
     bot_response: String(botResponse || ""),
@@ -3261,9 +3340,25 @@ async function sendMessage(text) {
 
   try {
     const affiliates = await loadConciergeAffiliates();
-    const mentionedEntity = findTruthLayerEntityInMessage(cleanText);
+    const shouldResetEntityContext = isEntityContextResetIntent(cleanText);
+
+    if (shouldResetEntityContext) {
+      clearActiveEntity();
+    }
+
     const activeEntity = getActiveEntity();
-    if (mentionedEntity) {
+    const mentionedEntity = activeEntity || findTruthLayerEntityInMessage(cleanText);
+
+    if (activeEntity) {
+      selectedAffiliate = activeEntity;
+      selectedIntent = selectedIntent || activeEntity.type;
+      latestConciergeSelectionContext = null;
+      askSantoriniTrafficLog("AskSantorini Session-State v1 follow-up entity reuse:", {
+        sessionId: getConciergeSessionId(),
+        currentEntityId: activeEntity.entityId,
+        inheritedEntitySource: "reused"
+      });
+    } else if (mentionedEntity) {
       selectedAffiliate = mentionedEntity;
       selectedIntent = selectedIntent || mentionedEntity.type;
       setActiveEntity(mentionedEntity);

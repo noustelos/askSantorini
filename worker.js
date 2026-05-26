@@ -41,6 +41,7 @@ export default {
 
 const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbwefn-8Ghek_jMNYR1jcAsFFJe5dWmf0u2NH7kGEIMKSfv6DqnA0cQiZgQuw04Z8QMl/exec";
 const eventForwardUrls = [eventWebhookUrl];
+const sessionEntityMemory = new Map();
 
 function normalizeEventPayload(payload) {
   const event = {
@@ -56,7 +57,23 @@ function normalizeEventPayload(payload) {
   event.intent = String(event.intent || "");
   event.event_type = String(event.event_type || "message").toLowerCase();
   event.affiliate_id = String(event.affiliate_id || "");
-  event.entity_id = String(event.entity_id || "");
+  const incomingEntityId = String(event.entity_id || "");
+  const inheritedEntityId = event.session_id ? sessionEntityMemory.get(event.session_id) || "" : "";
+  event.entity_id = incomingEntityId || inheritedEntityId;
+
+  if (event.session_id && event.entity_id) {
+    sessionEntityMemory.set(event.session_id, event.entity_id);
+  }
+
+  const entityContextSource = incomingEntityId ? "new" : event.entity_id ? "reused" : "none";
+
+  console.log("AskSantorini Session-State v1 Worker event context:", {
+    sessionId: event.session_id,
+    messageId: event.message_id,
+    eventType: event.event_type,
+    currentEntityId: event.entity_id,
+    inheritedEntitySource: entityContextSource
+  });
 
   return event;
 }
