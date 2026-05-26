@@ -1011,6 +1011,10 @@ const universalCtaIntentPatterns = {
   booking_request: /\b(book|booking|reserve|reservation|availability|available|κράτηση|κρατήσω|διαθεσιμότητα|διαθέσιμο)\b/i,
   navigation_request: /\b(how\s+(?:do|can)\s+i\s+get\s+to|how\s+to\s+get\s+to|navigate|route|directions|go\s+to|οδηγίες|πώς\s+πάω|πως\s+πάω|διαδρομή)\b/i
 };
+const routingIntentPatterns = {
+  location: /\b(how\s+(?:do|can)\s+i\s+(?:get|go)\s+to|how\s+to\s+(?:get|go)\s+to|directions?|route|map|maps|google\s+maps|navigate|navigation|go\s+to|where\s+is|where's|location|address|pin|οδηγίες|πώς\s+πάω|πως\s+πάω|διαδρομή|χάρτης|χάρτες|πού\s+είναι|που\s+είναι|τοποθεσία|διεύθυνση)\b/i,
+  business: /\b(phone|telephone|tel|number|contact|website|web\s*site|official\s+site|official\s+website|email|e-mail|mail|url|link|homepage|book|booking|reserve|reservation|availability|τηλέφωνο|επικοινωνία|ιστοσελίδα|σάιτ|σελίδα|λινκ|email|κρατήσω|κράτηση|διαθεσιμότητα)\b/i
+};
 const dataGovernanceAllowedTypes = new Set(["hotel", "villa", "restaurant", "beach", "club", "transport", "service", "place"]);
 const dataGovernanceRequiredFields = ["entity_id", "name", "type", "active"];
 const truthLayerFactualFields = ["phone", "website", "maps_url"];
@@ -1176,13 +1180,41 @@ function classifyUniversalCtaIntent(userMessage) {
 
   if (criticalIntent) return criticalIntent;
 
+  if (universalCtaIntentPatterns.navigation_request.test(sourceText)) return "navigation_request";
+  if (universalCtaIntentPatterns.location_request.test(sourceText)) return "location_request";
   if (universalCtaIntentPatterns.phone_request.test(sourceText)) return "phone";
   if (universalCtaIntentPatterns.website_request.test(sourceText)) return "website";
-  if (universalCtaIntentPatterns.location_request.test(sourceText)) return "location_request";
-  if (universalCtaIntentPatterns.navigation_request.test(sourceText)) return "navigation_request";
   if (universalCtaIntentPatterns.booking_request.test(sourceText)) return "booking_request";
 
   return "general_info";
+}
+
+function classifyRoutingIntent(userMessage) {
+  const sourceText = String(userMessage || "");
+  const hasLocationIntent = routingIntentPatterns.location.test(sourceText);
+  const hasBusinessIntent = routingIntentPatterns.business.test(sourceText);
+
+  if (hasLocationIntent) {
+    return {
+      detected_intent_type: "location",
+      intent_confidence_score: hasBusinessIntent ? 0.86 : 0.95,
+      routing_path: "location"
+    };
+  }
+
+  if (hasBusinessIntent || classifyCriticalUniversalCtaIntent(sourceText)) {
+    return {
+      detected_intent_type: "business",
+      intent_confidence_score: hasBusinessIntent ? 0.92 : 0.88,
+      routing_path: "business"
+    };
+  }
+
+  return {
+    detected_intent_type: "general",
+    intent_confidence_score: 0.55,
+    routing_path: "general"
+  };
 }
 
 function normalizeEntityId(value) {
@@ -1380,7 +1412,7 @@ function buildSfpTruthCtas(entity, intent) {
     }));
 }
 
-function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = "", llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", fallbackPathUsed = "" } = {}) {
+function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = "", llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackPathUsed = "" } = {}) {
   const resolvedEntity = resolveStructuredEntity(entity);
   const allowedUrls = resolvedEntity ? {
     phone: resolvedEntity.phone,
@@ -1430,6 +1462,7 @@ function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = ""
       fallbackTriggered,
       entityMatchConfidence,
       entityResolutionSource,
+      intentRouting,
       fallbackPathUsed
     })
   };
@@ -1502,6 +1535,7 @@ async function finalizeResponse({
   entity = null,
   entityMatchConfidence = 0,
   entityResolutionSource = "",
+  intentRouting = null,
   fallbackTriggered = false,
   fallbackPathUsed = "",
   className = "bot-message",
@@ -1511,6 +1545,7 @@ async function finalizeResponse({
 } = {}) {
   const pipelineStepLog = [];
   const hydratedEntity = resolveStructuredEntity(entity);
+  const routingDebug = intentRouting || classifyRoutingIntent(userMessage);
   let generatedText = llmText;
   let generatedCtaDebug = ctaDebug;
 
@@ -1550,6 +1585,7 @@ async function finalizeResponse({
     fallbackTriggered: truthFallbackTriggered,
     entityMatchConfidence,
     entityResolutionSource,
+    intentRouting: routingDebug,
     fallbackPathUsed
   });
   pipelineStepLog.push("enforce");
@@ -1564,6 +1600,9 @@ async function finalizeResponse({
     cta_debug: enforced.debug,
     entity_match_confidence: entityMatchConfidence,
     entity_resolution_source: entityResolutionSource,
+    detected_intent_type: routingDebug.detected_intent_type,
+    intent_confidence_score: routingDebug.intent_confidence_score,
+    routing_path: routingDebug.routing_path,
     fallback_triggered: truthFallbackTriggered,
     fallback_path_used: truthFallbackTriggered ? fallbackPathUsed : "",
     missing_fields_list: missingFieldsList,
@@ -1591,15 +1630,8 @@ async function finalizeResponse({
   return finalResponse;
 }
 
-function isFactualContactIntent(text) {
-  const sourceText = String(text || "");
-
-  return callIntentPattern.test(sourceText)
-    || universalCtaIntentPatterns.phone_request.test(sourceText)
-    || universalCtaIntentPatterns.website_request.test(sourceText)
-    || universalCtaIntentPatterns.location_request.test(sourceText)
-    || universalCtaIntentPatterns.navigation_request.test(sourceText)
-    || universalCtaIntentPatterns.booking_request.test(sourceText);
+function isBusinessContactIntent(text) {
+  return classifyRoutingIntent(text).routing_path === "business";
 }
 
 function getRequestedMissingTruthField(intent, missingFields = []) {
@@ -1607,7 +1639,6 @@ function getRequestedMissingTruthField(intent, missingFields = []) {
 
   if (intent === "phone" && missing.has("phone")) return "phone";
   if (intent === "website" && missing.has("website")) return "website";
-  if (["location_request", "navigation_request"].includes(intent) && missing.has("maps_url")) return "maps_url";
 
   return "";
 }
@@ -1684,14 +1715,22 @@ function detectGeneratedPhoneAttempt(text) {
     || hasContextualPhoneCandidate;
 }
 
-function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", fallbackPathUsed = "" } = {}) {
+function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackPathUsed = "" } = {}) {
   const phoneAction = actions.find((action) => action.type === "phone") || null;
   const hasLlmPhoneAttempt = Boolean(llmPhoneAttempt) || detectGeneratedPhoneAttempt(rawText);
   const ctaTypes = [...new Set(actions.map((action) => action.type))];
+  const routingDebug = intentRouting || {
+    detected_intent_type: "",
+    intent_confidence_score: 0,
+    routing_path: ""
+  };
 
   return {
     entity_match_confidence: Number(entityMatchConfidence) || 0,
     entity_resolution_source: entityResolutionSource,
+    detected_intent_type: routingDebug.detected_intent_type,
+    intent_confidence_score: routingDebug.intent_confidence_score,
+    routing_path: routingDebug.routing_path,
     fallback_triggered: Boolean(fallbackTriggered),
     fallback_path_used: fallbackTriggered ? fallbackPathUsed : "",
     missing_fields_list: entity?.missingFieldsList || truthLayerFactualFields,
@@ -3264,6 +3303,7 @@ async function sendMessage(text) {
 
   const copy = translations[currentLanguage];
   const messageId = createMessageId();
+  const intentRouting = classifyRoutingIntent(cleanText);
   let selectedIntent = detectConciergeIntent(cleanText);
   let selectedAffiliate = null;
   let resolvedEntity = null;
@@ -3324,9 +3364,9 @@ async function sendMessage(text) {
 
     const truthComplete = Boolean(resolvedEntity && hasTruthCompleteness(resolvedEntity));
     const fallbackRequired = Boolean(
-      (!activeEntity && mentionedEntityMatch?.ambiguous)
-      || (isFactualContactIntent(cleanText) && !resolvedEntity)
-      || (resolvedEntity && !truthComplete)
+      (intentRouting.routing_path === "business" && !activeEntity && mentionedEntityMatch?.ambiguous)
+      || (isBusinessContactIntent(cleanText) && !resolvedEntity)
+      || (intentRouting.routing_path === "business" && resolvedEntity && !truthComplete)
     );
 
     if (fallbackRequired) {
@@ -3354,6 +3394,9 @@ async function sendMessage(text) {
         sessionEntityId: activeEntityId,
         resolvedEntityId: resolvedEntity?.entityId || "",
         entity_resolution_source: entityResolutionSource,
+        detected_intent_type: intentRouting.detected_intent_type,
+        intent_confidence_score: intentRouting.intent_confidence_score,
+        routing_path: intentRouting.routing_path,
         fallback_path_used: fallbackPathUsed,
         fallback_triggered: true
       });
@@ -3364,6 +3407,7 @@ async function sendMessage(text) {
         entity: fallbackPathUsed === "clarification_request" ? null : resolvedEntity,
         entityMatchConfidence: entityMatchDebug.confidence,
         entityResolutionSource,
+        intentRouting,
         fallbackTriggered: true,
         fallbackPathUsed,
         className: "bot-message error",
@@ -3428,6 +3472,7 @@ async function sendMessage(text) {
       entity: resolvedEntity,
       entityMatchConfidence: entityMatchDebug.confidence,
       entityResolutionSource,
+      intentRouting,
       fallbackPathUsed: getActiveEntityId() ? "session_reuse" : "clarification_request",
       className: "bot-message",
       messageId,
@@ -3458,6 +3503,7 @@ async function sendMessage(text) {
       entity: resolvedEntity,
       entityMatchConfidence: entityMatchDebug.confidence,
       entityResolutionSource,
+      intentRouting,
       className: "bot-message error",
       messageId,
       onBeforeRender: () => {
