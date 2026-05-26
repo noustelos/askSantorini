@@ -1191,21 +1191,64 @@ function classifyUniversalCtaIntent(userMessage) {
 
 function classifyRoutingIntent(userMessage) {
   const sourceText = String(userMessage || "");
+  const normalizedText = sourceText.toLowerCase().replace(/[^\w\s\u0370-\u03FF]/g, "").trim();
+
+  const emergencyKeywords = ["hospital", "police", "emergency", "ambulance", "doctor", "clinic", "medical", "urgent", "fire", "νοσοκομείο", "αστυνομία", "ασθενοφόρο", "έκτακτ", "επείγον", "γιατρός", "κλινική"];
+  const contactKeywords = ["number", "phone", "contact", "call", "τηλέφωνο", "επικοινωνία"];
+
+  const foundEmergency = emergencyKeywords.filter(kw => normalizedText.includes(kw));
+  const foundContact = contactKeywords.filter(kw => normalizedText.includes(kw));
+  
+  let isRobustEmergency = false;
+  let robustEmergencyType = "general";
+  let matchedEmergencyKeywords = [];
+  let emergencyIntentConfidence = 0;
+
+  if (foundEmergency.length > 0 && foundContact.length > 0) {
+    isRobustEmergency = true;
+    emergencyIntentConfidence = 0.99;
+    matchedEmergencyKeywords = [...foundEmergency, ...foundContact];
+    
+    if (foundEmergency.some(kw => ["hospital", "doctor", "clinic", "medical", "νοσοκομείο", "γιατρός", "κλινική"].includes(kw))) {
+      robustEmergencyType = "hospital";
+    } else if (foundEmergency.some(kw => ["police", "αστυνομία"].includes(kw))) {
+      robustEmergencyType = "police";
+    }
+  }
+
+  const criticalIntent = classifyCriticalUniversalCtaIntent(sourceText);
   const hasLocationIntent = routingIntentPatterns.location.test(sourceText);
   const hasBusinessIntent = routingIntentPatterns.business.test(sourceText);
-  const createRoutingResult = (detectedIntentType, intentConfidenceScore, routingPath) => Object.freeze({
+  
+  const createRoutingResult = (detectedIntentType, intentConfidenceScore, routingPath, emergencyType = "", extraDebug = {}) => Object.freeze({
     detected_intent_type: detectedIntentType,
     intent_confidence_score: intentConfidenceScore,
     routing_path: routingPath,
     original_routing_path: routingPath,
-    routing_path_locked: routingPath === "location"
+    routing_path_locked: routingPath === "location" || routingPath === "emergency",
+    emergency_type: emergencyType,
+    ...extraDebug
   });
+
+  if (isRobustEmergency || criticalIntent) {
+    let finalEmergencyType = isRobustEmergency ? robustEmergencyType : "general";
+    if (!isRobustEmergency && criticalIntent) {
+      if (criticalIntent === "hospital_request" || criticalIntent === "emergency_service_request") finalEmergencyType = "hospital";
+      if (criticalIntent === "police_request") finalEmergencyType = "police";
+      emergencyIntentConfidence = 0.95;
+      matchedEmergencyKeywords = [criticalIntent];
+    }
+    return createRoutingResult("emergency", emergencyIntentConfidence, "emergency", finalEmergencyType, {
+      matched_emergency_keywords: matchedEmergencyKeywords,
+      emergency_intent_confidence: emergencyIntentConfidence
+    });
+  }
 
   if (hasLocationIntent) {
     return createRoutingResult("location", hasBusinessIntent ? 0.86 : 0.95, "location");
   }
 
-  if (hasBusinessIntent || classifyCriticalUniversalCtaIntent(sourceText)) {
+  if (hasBusinessIntent) {
     return createRoutingResult("business", hasBusinessIntent ? 0.92 : 0.88, "business");
   }
 
@@ -1415,7 +1458,7 @@ function buildSfpTruthCtas(entity, intent) {
     }));
 }
 
-function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = "", llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackAttemptedOverride = false, fallbackPathUsed = "" } = {}) {
+function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = "", llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackAttemptedOverride = false, locationFallbackTriggered = false, entityMissingLocationCase = false, fallbackPathUsed = "" } = {}) {
   const resolvedEntity = resolveStructuredEntity(entity);
   const allowedUrls = resolvedEntity ? {
     phone: resolvedEntity.phone,
@@ -1467,6 +1510,8 @@ function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = ""
       entityResolutionSource,
       intentRouting,
       fallbackAttemptedOverride,
+      locationFallbackTriggered,
+      entityMissingLocationCase,
       fallbackPathUsed
     })
   };
@@ -1541,6 +1586,8 @@ async function finalizeResponse({
   entityResolutionSource = "",
   intentRouting = null,
   fallbackAttemptedOverride = false,
+  locationFallbackTriggered = false,
+  entityMissingLocationCase = false,
   fallbackTriggered = false,
   fallbackPathUsed = "",
   className = "bot-message",
@@ -1598,6 +1645,8 @@ async function finalizeResponse({
     entityResolutionSource,
     intentRouting: routingDebug,
     fallbackAttemptedOverride,
+    locationFallbackTriggered,
+    entityMissingLocationCase,
     fallbackPathUsed
   });
   pipelineStepLog.push("enforce");
@@ -1617,6 +1666,8 @@ async function finalizeResponse({
     routing_path: routingDebug.routing_path,
     routing_path_locked: Boolean(routingDebug.routing_path_locked),
     fallback_attempted_override: Boolean(fallbackAttemptedOverride),
+    location_fallback_triggered: Boolean(locationFallbackTriggered),
+    entity_missing_location_case: Boolean(entityMissingLocationCase),
     fallback_triggered: truthFallbackTriggered,
     fallback_path_used: truthFallbackTriggered ? fallbackPathUsed : "",
     missing_fields_list: missingFieldsList,
@@ -1706,6 +1757,27 @@ function getTruthLayerFallbackMessage(missingFields = truthLayerFactualFields, {
   return "Verified contact details are not available right now." + nextBestAction;
 }
 
+function getLocationFallbackMessage(userMessage = "") {
+  const targetMatch = String(userMessage || "").match(/\b(?:to|towards|for|in|at|στο|στη|στην|στον|προς)\s+([\p{L}\d\s.'’-]{2,40})/iu);
+  const destination = targetMatch?.[1]?.replace(/[?.!,;:]+$/g, "").trim();
+
+  if (destination) {
+    return `I can help you get directions to ${destination}. Tell me where you are starting from, or open your map app and search the destination for the safest route.`;
+  }
+
+  return "I can help with directions. Tell me where you are starting from and where you want to go, and I’ll guide you with the safest route options.";
+}
+
+function getEmergencyFallbackMessage(emergencyType = "general") {
+  if (emergencyType === "police") {
+    return "For police assistance in Santorini, please dial 100 or the European Emergency Number 112.";
+  }
+  if (emergencyType === "hospital") {
+    return "For medical emergencies in Santorini, please dial 166 for an ambulance or 112 for the European Emergency Number.";
+  }
+  return "For any emergency in Santorini, please dial 112 (European Emergency Number) for immediate assistance. You can also dial 100 for Police, 166 for Ambulance, or 199 for the Fire Department.";
+}
+
 function sanitizeGeneratedFacts(text) {
   return String(text || "")
     .replace(markdownLinkPattern, "$1")
@@ -1729,7 +1801,7 @@ function detectGeneratedPhoneAttempt(text) {
     || hasContextualPhoneCandidate;
 }
 
-function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackAttemptedOverride = false, fallbackPathUsed = "" } = {}) {
+function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackAttemptedOverride = false, locationFallbackTriggered = false, entityMissingLocationCase = false, fallbackPathUsed = "" } = {}) {
   const phoneAction = actions.find((action) => action.type === "phone") || null;
   const hasLlmPhoneAttempt = Boolean(llmPhoneAttempt) || detectGeneratedPhoneAttempt(rawText);
   const ctaTypes = [...new Set(actions.map((action) => action.type))];
@@ -1748,6 +1820,8 @@ function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, acti
     routing_path: routingDebug.routing_path,
     routing_path_locked: Boolean(routingDebug.routing_path_locked),
     fallback_attempted_override: Boolean(fallbackAttemptedOverride),
+    location_fallback_triggered: Boolean(locationFallbackTriggered),
+    entity_missing_location_case: Boolean(entityMissingLocationCase),
     fallback_triggered: Boolean(fallbackTriggered),
     fallback_path_used: fallbackTriggered ? fallbackPathUsed : "",
     missing_fields_list: entity?.missingFieldsList || truthLayerFactualFields,
@@ -3379,6 +3453,87 @@ async function sendMessage(text) {
       ? hydrateTruthLayerEntity(selectedAffiliate.entityId, activeEntity ? "follow_up_request" : "resolved_request")
       : null;
     selectedAffiliate = resolvedEntity || selectedAffiliate;
+
+    if (intentRouting.routing_path === "emergency") {
+      const finalResponse = await finalizeResponse({
+        userMessage: cleanText,
+        llmText: getEmergencyFallbackMessage(intentRouting.emergency_type),
+        selectedIntent: "emergency_request",
+        entity: null,
+        entityMatchConfidence: 0,
+        entityResolutionSource: "fallback_prompt",
+        intentRouting,
+        fallbackAttemptedOverride: false,
+        fallbackTriggered: true,
+        fallbackPathUsed: "emergency_guidance",
+        className: "bot-message",
+        messageId,
+        onBeforeRender: () => {
+          const loadingEl = loadingId ? document.getElementById(loadingId) : null;
+          if (loadingEl) loadingEl.remove();
+        }
+      });
+      askSantoriniTrafficLog("AskSantorini Emergency Layer v1:", {
+        sessionId: getConciergeSessionId(),
+        routing_path: intentRouting.routing_path,
+        routing_path_locked: Boolean(intentRouting.routing_path_locked),
+        detected_intent: "emergency",
+        emergency_type: intentRouting.emergency_type,
+        matched_emergency_keywords: intentRouting.matched_emergency_keywords || [],
+        emergency_intent_confidence: intentRouting.emergency_intent_confidence || 0
+      });
+      latestInteractionEvent = buildEvent({
+        userMessage: cleanText,
+        botResponse: finalResponse.text,
+        intent: "emergency",
+        affiliate: "",
+        eventType: "message",
+        messageId
+      });
+      await sendEvent(latestInteractionEvent);
+      return;
+    }
+
+    if (intentRouting.routing_path === "location" && !resolvedEntity) {
+      const finalResponse = await finalizeResponse({
+        userMessage: cleanText,
+        llmText: getLocationFallbackMessage(cleanText),
+        selectedIntent: "navigation_request",
+        entity: null,
+        entityMatchConfidence: entityMatchDebug.confidence,
+        entityResolutionSource,
+        intentRouting,
+        fallbackAttemptedOverride,
+        locationFallbackTriggered: true,
+        entityMissingLocationCase: true,
+        fallbackTriggered: false,
+        fallbackPathUsed: "",
+        className: "bot-message",
+        messageId,
+        onBeforeRender: () => {
+          const loadingEl = loadingId ? document.getElementById(loadingId) : null;
+          if (loadingEl) loadingEl.remove();
+        }
+      });
+      askSantoriniTrafficLog("AskSantorini Location Fallback Handler v1:", {
+        sessionId: getConciergeSessionId(),
+        routing_path: intentRouting.routing_path,
+        routing_path_locked: Boolean(intentRouting.routing_path_locked),
+        location_fallback_triggered: true,
+        entity_missing_location_case: true,
+        fallback_attempted_override: fallbackAttemptedOverride
+      });
+      latestInteractionEvent = buildEvent({
+        userMessage: cleanText,
+        botResponse: finalResponse.text,
+        intent: finalResponse.intent,
+        affiliate: "",
+        eventType: "message",
+        messageId
+      });
+      await sendEvent(latestInteractionEvent);
+      return;
+    }
 
     const truthComplete = Boolean(resolvedEntity && hasTruthCompleteness(resolvedEntity));
     const fallbackAttemptedRoutingPath = (!activeEntity && mentionedEntityMatch?.ambiguous) || !resolvedEntity || (resolvedEntity && !truthComplete)
