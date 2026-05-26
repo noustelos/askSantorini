@@ -997,6 +997,7 @@ const phoneCandidatePattern = /(?:\+30[\s().-]*)?(?:\d[\s().-]*){3,14}\d/g;
 const callIntentPattern = /\b(call|phone|contact|emergency|dial|number|τηλέφωνο|κάλεσε|επικοινωνία|έκτακτη)\b/i;
 const emergencyIntentPattern = /\b(hospital|emergency|urgent care|police|ambulance|doctor|clinic|medical|health center|health centre|νοσοκομείο|έκτακτ|επείγον|αστυνομία|ασθενοφόρο|γιατρός|κλινική|κέντρο υγείας)\b/i;
 const mapsIntentPattern = /\b(maps?|google\s+maps?|directions?|navigate|navigation|location|address|route|χάρτης|χάρτες|οδηγίες|τοποθεσία|διεύθυνση)\b/i;
+const coordinatePattern = /-?\d{1,2}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}/;
 const universalCtaPlaceTypes = new Set(["hotel", "villa", "restaurant", "beach", "club", "place", "general_place"]);
 const universalCtaPhoneTypes = new Set(["hotel", "restaurant", "service", "transport/service"]);
 const universalCtaPriority = {
@@ -1029,6 +1030,18 @@ const universalCtaEntityTypePatterns = [
   { type: "club", pattern: /\b(club|beach\s+bar|nightclub|bar|κλαμπ)\b/i },
   { type: "transport/service", pattern: /\b(taxi|transfer|transfers|driver|chauffeur|service|transport|airport|port|ferry|ταξί|μεταφορά|οδηγός|λιμάνι|αεροδρόμιο)\b/i }
 ];
+const dataGovernanceAllowedTypes = new Set(["hotel", "villa", "restaurant", "beach", "club", "transport", "service", "place"]);
+const dataGovernanceRequiredFields = ["entity_id", "name", "type", "phone", "website", "maps_url", "active"];
+const dataGovernanceBooleanMap = {
+  true: true,
+  false: false,
+  yes: true,
+  no: false,
+  y: true,
+  n: false,
+  "1": true,
+  "0": false
+};
 
 function sanitizeLinkLabel(label, fallback = "Open link") {
   const cleanLabel = String(label || "").replace(/\s+/g, " ").trim();
@@ -1270,7 +1283,14 @@ function normalizeEntityId(value) {
 }
 
 function normalizeMapsUrl(rawUrl) {
-  const url = normalizeUrl(rawUrl || "");
+  const cleanUrl = String(rawUrl || "").trim();
+  const coordinateMatch = cleanUrl.match(coordinatePattern);
+
+  if (coordinateMatch && coordinateMatch[0] === cleanUrl) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanUrl)}`;
+  }
+
+  const url = normalizeUrl(cleanUrl);
 
   return url && isGoogleMapsUrl(url) ? url : "";
 }
@@ -1358,9 +1378,7 @@ function isFactualContactIntent(text) {
 }
 
 function getTruthLayerFallbackMessage() {
-  return currentLanguage === "el"
-    ? "Δεν έχω επιβεβαιωμένα στοιχεία για αυτή την επιχείρηση στη βάση μου, οπότε δεν θα μαντέψω τηλέφωνο, ιστοσελίδα ή τοποθεσία."
-    : "I do not have verified details for that business in my source data, so I will not guess a phone number, website, or location.";
+  return "Information temporarily unavailable";
 }
 
 function sanitizeGeneratedFacts(text) {
@@ -2091,10 +2109,12 @@ async function fetchGoogleSheetAffiliates(sheetUrl) {
   if (!csv.trim()) return [];
   const [headerRow, ...rows] = parseCsvRows(csv.trim());
   const headers = (headerRow || []).map((header) => header.trim().toLowerCase());
-  return rows.map((values) => values.reduce((row, value, index) => ({ ...row, [headers[index]]: value.trim() }), {}))
-    .filter((row) => isActiveAffiliateRow(row))
+  const validatedRows = rows
+    .map((values, index) => values.reduce((row, value, valueIndex) => ({ ...row, [headers[valueIndex]]: value.trim() }), { __rowNumber: index + 2 }))
     .map(normalizeAffiliateRow)
-    .filter(Boolean)
+    .filter(Boolean);
+
+  return dedupeGovernedEntities(validatedRows)
     .sort((a, b) => b.score - a.score);
 }
 
@@ -2202,17 +2222,169 @@ function ensureIntentOptimizationState(state, intentType) {
   return state.intents[intent];
 }
 
-function isActiveAffiliateRow(row) {
-  return ["true", "1"].includes(String(row?.active || "").trim().toLowerCase());
+function logDataGovernanceEvent(message, details = {}) {
+  console.info(`AskSantorini Data Governance v1: ${message}`, details);
+}
+
+function getGovernedField(row, ...fields) {
+  return fields.map((field) => String(row?.[field] || "").trim()).find(Boolean) || "";
+}
+
+function parseGovernedBoolean(value) {
+  const normalizedValue = String(value || "").trim().toLowerCase();
+
+  return Object.prototype.hasOwnProperty.call(dataGovernanceBooleanMap, normalizedValue)
+    ? dataGovernanceBooleanMap[normalizedValue]
+    : null;
+}
+
+function getMissingGovernanceFields(row) {
+  return dataGovernanceRequiredFields.filter((field) => {
+    return !getGovernedField(row, field);
+  });
+}
+
+function normalizeGovernancePhone(rawPhone) {
+  const normalizedPhone = normalizePhoneCandidate(rawPhone);
+
+  if (!normalizedPhone) return "";
+
+  const phoneNumber = normalizedPhone.replace(/^tel:/i, "");
+  return /^\+\d{8,15}$/.test(phoneNumber) || /^\d{3,11}$/.test(phoneNumber) ? normalizedPhone : "";
+}
+
+function normalizeGovernanceWebsite(rawUrl) {
+  const cleanUrl = String(rawUrl || "").trim();
+
+  if (!/^https?:\/\//i.test(cleanUrl)) return "";
+
+  return normalizeUrl(cleanUrl);
+}
+
+function normalizeGovernanceMapsUrl(rawMapsUrl) {
+  return normalizeMapsUrl(rawMapsUrl);
+}
+
+function getGovernanceDuplicateKey(entity) {
+  return `${entity.normalizedName}:${entity.type}`;
+}
+
+function isHigherPriorityEntity(candidate, current) {
+  if (!current) return true;
+  if (candidate.priority !== current.priority) return candidate.priority > current.priority;
+  return String(candidate.entityId).localeCompare(String(current.entityId)) < 0;
+}
+
+function dedupeGovernedEntities(entities) {
+  const byEntityId = new Map();
+  const byNameAndType = new Map();
+
+  entities.forEach((entity) => {
+    const duplicateMatches = [
+      byEntityId.get(entity.entityId),
+      byNameAndType.get(getGovernanceDuplicateKey(entity))
+    ].filter(Boolean);
+    const uniqueDuplicateMatches = [...new Map(duplicateMatches.map((match) => [match.entityId, match])).values()];
+    const existing = uniqueDuplicateMatches
+      .sort((a, b) => {
+        if (b.priority !== a.priority) return b.priority - a.priority;
+        return String(a.entityId).localeCompare(String(b.entityId));
+      })[0] || null;
+
+    if (existing && !isHigherPriorityEntity(entity, existing)) {
+      logDataGovernanceEvent("duplicate entity removed", {
+        rowNumber: entity.rowNumber,
+        entityId: entity.entityId,
+        duplicateOf: existing.entityId,
+        reason: byEntityId.has(entity.entityId) ? "entity_id" : "name_type"
+      });
+      return;
+    }
+
+    if (existing) {
+      uniqueDuplicateMatches.forEach((duplicate) => {
+        byEntityId.delete(duplicate.entityId);
+        byNameAndType.delete(getGovernanceDuplicateKey(duplicate));
+      });
+      logDataGovernanceEvent("duplicate entity replaced by higher priority row", {
+        rowNumber: entity.rowNumber,
+        entityId: entity.entityId,
+        replacedEntityIds: uniqueDuplicateMatches.map((duplicate) => duplicate.entityId)
+      });
+    }
+
+    byEntityId.set(entity.entityId, entity);
+    byNameAndType.set(getGovernanceDuplicateKey(entity), entity);
+  });
+
+  return Array.from(byEntityId.values());
 }
 
 function normalizeAffiliateRow(row) {
-  const type = String(row.type || "").trim().toLowerCase();
-  const url = normalizeUrl(row.website || row.url || "");
-  const name = String(row.name || "").trim();
-  const entityId = normalizeEntityId(row.entity_id || row.id || name);
+  const rowNumber = Number(row.__rowNumber) || 0;
+  const missingFields = getMissingGovernanceFields(row);
+  const rawActive = getGovernedField(row, "active");
+  const active = parseGovernedBoolean(rawActive);
+  const rawType = getGovernedField(row, "type");
+  const type = rawType.toLowerCase();
+  const rawWebsite = getGovernedField(row, "website");
+  const rawMapsUrl = getGovernedField(row, "maps_url");
+  const rawPhone = getGovernedField(row, "phone", "telephone", "tel");
+  const url = normalizeGovernanceWebsite(rawWebsite);
+  const mapsUrl = normalizeGovernanceMapsUrl(rawMapsUrl);
+  const phone = normalizeGovernancePhone(rawPhone);
+  const name = getGovernedField(row, "name").replace(/\s+/g, " ");
+  const entityId = normalizeEntityId(getGovernedField(row, "entity_id"));
 
-  if (!name || !entityId || !conciergeIntentPatterns[type]) return null;
+  if (missingFields.length) {
+    logDataGovernanceEvent("invalid row rejected: missing required fields", { rowNumber, missingFields });
+    return null;
+  }
+
+  if (active === null) {
+    logDataGovernanceEvent("invalid row rejected: active is not boolean", { rowNumber, active: rawActive });
+    return null;
+  }
+
+  if (active !== true) {
+    logDataGovernanceEvent("inactive row rejected", { rowNumber, entityId: entityId || getGovernedField(row, "entity_id") });
+    return null;
+  }
+
+  if (!entityId || !name) {
+    logDataGovernanceEvent("invalid row rejected: entity_id or name missing after sanitization", { rowNumber, entityId, name });
+    return null;
+  }
+
+  if (!dataGovernanceAllowedTypes.has(type)) {
+    logDataGovernanceEvent("invalid row rejected: unsupported type", { rowNumber, entityId, type: rawType });
+    return null;
+  }
+
+  if (!phone || !url || !mapsUrl) {
+    logDataGovernanceEvent("invalid row rejected: invalid factual fields", {
+      rowNumber,
+      entityId,
+      hasValidPhone: Boolean(phone),
+      hasValidWebsite: Boolean(url),
+      hasValidMapsUrl: Boolean(mapsUrl)
+    });
+    return null;
+  }
+
+  if (phone !== rawPhone || url !== rawWebsite || mapsUrl !== rawMapsUrl || type !== rawType || active !== rawActive) {
+    logDataGovernanceEvent("normalization applied", {
+      rowNumber,
+      entityId,
+      normalizedFields: {
+        phone: phone !== rawPhone,
+        website: url !== rawWebsite,
+        mapsUrl: mapsUrl !== rawMapsUrl,
+        type: type !== rawType,
+        active: active !== rawActive
+      }
+    });
+  }
 
   const priority = clampNumber(row.priority, 0, 10);
   const clicks = clampNumber(row.clicks, 0, Number.MAX_SAFE_INTEGER);
@@ -2232,6 +2404,7 @@ function normalizeAffiliateRow(row) {
   return {
     entityId,
     name,
+    normalizedName: name.toLowerCase(),
     type,
     tags: String(row.tags || "").split(/[|,]/).map((tag) => tag.trim()).filter(Boolean),
     priority,
@@ -2244,8 +2417,9 @@ function normalizeAffiliateRow(row) {
     url,
     websiteUrl: url,
     address: String(row.address || "").trim(),
-    mapsUrl: normalizeMapsUrl(row.maps || row.map || row.maps_url || row.maps_link || row.google_maps || row.google_maps_url || ""),
-    phone: normalizePhoneCandidate(row.phone || row.telephone || row.tel || ""),
+    mapsUrl,
+    phone,
+    rowNumber,
     score
   };
 }

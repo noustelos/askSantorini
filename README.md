@@ -63,10 +63,11 @@ Frontend affiliate data comes from the published Google Sheets CSV:
 https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0
 ```
 
-Required columns: `active`, `name`, `type`, `priority`, `tags`, `clicks`, `impressions`, `intent_strength`, `context_boost`.
-Truth Layer columns: `entity_id`, `phone`, `website` or `url`, `maps_url` or `maps_link`, `address`.
-Supported affiliate `type` values are `transport`, `hotel`, and `tour`.
-All phone numbers, websites, map links and addresses must come from the published Google Sheets CSV. The LLM only writes natural language guidance; factual contact data is resolved by `entity_id` and injected into CTA buttons after generation.
+Required governance columns: `entity_id`, `name`, `type`, `phone`, `website`, `maps_url`, `active`.
+Optional columns: `address`, `tags`, `priority`, `clicks`, `impressions`, `intent_strength`, `context_boost`.
+Supported entity `type` values are `hotel`, `villa`, `restaurant`, `beach`, `club`, `transport`, `service`, and `place`.
+All phone numbers, websites, map links and addresses must come from validated rows in the published Google Sheets CSV. The LLM only writes natural language guidance; factual contact data is resolved by `entity_id` and injected into CTA buttons after generation.
+Rows with missing required fields, invalid phones, broken URLs, invalid map links, unsupported types, inactive status, or duplicate lower-priority entities are rejected before they enter the Truth Layer.
 The frontend loads active affiliates from the published Google Sheets CSV and ranks them deterministically with:
 
 ```text
