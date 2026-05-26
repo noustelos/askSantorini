@@ -1478,7 +1478,39 @@ const conciergeSessionStorageKey = "askSantoriniConciergeSession";
 let conciergeAffiliates = [];
 let conciergeAffiliateLoadPromise = null;
 let latestInteractionEvent = null;
+let latestConciergeSelectionContext = null;
 const sentAffiliateImpressionMessageIds = new Set();
+
+const conciergeOptimizationConfig = {
+  abTesting: {
+    variants: ["A", "B"],
+    explorationBoost: 0.45
+  },
+  seasonalBoosts: {
+    summer: {
+      tour: 0.45,
+      transport: 0.25,
+      hotel: 0.05
+    },
+    winter: {
+      hotel: 0.35,
+      transport: 0.30,
+      tour: 0.10
+    },
+    shoulder: {
+      tour: 0.12,
+      transport: 0.12,
+      hotel: 0.12
+    }
+  },
+  drift: {
+    minSamplesForDecay: 8,
+    confidenceSampleSize: 50,
+    multiplier: 2.0,
+    minModifier: -0.60,
+    maxModifier: 0.80
+  }
+};
 
 const conciergeIntentPatterns = {
   transport: /\b(airport|air port|taxi|taxis|transfer|transfers|transport|transportation|pickup|pickups|pick-up|driver|chauffeur|port|ferry|arrival|departure)\b/i,
@@ -1584,11 +1616,13 @@ function normalizeAffiliateRow(row) {
   const ctr = Math.min(clicks / (impressions + 1), 1);
   const intentStrength = clampNumber(row.intent_strength, 0, 5);
   const contextBoost = clampNumber(row.context_boost, 0, 3);
-  const score =
-    priority * 0.4 +
-    ctr * 3.0 +
-    intentStrength * 1.5 +
-    contextBoost * 1.2;
+  const baseScoreBreakdown = {
+    priority: priority * 0.4,
+    ctr: ctr * 3.0,
+    intentStrength: intentStrength * 1.5,
+    contextBoost: contextBoost * 1.2
+  };
+  const score = Object.values(baseScoreBreakdown).reduce((total, value) => total + value, 0);
 
   return {
     name: String(row.name).trim(),
@@ -1597,8 +1631,10 @@ function normalizeAffiliateRow(row) {
     priority,
     clicks,
     impressions,
+    ctr,
     intentStrength,
     contextBoost,
+    baseScoreBreakdown,
     url,
     score
   };
@@ -1635,7 +1671,7 @@ function createMessageId() {
   return `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
-function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate = "", eventType = "message", messageId = "" } = {}) {
+function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate = "", eventType = "message", messageId = "", optimizationContext = null } = {}) {
   const event = {
     timestamp: new Date().toISOString(),
     session_id: getConciergeSessionId(),
@@ -1652,10 +1688,50 @@ function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate
     event.affiliate = affiliateName;
   }
 
+  if (optimizationContext) {
+    event.ab_variant = String(optimizationContext.variant || "");
+    event.seasonal_mode = String(optimizationContext.seasonalMode || "");
+    event.intent_category = String(optimizationContext.intent || intent || "");
+    event.selected_affiliate_score = String(optimizationContext.finalScore ?? "");
+    event.selected_affiliate_score_breakdown = JSON.stringify(optimizationContext.scoreBreakdown || {});
+  }
+
+  console.log("AskSantorini optimization event context:", {
+    eventType: event.event_type,
+    messageId: event.message_id,
+    variant: event.ab_variant || "",
+    seasonalMode: event.seasonal_mode || "",
+    intent: event.intent_category || event.intent,
+    affiliate: event.affiliate || "",
+    scoreBreakdown: optimizationContext?.scoreBreakdown || null
+  });
+
   return event;
 }
 
-async function sendAffiliateImpressionOnce({ messageId, userMessage, intent, affiliate }) {
+function getOptimizationContextFromEvent(event) {
+  if (!event?.ab_variant) {
+    return null;
+  }
+
+  let scoreBreakdown = {};
+
+  try {
+    scoreBreakdown = JSON.parse(event.selected_affiliate_score_breakdown || "{}") || {};
+  } catch {
+    scoreBreakdown = {};
+  }
+
+  return {
+    variant: event.ab_variant,
+    seasonalMode: event.seasonal_mode || "",
+    intent: event.intent_category || event.intent || "",
+    finalScore: event.selected_affiliate_score || "",
+    scoreBreakdown
+  };
+}
+
+async function sendAffiliateImpressionOnce({ messageId, userMessage, intent, affiliate, optimizationContext }) {
   if (!affiliate || !messageId || sentAffiliateImpressionMessageIds.has(messageId)) {
     return null;
   }
@@ -1667,7 +1743,8 @@ async function sendAffiliateImpressionOnce({ messageId, userMessage, intent, aff
     intent,
     affiliate,
     eventType: "impression",
-    messageId
+    messageId,
+    optimizationContext
   });
 
   await sendEvent(impressionEvent);
@@ -1711,6 +1788,104 @@ function setConciergeRotationState(state) {
   setStoredValue(conciergeRotationStorageKey, JSON.stringify(state || {}));
 }
 
+function hashString(value) {
+  return String(value || "").split("").reduce((hash, char) => {
+    return ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+  }, 0);
+}
+
+function getConciergeVariant(intentType) {
+  const variants = conciergeOptimizationConfig.abTesting.variants;
+  const sessionId = getConciergeSessionId();
+  const hash = Math.abs(hashString(`${sessionId}:${intentType || "general"}`));
+
+  return variants[hash % variants.length] || "A";
+}
+
+function getSeasonalMode(date = new Date()) {
+  const month = date.getMonth();
+
+  if (month >= 5 && month <= 8) {
+    return "summer";
+  }
+
+  if (month >= 9 || month <= 2) {
+    return "winter";
+  }
+
+  return "shoulder";
+}
+
+function getSeasonalModifier(affiliate, seasonalMode) {
+  return Number(conciergeOptimizationConfig.seasonalBoosts[seasonalMode]?.[affiliate?.type] || 0);
+}
+
+function getIntentPerformanceStats(intentType) {
+  const matches = conciergeAffiliates.filter((affiliate) => affiliate.type === intentType);
+  const clicks = matches.reduce((total, affiliate) => total + (Number(affiliate.clicks) || 0), 0);
+  const impressions = matches.reduce((total, affiliate) => total + (Number(affiliate.impressions) || 0), 0);
+  const averageCtr = impressions > 0 ? Math.min(clicks / (impressions + 1), 1) : 0;
+
+  return {
+    averageCtr,
+    affiliateCount: matches.length,
+    totalClicks: clicks,
+    totalImpressions: impressions
+  };
+}
+
+function getAbTestModifier(affiliate, variant) {
+  if (variant !== "B") {
+    return 0;
+  }
+
+  const confidence = Math.min((Number(affiliate.impressions) || 0) / conciergeOptimizationConfig.drift.confidenceSampleSize, 1);
+
+  return (1 - confidence) * conciergeOptimizationConfig.abTesting.explorationBoost;
+}
+
+function getDriftModifier(affiliate, intentStats) {
+  const config = conciergeOptimizationConfig.drift;
+  const impressions = Number(affiliate.impressions) || 0;
+  const confidence = Math.min(impressions / config.confidenceSampleSize, 1);
+  const relativeCtr = (Number(affiliate.ctr) || 0) - (Number(intentStats.averageCtr) || 0);
+  const rawModifier = relativeCtr * config.multiplier * confidence;
+
+  if (impressions < config.minSamplesForDecay && rawModifier < 0) {
+    return 0;
+  }
+
+  return clampNumber(rawModifier, config.minModifier, config.maxModifier);
+}
+
+function buildAffiliateScoreContext({ affiliate, intentType, userMessage, variant, seasonalMode, intentStats }) {
+  const normalizedMessage = String(userMessage || "").toLowerCase();
+  const tagScore = getAffiliateTags(affiliate).reduce((score, tag) => {
+    return tag && normalizedMessage.includes(tag) ? score + 1 : score;
+  }, 0);
+  const abTestModifier = getAbTestModifier(affiliate, variant);
+  const seasonalModifier = getSeasonalModifier(affiliate, seasonalMode);
+  const driftModifier = getDriftModifier(affiliate, intentStats);
+  const scoreBreakdown = {
+    ...(affiliate.baseScoreBreakdown || {}),
+    abTestModifier,
+    seasonalModifier,
+    driftModifier,
+    tagScore
+  };
+  const finalScore = Object.values(scoreBreakdown).reduce((total, value) => total + (Number(value) || 0), 0);
+
+  return {
+    affiliate,
+    intent: intentType,
+    variant,
+    seasonalMode,
+    intentStats,
+    scoreBreakdown,
+    finalScore
+  };
+}
+
 function getNextConciergeRotationIndex(intentType, matchCount) {
   if (!intentType || matchCount < 2) return 0;
 
@@ -1725,23 +1900,25 @@ function getNextConciergeRotationIndex(intentType, matchCount) {
 }
 
 function chooseConciergeAffiliate(intentType, userMessage) {
+  latestConciergeSelectionContext = null;
+
   if (!intentType) return null;
 
-  const normalizedMessage = String(userMessage || "").toLowerCase();
+  const variant = getConciergeVariant(intentType);
+  const seasonalMode = getSeasonalMode();
+  const intentStats = getIntentPerformanceStats(intentType);
   const matches = conciergeAffiliates
     .filter((affiliate) => affiliate.type === intentType)
-    .map((affiliate) => {
-      const tagScore = getAffiliateTags(affiliate).reduce((score, tag) => {
-        return tag && normalizedMessage.includes(tag) ? score + 1 : score;
-      }, 0);
-
-      return {
-        affiliate,
-        score: (Number(affiliate.score ?? affiliate.priority) || 0) * 100 + tagScore
-      };
-    })
+    .map((affiliate) => buildAffiliateScoreContext({
+      affiliate,
+      intentType,
+      userMessage,
+      variant,
+      seasonalMode,
+      intentStats
+    }))
     .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
+      if (b.finalScore !== a.finalScore) return b.finalScore - a.finalScore;
       return String(a.affiliate.name || "").localeCompare(String(b.affiliate.name || ""));
     });
 
@@ -1749,8 +1926,23 @@ function chooseConciergeAffiliate(intentType, userMessage) {
 
   const topMatches = matches.slice(0, Math.min(3, matches.length));
   const selectedIndex = getNextConciergeRotationIndex(intentType, topMatches.length);
+  latestConciergeSelectionContext = topMatches[selectedIndex] || null;
 
-  return topMatches[selectedIndex]?.affiliate || null;
+  console.log("AskSantorini concierge optimization selection:", {
+    intent: intentType,
+    variant,
+    seasonalMode,
+    selectedAffiliate: latestConciergeSelectionContext?.affiliate?.name || "",
+    scoreBreakdown: latestConciergeSelectionContext?.scoreBreakdown || {},
+    finalScore: latestConciergeSelectionContext?.finalScore || 0,
+    rankedAffiliates: topMatches.map((match) => ({
+      name: match.affiliate.name,
+      finalScore: match.finalScore,
+      scoreBreakdown: match.scoreBreakdown
+    }))
+  });
+
+  return latestConciergeSelectionContext?.affiliate || null;
 }
 
 function getConciergeAffiliate(userMessage) {
@@ -1788,6 +1980,7 @@ async function sendMessage(text) {
   const messageId = createMessageId();
   const selectedIntent = detectConciergeIntent(cleanText);
   let selectedAffiliate = null;
+  let selectedOptimizationContext = null;
 
   appendMessage(cleanText, "user-message");
   userInput.value = "";
@@ -1799,11 +1992,13 @@ async function sendMessage(text) {
   try {
     const affiliates = await loadConciergeAffiliates();
     selectedAffiliate = affiliates.length ? chooseConciergeAffiliate(selectedIntent, cleanText) : null;
+    selectedOptimizationContext = latestConciergeSelectionContext;
     await sendAffiliateImpressionOnce({
       messageId,
       userMessage: cleanText,
       intent: selectedIntent,
-      affiliate: selectedAffiliate
+      affiliate: selectedAffiliate,
+      optimizationContext: selectedOptimizationContext
     });
     const workerMessage = buildConciergePrompt(cleanText, selectedAffiliate);
 
@@ -1842,7 +2037,8 @@ async function sendMessage(text) {
       intent: selectedIntent,
       affiliate: selectedAffiliate,
       eventType: "message",
-      messageId
+      messageId,
+      optimizationContext: selectedOptimizationContext
     });
 
     await sendEvent(latestInteractionEvent);
@@ -1860,7 +2056,8 @@ async function sendMessage(text) {
       intent: selectedIntent,
       affiliate: selectedAffiliate,
       eventType: "message",
-      messageId
+      messageId,
+      optimizationContext: selectedOptimizationContext
     });
     await sendEvent(latestInteractionEvent).catch(() => {});
 
@@ -1901,7 +2098,8 @@ document.addEventListener("click", (event) => {
     intent: latestInteractionEvent?.intent || chatAction || affiliate?.type || "",
     affiliate,
     eventType: "click",
-    messageId: latestInteractionEvent?.message_id || ""
+    messageId: latestInteractionEvent?.message_id || "",
+    optimizationContext: getOptimizationContextFromEvent(latestInteractionEvent)
   });
 
   if (chatAction) {
