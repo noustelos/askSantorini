@@ -63,9 +63,11 @@ Frontend affiliate data comes from the published Google Sheets CSV:
 https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0
 ```
 
-Required columns: `active`, `name`, `type`, `priority`, `tags`, `clicks`, `impressions`, `intent_strength`, `context_boost`, `url`.
+Required columns: `active`, `name`, `type`, `priority`, `tags`, `clicks`, `impressions`, `intent_strength`, `context_boost`.
+Truth Layer columns: `entity_id`, `phone`, `website` or `url`, `maps_url` or `maps_link`, `address`.
 Supported affiliate `type` values are `transport`, `hotel`, and `tour`.
-The frontend loads active affiliates from the published Google Sheets CSV and ranks them with:
+All phone numbers, websites, map links and addresses must come from the published Google Sheets CSV. The LLM only writes natural language guidance; factual contact data is resolved by `entity_id` and injected into CTA buttons after generation.
+The frontend loads active affiliates from the published Google Sheets CSV and ranks them deterministically with:
 
 ```text
 score = priority + (clicks / (impressions + 1)) + intent_strength + context_boost
@@ -79,7 +81,7 @@ CSP:
 
 Partner data is updated live from the published Google Sheets monetization log.
 If the Sheet is unavailable, the frontend fails gracefully with no affiliate suggestion.
-The frontend selects a single relevant affiliate and sends the final structured prompt to the Worker.
+The frontend selects a single relevant affiliate, stores its active `entity_id` for the session, and sends only non-contact entity context to the Worker.
 The Worker does not detect intent, rank affiliates, or construct concierge rules.
 
 ## Single Event Write Layer

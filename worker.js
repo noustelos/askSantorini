@@ -29,7 +29,7 @@ export default {
         return jsonResponse({ error: "Prompt is required." }, 400);
       }
 
-      const reply = await callGemini(env, prompt);
+      const reply = sanitizeGeneratedFacts(await callGemini(env, prompt));
 
       return jsonResponse({ reply });
     } catch (error) {
@@ -126,6 +126,19 @@ async function callGemini(env, prompt) {
   }
 
   return text;
+}
+
+function sanitizeGeneratedFacts(text) {
+  return String(text || "")
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, "$1")
+    .replace(/\b(?:(?:https?:\/\/|www\.)[^\s<>()]+|tel:\+?[0-9().\-\s]+[0-9])/gi, "")
+    .replace(/\btel:\+?[0-9().\-\s]+[0-9]\b/gi, "")
+    .replace(/\+30[\s().-]*(?:\d[\s().-]*){8,14}\d/g, "")
+    .replace(/\b(?:phone|telephone|tel|call|website|url|link|address|maps?|google maps)\s*:\s*[^.\n]+[.\n]?/gi, "")
+    .replace(/\b(?:τηλέφωνο|ιστοσελίδα|διεύθυνση|χάρτης|χάρτες)\s*:\s*[^.\n]+[.\n]?/gi, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function jsonResponse(payload, status = 200) {
