@@ -1478,6 +1478,7 @@ const conciergeSessionStorageKey = "askSantoriniConciergeSession";
 let conciergeAffiliates = [];
 let conciergeAffiliateLoadPromise = null;
 let latestInteractionEvent = null;
+const sentAffiliateImpressionMessageIds = new Set();
 
 const conciergeIntentPatterns = {
   transport: /\b(airport|air port|taxi|taxis|transfer|transfers|transport|transportation|pickup|pickups|pick-up|driver|chauffeur|port|ferry|arrival|departure)\b/i,
@@ -1583,6 +1584,11 @@ function normalizeAffiliateRow(row) {
   const ctr = Math.min(clicks / (impressions + 1), 1);
   const intentStrength = clampNumber(row.intent_strength, 0, 5);
   const contextBoost = clampNumber(row.context_boost, 0, 3);
+  const score =
+    priority * 0.4 +
+    ctr * 3.0 +
+    intentStrength * 1.5 +
+    contextBoost * 1.2;
 
   return {
     name: String(row.name).trim(),
@@ -1594,7 +1600,7 @@ function normalizeAffiliateRow(row) {
     intentStrength,
     contextBoost,
     url,
-    score: priority + ctr + intentStrength + contextBoost
+    score
   };
 }
 
@@ -1625,10 +1631,15 @@ function normalizeAffiliateName(affiliate) {
   return String(affiliate.name || "").trim();
 }
 
-function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate = "", eventType = "message" } = {}) {
+function createMessageId() {
+  return `msg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate = "", eventType = "message", messageId = "" } = {}) {
   const event = {
     timestamp: new Date().toISOString(),
     session_id: getConciergeSessionId(),
+    message_id: String(messageId || ""),
     user_message: String(userMessage || ""),
     bot_response: String(botResponse || ""),
     intent: String(intent || ""),
@@ -1642,6 +1653,26 @@ function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate
   }
 
   return event;
+}
+
+async function sendAffiliateImpressionOnce({ messageId, userMessage, intent, affiliate }) {
+  if (!affiliate || !messageId || sentAffiliateImpressionMessageIds.has(messageId)) {
+    return null;
+  }
+
+  sentAffiliateImpressionMessageIds.add(messageId);
+
+  const impressionEvent = buildEvent({
+    userMessage,
+    intent,
+    affiliate,
+    eventType: "impression",
+    messageId
+  });
+
+  await sendEvent(impressionEvent);
+
+  return impressionEvent;
 }
 
 async function sendEvent(event) {
@@ -1754,6 +1785,9 @@ async function sendMessage(text) {
   if (!chatBox || !userInput) return;
 
   const copy = translations[currentLanguage];
+  const messageId = createMessageId();
+  const selectedIntent = detectConciergeIntent(cleanText);
+  let selectedAffiliate = null;
 
   appendMessage(cleanText, "user-message");
   userInput.value = "";
@@ -1764,8 +1798,13 @@ async function sendMessage(text) {
 
   try {
     const affiliates = await loadConciergeAffiliates();
-    const selectedIntent = detectConciergeIntent(cleanText);
-    const selectedAffiliate = affiliates.length ? chooseConciergeAffiliate(selectedIntent, cleanText) : null;
+    selectedAffiliate = affiliates.length ? chooseConciergeAffiliate(selectedIntent, cleanText) : null;
+    await sendAffiliateImpressionOnce({
+      messageId,
+      userMessage: cleanText,
+      intent: selectedIntent,
+      affiliate: selectedAffiliate
+    });
     const workerMessage = buildConciergePrompt(cleanText, selectedAffiliate);
 
     const response = await fetch(workerUrl, {
@@ -1797,13 +1836,13 @@ async function sendMessage(text) {
     const reply = data?.reply || copy.noReplyMessage;
     console.log("AskSantorini CTA debug - raw bot response:", reply);
     appendMessage(reply, "bot-message");
-    const hasAffiliateImpression = Boolean(selectedAffiliate && (reply.includes(selectedAffiliate.name) || reply.includes(selectedAffiliate.url)));
     latestInteractionEvent = buildEvent({
       userMessage: cleanText,
       botResponse: reply,
       intent: selectedIntent,
       affiliate: selectedAffiliate,
-      eventType: hasAffiliateImpression ? "impression" : "message"
+      eventType: "message",
+      messageId
     });
 
     await sendEvent(latestInteractionEvent);
@@ -1818,8 +1857,10 @@ async function sendMessage(text) {
     latestInteractionEvent = buildEvent({
       userMessage: cleanText,
       botResponse: copy.disconnectedMessage,
-      intent: detectConciergeIntent(cleanText),
-      eventType: "message"
+      intent: selectedIntent,
+      affiliate: selectedAffiliate,
+      eventType: "message",
+      messageId
     });
     await sendEvent(latestInteractionEvent).catch(() => {});
 
@@ -1859,7 +1900,8 @@ document.addEventListener("click", (event) => {
     botResponse: latestInteractionEvent?.bot_response || "",
     intent: latestInteractionEvent?.intent || chatAction || affiliate?.type || "",
     affiliate,
-    eventType: "click"
+    eventType: "click",
+    messageId: latestInteractionEvent?.message_id || ""
   });
 
   if (chatAction) {
