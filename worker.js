@@ -39,7 +39,7 @@ export default {
   }
 };
 
-const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbzocLCBjm8m0C7-Y_nczceGvpLwsWDIBSa9O_AlEvMKgdVupauB6fEg5JYxMJ8mi5S7RQ/exec";
+const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbwefn-8Ghek_jMNYR1jcAsFFJe5dWmf0u2NH7kGEIMKSfv6DqnA0cQiZgQuw04Z8QMl/exec";
 const eventForwardUrls = [eventWebhookUrl];
 
 function normalizeEventPayload(payload) {
