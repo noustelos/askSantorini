@@ -1,0 +1,4 @@
+entity_id,name,type,phone,website,maps_url,active,address,tags,priority,legacy_name,legacy_type,legacy_tags,legacy_priority,legacy_active,legacy_url,legacy_impressions,legacy_clicks,legacy_ctr,legacy_last_updated,legacy_intent_strength,legacy_context_boost
+oia_sunset_cruises_tour,Oia Sunset Cruises,tour,,https://example.com/oia-sunset,,true,,"boat, sunset, volcano",9,Oia Sunset Cruises,tour,"boat, sunset, volcano",9,TRUE,https://example.com/oia-sunset,,,0.0%,,,
+santorini_transfers_transport,Santorini Transfers,transport,,https://example.com/transfers,,true,,"airport, port, taxi",10,Santorini Transfers,transport,"airport, port, taxi",10,TRUE,https://example.com/transfers,,,0.0%,,,
+astra_suites_hotel,Astra Suites,hotel,,https://example.com/astra,,false,,"luxury, caldera view, imerovigli",8,Astra Suites,hotel,"luxury, caldera view, imerovigli",8,FALSE,https://example.com/astra,,,0.0%,,,

@@ -1,0 +1,54 @@
+{
+  "source": "affiliate-sheet-backup-2026-05-26.csv",
+  "output": "affiliate-sheet-governance-v1-migrated-2026-05-26.csv",
+  "rowsMigrated": 3,
+  "rowsRejectedOrFlagged": 3,
+  "entitiesNormalized": 3,
+  "duplicateWinners": [],
+  "ambiguousMappings": [
+    {
+      "rowNumber": 2,
+      "field": "type",
+      "value": "tour",
+      "note": "No automatic mapping applied because Governance v1 enum does not include this value."
+    }
+  ],
+  "rejectedRows": [
+    {
+      "rowNumber": 2,
+      "entityId": "oia_sunset_cruises_tour",
+      "name": "Oia Sunset Cruises",
+      "type": "tour",
+      "reasons": [
+        "invalid type: tour",
+        "missing or invalid phone",
+        "missing or invalid maps_url"
+      ]
+    },
+    {
+      "rowNumber": 3,
+      "entityId": "santorini_transfers_transport",
+      "name": "Santorini Transfers",
+      "type": "transport",
+      "reasons": [
+        "missing or invalid phone",
+        "missing or invalid maps_url"
+      ]
+    },
+    {
+      "rowNumber": 4,
+      "entityId": "astra_suites_hotel",
+      "name": "Astra Suites",
+      "type": "hotel",
+      "reasons": [
+        "missing or invalid phone",
+        "missing or invalid maps_url"
+      ]
+    }
+  ],
+  "safety": {
+    "dataLoss": false,
+    "oldColumnsPreservedAsLegacyColumns": true,
+    "liveSheetModified": false
+  }
+}

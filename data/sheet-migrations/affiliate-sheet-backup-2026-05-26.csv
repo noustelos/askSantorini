@@ -1,0 +1,4 @@
+name,type,tags,priority,active,url,impressions,clicks,ctr,last_updated,intent_strength,context_boost
+Oia Sunset Cruises,tour,"boat, sunset, volcano",9,TRUE,https://example.com/oia-sunset,,,0.0%,,,
+Santorini Transfers,transport,"airport, port, taxi",10,TRUE,https://example.com/transfers,,,0.0%,,,
+Astra Suites,hotel,"luxury, caldera view, imerovigli",8,FALSE,https://example.com/astra,,,0.0%,,,
