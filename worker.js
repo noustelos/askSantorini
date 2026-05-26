@@ -31,19 +31,15 @@ export default {
 
       const generatedText = await callGemini(env, prompt);
       const reply = sanitizeGeneratedFacts(generatedText);
-      const detectedCtas = extractGeneratedUrlCtas(generatedText);
       const phoneLlmAttempt = detectGeneratedPhoneAttempt(generatedText);
 
-      console.log("AskSantorini CTA Enforcement Layer v2 Worker:", {
+      console.log("AskSantorini SFP Worker text gate:", {
         source_of_phone: phoneLlmAttempt ? "llm_attempt" : "none",
-        phone_llm_attempt_blocked: phoneLlmAttempt,
-        cta_generated: detectedCtas.length > 0,
-        cta_type: [...new Set(detectedCtas.map((cta) => cta.type))]
+        phone_llm_attempt_blocked: phoneLlmAttempt
       });
 
       return jsonResponse({
         reply,
-        detected_ctas: detectedCtas,
         cta_debug: {
           source_of_phone: phoneLlmAttempt ? "llm_attempt" : "none",
           phone_llm_attempt_blocked: phoneLlmAttempt
@@ -195,72 +191,6 @@ function sanitizeGeneratedFacts(text) {
     .replace(/[ \t]{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-}
-
-function normalizeUrl(rawUrl) {
-  const cleanUrl = String(rawUrl || "").trim();
-
-  if (!cleanUrl || /^tel:/i.test(cleanUrl)) {
-    return "";
-  }
-
-  try {
-    const url = new URL(/^www\./i.test(cleanUrl) ? `https://${cleanUrl}` : cleanUrl);
-    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
-  } catch {
-    return "";
-  }
-}
-
-function isGoogleMapsUrl(url) {
-  try {
-    const parsedUrl = new URL(url);
-    const host = parsedUrl.hostname.replace(/^www\./, "").toLowerCase();
-    const path = parsedUrl.pathname.toLowerCase();
-
-    return (
-      host === "goo.gl" && path.startsWith("/maps") ||
-      host === "maps.app.goo.gl" ||
-      host === "maps.google.com" ||
-      (host === "google.com" && path.startsWith("/maps"))
-    );
-  } catch {
-    return false;
-  }
-}
-
-function trimTrailingUrlPunctuation(url) {
-  return String(url || "").replace(/[.,!?;:]+$/, "");
-}
-
-function extractGeneratedUrlCtas(text) {
-  const sourceText = String(text || "");
-  const rawUrlPattern = /\b(?:(?:https?:\/\/|www\.)[^\s<>()]+|tel:\+?[0-9().\-\s]+[0-9])/gi;
-  const markdownLinkPattern = /\[([^\]]+)\]\(([^)\s]+)\)/g;
-  const actions = new Map();
-  const addUrl = (rawUrl) => {
-    const safeUrl = normalizeUrl(trimTrailingUrlPunctuation(rawUrl));
-
-    if (!safeUrl) {
-      return;
-    }
-
-    const type = isGoogleMapsUrl(safeUrl) ? "maps" : "link";
-    const label = type === "maps" ? "Open in Maps" : "Visit Website";
-    actions.set(`${type}:${safeUrl}`, { type, label, url: safeUrl });
-  };
-
-  sourceText.replace(markdownLinkPattern, (match, label, rawUrl) => {
-    addUrl(rawUrl || label);
-    return match;
-  });
-
-  sourceText.replace(rawUrlPattern, (match) => {
-    addUrl(match);
-    return match;
-  });
-
-  return Array.from(actions.values());
 }
 
 function detectGeneratedPhoneAttempt(text) {

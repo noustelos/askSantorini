@@ -998,17 +998,6 @@ const callIntentPattern = /\b(call|phone|contact|emergency|dial|number|τηλέ�
 const emergencyIntentPattern = /\b(hospital|emergency|urgent care|police|ambulance|doctor|clinic|medical|health center|health centre|νοσοκομείο|έκτακτ|επείγον|αστυνομία|ασθενοφόρο|γιατρός|κλινική|κέντρο υγείας)\b/i;
 const mapsIntentPattern = /\b(maps?|google\s+maps?|directions?|navigate|navigation|location|address|route|χάρτης|χάρτες|οδηγίες|τοποθεσία|διεύθυνση)\b/i;
 const coordinatePattern = /-?\d{1,2}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}/;
-const universalCtaPlaceTypes = new Set(["hotel", "villa", "restaurant", "beach", "club", "place", "general_place"]);
-const universalCtaPriority = {
-  phone: 1,
-  link: 2,
-  maps: 3
-};
-const criticalUniversalCtaPriority = {
-  phone: 1,
-  maps: 2,
-  link: 3
-};
 const criticalIntentPatterns = {
   emergency_service_request: /\b(emergency|emergencies|ambulance|fire\s*(?:department|brigade|service)?|paramedic|911|112|166|199|έκτακτ|επείγον|επείγουσα|επείγουσα\s+ανάγκη|ασθενοφόρο|πυροσβεστική)\b/i,
   hospital_request: /\b(hospital|hospitals|urgent\s+care|emergency\s+room|er\b|doctor|doctors|medical\s+(?:help|care|center|centre)|health\s+(?:center|centre)|clinic|νοσοκομείο|νοσοκομεια|γιατρ|κλινική|κέντρο\s+υγείας|κεντρο\s+υγειας)\b/i,
@@ -1022,16 +1011,9 @@ const universalCtaIntentPatterns = {
   booking_request: /\b(book|booking|reserve|reservation|availability|available|κράτηση|κρατήσω|διαθεσιμότητα|διαθέσιμο)\b/i,
   navigation_request: /\b(how\s+(?:do|can)\s+i\s+get\s+to|how\s+to\s+get\s+to|navigate|route|directions|go\s+to|οδηγίες|πώς\s+πάω|πως\s+πάω|διαδρομή)\b/i
 };
-const universalCtaEntityTypePatterns = [
-  { type: "hotel", pattern: /\b(hotel|hotels|suite|suites|resort|stay|accommodation|ξενοδοχείο|ξενοδοχειο|διαμονή)\b/i },
-  { type: "villa", pattern: /\b(villa|villas|βίλα|βιλα)\b/i },
-  { type: "restaurant", pattern: /\b(restaurant|taverna|tavern|bar|cafe|café|seafood|dinner|lunch|εστιατόριο|ταβέρνα|καφέ|φαγητό)\b/i },
-  { type: "beach", pattern: /\b(beach|beaches|παραλία|παραλια)\b/i },
-  { type: "club", pattern: /\b(club|beach\s+bar|nightclub|bar|κλαμπ)\b/i },
-  { type: "transport/service", pattern: /\b(taxi|transfer|transfers|driver|chauffeur|service|transport|airport|port|ferry|ταξί|μεταφορά|οδηγός|λιμάνι|αεροδρόμιο)\b/i }
-];
 const dataGovernanceAllowedTypes = new Set(["hotel", "villa", "restaurant", "beach", "club", "transport", "service", "place"]);
-const dataGovernanceRequiredFields = ["entity_id", "name", "type", "phone", "website", "maps_url", "active"];
+const dataGovernanceRequiredFields = ["entity_id", "name", "type", "active"];
+const truthLayerFactualFields = ["phone", "website", "maps_url"];
 const dataGovernanceBooleanMap = {
   true: true,
   false: false,
@@ -1121,19 +1103,6 @@ function isGoogleMapsUrl(url) {
   }
 }
 
-function trimTrailingUrlPunctuation(url) {
-  const trailingMatch = url.match(/[.,!?;:]+$/);
-
-  if (!trailingMatch) {
-    return { url, trailingText: "" };
-  }
-
-  return {
-    url: url.slice(0, -trailingMatch[0].length),
-    trailingText: trailingMatch[0]
-  };
-}
-
 function isPhoneContext(text, index, rawPhone) {
   const digits = String(rawPhone || "").replace(/\D/g, "");
 
@@ -1190,32 +1159,6 @@ function extractPhoneCandidates(text) {
   return candidates;
 }
 
-function extractUrlCandidates(text) {
-  const sourceText = String(text || "");
-  const candidates = [];
-  const seen = new Set();
-
-  sourceText.replace(rawUrlPattern, (match, offset) => {
-    const { url: displayUrl } = trimTrailingUrlPunctuation(match);
-    const href = normalizeUrl(displayUrl);
-
-    if (!href || seen.has(href)) {
-      return match;
-    }
-
-    seen.add(href);
-    candidates.push({
-      raw: displayUrl,
-      href,
-      index: offset
-    });
-
-    return match;
-  });
-
-  return candidates;
-}
-
 function classifyCriticalUniversalCtaIntent(text) {
   const sourceText = String(text || "");
 
@@ -1240,35 +1183,6 @@ function classifyUniversalCtaIntent(userMessage) {
   if (universalCtaIntentPatterns.booking_request.test(sourceText)) return "booking_request";
 
   return "general_info";
-}
-
-function normalizeUniversalCtaEntityType(type, tags = []) {
-  const cleanType = String(type || "").trim().toLowerCase();
-  const cleanTags = Array.isArray(tags) ? tags.map((tag) => String(tag).toLowerCase()) : [];
-
-  if (cleanType === "transport" || cleanType === "service") return "transport/service";
-  if (cleanType === "tour") return "transport/service";
-  if (cleanType === "place") return "general_place";
-  if (cleanType === "hotel" && cleanTags.some((tag) => /\bvillas?\b/i.test(tag))) return "villa";
-
-  return cleanType || "";
-}
-
-function inferUniversalCtaTypeFromText(text) {
-  const sourceText = String(text || "");
-  return universalCtaEntityTypePatterns.find(({ pattern }) => pattern.test(sourceText))?.type || "";
-}
-
-function stripUniversalCtaIntentPhrases(text) {
-  return String(text || "")
-    .replace(/\b(what\s+is|what's|tell\s+me|please|can\s+you|could\s+you|give\s+me|show\s+me|find|open)\b/gi, " ")
-    .replace(/\b(the\s+)?(website|web\s*site|site|official\s+site|official\s+website|url|link|page|homepage)\b/gi, " ")
-    .replace(/\b(where\s+is|where's|location|address|map|maps|google\s+maps|pin|directions?\s+to|how\s+to\s+get\s+to|how\s+(?:do|can)\s+i\s+get\s+to|navigate|route|go\s+to)\b/gi, " ")
-    .replace(/\b(ιστοσελίδα|σάιτ|σελίδα|λινκ|πού\s+είναι|που\s+είναι|τοποθεσία|διεύθυνση|χάρτης|χάρτες|οδηγίες|πώς\s+πάω|πως\s+πάω|διαδρομή)\b/gi, " ")
-    .replace(/[?!.,;:()[\]{}"“”]+/g, " ")
-    .replace(/\s+/g, " ")
-    .replace(/^(?:of|for|to|του|της|στο|στη|στον|στην)\s+/i, "")
-    .trim();
 }
 
 function normalizeEntityId(value) {
@@ -1302,6 +1216,19 @@ function getEntityWebsiteUrl(entity) {
 
 function getEntityMapsUrl(entity) {
   return normalizeMapsUrl(entity?.mapsUrl || entity?.maps_link || entity?.google_maps_url || "");
+}
+
+function getTruthLayerMissingFields(entity) {
+  return truthLayerFactualFields.filter((field) => {
+    if (field === "phone") return !getEntityPhoneUrl(entity);
+    if (field === "website") return !getEntityWebsiteUrl(entity);
+    if (field === "maps_url") return !getEntityMapsUrl(entity);
+    return true;
+  });
+}
+
+function hasTruthCompleteness(entity) {
+  return getTruthLayerMissingFields(entity).length < truthLayerFactualFields.length;
 }
 
 function getEntityById(entityId) {
@@ -1341,6 +1268,8 @@ function hydrateTruthLayerEntity(entityId, source = "unknown") {
     entityId: normalizedEntityId,
     hydrationSuccess: Boolean(resolvedEntity),
     phonePresent: Boolean(resolvedEntity?.phone),
+    truthComplete: Boolean(resolvedEntity?.truthComplete),
+    missingFieldsList: resolvedEntity?.missingFieldsList || [],
     source
   });
 
@@ -1403,30 +1332,258 @@ function resolveStructuredEntity(entity) {
   const phone = getEntityPhoneUrl(canonicalEntity);
   const website = getEntityWebsiteUrl(canonicalEntity);
   const maps = getEntityMapsUrl(canonicalEntity);
+  const missingFieldsList = getTruthLayerMissingFields(canonicalEntity);
+  const truthComplete = missingFieldsList.length < truthLayerFactualFields.length;
 
   return {
     ...canonicalEntity,
     phone,
     websiteUrl: website,
     mapsUrl: maps,
-    hasAuthoritativeFacts: Boolean(phone && website && maps)
+    missingFieldsList,
+    truthComplete,
+    hasAuthoritativeFacts: truthComplete
   };
 }
 
-function buildTruthLayerActions(entity) {
+function getSfpIntent(userMessage, selectedIntent = "", entity = null) {
+  const ctaIntent = classifyCriticalUniversalCtaIntent(userMessage) || classifyUniversalCtaIntent(userMessage);
+
+  return ctaIntent && ctaIntent !== "general_info"
+    ? ctaIntent
+    : String(selectedIntent || entity?.type || ctaIntent || "general_info");
+}
+
+function getSfpCtaPriority(intent) {
+  if (intent === "phone") return { phone: 1, link: 2, maps: 3 };
+  if (intent === "website") return { link: 1, phone: 2, maps: 3 };
+  if (["location_request", "navigation_request"].includes(intent)) return { maps: 1, phone: 2, link: 3 };
+  return { phone: 1, link: 2, maps: 3 };
+}
+
+function buildSfpTruthCtas(entity, intent) {
   const resolvedEntity = resolveStructuredEntity(entity);
   const actions = new Map();
+  const priority = getSfpCtaPriority(intent);
 
   if (!resolvedEntity) return [];
 
-  addUniversalCta(actions, createUniversalCta("phone", "Call Now", resolvedEntity.phone, "primary"));
-  addUniversalCta(actions, createUniversalCta("link", "Visit Website", resolvedEntity.websiteUrl, actions.size ? "secondary" : "primary"));
-  addUniversalCta(actions, createUniversalCta("maps", "Open in Maps", resolvedEntity.mapsUrl, actions.size ? "secondary" : "primary"));
+  addUniversalCta(actions, createUniversalCta("phone", "Call Now", resolvedEntity.phone, "secondary"));
+  addUniversalCta(actions, createUniversalCta("link", "Visit Website", resolvedEntity.websiteUrl, "secondary"));
+  addUniversalCta(actions, createUniversalCta("maps", "Open in Maps", resolvedEntity.mapsUrl, "secondary"));
 
-  return Array.from(actions.values()).map((action, index) => ({
-    ...action,
-    style: index === 0 ? "primary" : "secondary"
-  }));
+  return Array.from(actions.values())
+    .sort((a, b) => (priority[a.type] || 99) - (priority[b.type] || 99))
+    .map((action, index) => ({
+      ...action,
+      style: index === 0 ? "primary" : "secondary"
+    }));
+}
+
+function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = "", llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, fallbackPathUsed = "" } = {}) {
+  const resolvedEntity = resolveStructuredEntity(entity);
+  const allowedUrls = resolvedEntity ? {
+    phone: resolvedEntity.phone,
+    link: resolvedEntity.websiteUrl,
+    maps: resolvedEntity.mapsUrl
+  } : {};
+  const enforcedActions = [];
+  const seen = new Set();
+
+  actions.forEach((action) => {
+    const type = String(action?.type || "");
+    const expectedUrl = allowedUrls[type] || "";
+
+    if (!expectedUrl || action?.url !== expectedUrl || seen.has(type)) {
+      return;
+    }
+
+    seen.add(type);
+    enforcedActions.push({
+      type,
+      label: type === "phone" ? "Call Now" : type === "link" ? "Visit Website" : "Open in Maps",
+      url: expectedUrl,
+      style: action.style || "secondary"
+    });
+  });
+
+  if (resolvedEntity && !enforcedActions.length) {
+    buildSfpTruthCtas(resolvedEntity, intent).forEach((action) => enforcedActions.push(action));
+  }
+
+  const priority = getSfpCtaPriority(intent);
+  const sortedActions = enforcedActions
+    .sort((a, b) => (priority[a.type] || 99) - (priority[b.type] || 99))
+    .map((action, index) => ({
+      ...action,
+      style: index === 0 ? "primary" : "secondary"
+    }));
+
+  return {
+    actions: sortedActions,
+    debug: getCtaEnforcementDebug({
+      rawText,
+      intent,
+      entity: resolvedEntity,
+      actions: sortedActions,
+      llmPhoneAttempt,
+      fallbackTriggered,
+      entityMatchConfidence,
+      fallbackPathUsed
+    })
+  };
+}
+
+function renderSfpFragment(finalResponse) {
+  const fragment = document.createDocumentFragment();
+  const textContainer = document.createElement("div");
+
+  textContainer.className = "chat-message-text";
+  textContainer.appendChild(document.createTextNode(finalResponse.text || getTruthLayerFallbackMessage()));
+  fragment.appendChild(textContainer);
+
+  if (finalResponse.actions.length) {
+    const actionList = document.createElement("div");
+    actionList.className = "chat-action-layer";
+
+    finalResponse.actions.forEach((action) => {
+      const actionLink = document.createElement("a");
+
+      actionLink.href = action.url;
+      actionLink.className = `chat-action-button chat-action-${action.type} chat-action-${action.style || "secondary"}`;
+      actionLink.appendChild(document.createTextNode(sanitizeLinkLabel(action.label, action.url)));
+      actionLink.dataset.chatAction = action.type;
+
+      if (action.type !== "phone") {
+        actionLink.target = "_blank";
+        actionLink.rel = "noopener noreferrer";
+      }
+
+      actionList.appendChild(actionLink);
+    });
+
+    fragment.appendChild(actionList);
+  }
+
+  return fragment;
+}
+
+function appendFinalResponse(finalResponse, className = "bot-message") {
+  if (!chatBox) return null;
+
+  const msgDiv = document.createElement("div");
+  const id = "msg-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+  const fragment = renderSfpFragment(finalResponse);
+
+  msgDiv.id = id;
+  msgDiv.className = className;
+  msgDiv.replaceChildren(fragment);
+  chatBox.appendChild(msgDiv);
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  askSantoriniTrafficLog("AskSantorini SFP final render:", {
+    id,
+    pipeline_step_log: finalResponse.pipeline_step_log,
+    intent: finalResponse.intent,
+    actions: finalResponse.actions,
+    cta_debug: finalResponse.cta_debug,
+    html: msgDiv.innerHTML
+  });
+
+  return id;
+}
+
+async function finalizeResponse({
+  userMessage = "",
+  llmText = "",
+  generateLlmText = null,
+  selectedIntent = "",
+  entity = null,
+  entityMatchConfidence = 0,
+  fallbackTriggered = false,
+  fallbackPathUsed = "",
+  className = "bot-message",
+  messageId = "",
+  ctaDebug = null,
+  onBeforeRender = null
+} = {}) {
+  const pipelineStepLog = [];
+  const hydratedEntity = resolveStructuredEntity(entity);
+  let generatedText = llmText;
+  let generatedCtaDebug = ctaDebug;
+
+  pipelineStepLog.push("hydration");
+  const intent = getSfpIntent(userMessage, selectedIntent, hydratedEntity);
+  pipelineStepLog.push("intent");
+  const truthComplete = Boolean(hydratedEntity && hasTruthCompleteness(hydratedEntity));
+  const missingFieldsList = hydratedEntity?.missingFieldsList || truthLayerFactualFields;
+  const requestedMissingField = getRequestedMissingTruthField(intent, missingFieldsList);
+  const truthFallbackTriggered = Boolean(fallbackTriggered || (hydratedEntity && !truthComplete) || requestedMissingField);
+  const truthFallbackMessage = getTruthLayerFallbackMessage(requestedMissingField ? [requestedMissingField] : missingFieldsList, {
+      entity: hydratedEntity,
+      intent,
+      fallbackPathUsed
+  });
+  const ctas = buildSfpTruthCtas(hydratedEntity, intent);
+  pipelineStepLog.push("cta_gen");
+
+  if (typeof generateLlmText === "function") {
+    const llmResult = await generateLlmText();
+    generatedText = llmResult?.text || "";
+    generatedCtaDebug = llmResult?.ctaDebug || generatedCtaDebug;
+  }
+
+  const shouldUseTruthFallbackText = Boolean(
+    (requestedMissingField || (hydratedEntity && !truthComplete)) && !fallbackTriggered
+  );
+  const responseText = shouldUseTruthFallbackText ? truthFallbackMessage : (generatedText || truthFallbackMessage);
+  const sanitizedText = sanitizeGeneratedFacts(responseText);
+  pipelineStepLog.push("llm");
+  const enforced = enforceSfpCtas({
+    actions: ctas,
+    entity: hydratedEntity,
+    intent,
+    rawText: generatedText,
+    llmPhoneAttempt: generatedCtaDebug?.phone_llm_attempt_blocked,
+    fallbackTriggered: truthFallbackTriggered,
+    entityMatchConfidence,
+    fallbackPathUsed
+  });
+  pipelineStepLog.push("enforce");
+  pipelineStepLog.push("render");
+
+  const finalResponse = {
+    message_id: messageId,
+    text: sanitizedText || getTruthLayerFallbackMessage(),
+    intent,
+    entity: hydratedEntity,
+    actions: enforced.actions,
+    cta_debug: enforced.debug,
+    entity_match_confidence: entityMatchConfidence,
+    fallback_triggered: truthFallbackTriggered,
+    fallback_path_used: truthFallbackTriggered ? fallbackPathUsed : "",
+    missing_fields_list: missingFieldsList,
+    pipeline_step_log: pipelineStepLog
+  };
+
+  if (truthFallbackTriggered) {
+    askSantoriniTrafficLog("AskSantorini Helpful Action Fallback Layer v1:", {
+      entityId: hydratedEntity?.entityId || "",
+      fallback_path_used: fallbackPathUsed,
+      fallback_triggered: true,
+      missing_fields_list: missingFieldsList
+    });
+  }
+
+  if (typeof onBeforeRender === "function") {
+    onBeforeRender();
+  }
+
+  appendFinalResponse(finalResponse, className);
+
+  askSantoriniTrafficLog("AskSantorini Single Final Output Pipeline:", finalResponse);
+
+  return finalResponse;
 }
 
 function isFactualContactIntent(text) {
@@ -1440,8 +1597,63 @@ function isFactualContactIntent(text) {
     || universalCtaIntentPatterns.booking_request.test(sourceText);
 }
 
-function getTruthLayerFallbackMessage() {
-  return "Information temporarily unavailable";
+function getRequestedMissingTruthField(intent, missingFields = []) {
+  const missing = new Set(missingFields);
+
+  if (intent === "phone" && missing.has("phone")) return "phone";
+  if (intent === "website" && missing.has("website")) return "website";
+  if (["location_request", "navigation_request"].includes(intent) && missing.has("maps_url")) return "maps_url";
+
+  return "";
+}
+
+function getTruthLayerFallbackMessage(missingFields = truthLayerFactualFields, { entity = null, intent = "", fallbackPathUsed = "" } = {}) {
+  const missing = Array.isArray(missingFields) ? new Set(missingFields) : new Set();
+  const hasAllContactFieldsMissing = truthLayerFactualFields.every((field) => missing.has(field));
+  const hasWebsite = Boolean(getEntityWebsiteUrl(entity));
+  const hasMaps = Boolean(getEntityMapsUrl(entity));
+  const hasPhone = Boolean(getEntityPhoneUrl(entity));
+  const alternatives = [];
+
+  if (hasWebsite) alternatives.push("check the official website for the most up-to-date details");
+  if (hasMaps) alternatives.push("open the verified map listing for location details");
+  if (hasPhone && intent !== "phone") alternatives.push("use the verified contact number shown here");
+
+  const nextBestAction = alternatives.length
+    ? ` You can ${alternatives.slice(0, 2).join(" or ")}.`
+    : fallbackPathUsed === "clarification_request"
+      ? " Please send the full business name so I can check only verified details."
+      : " I’ll keep using the place from this chat and show verified actions when they are available.";
+
+  if (hasAllContactFieldsMissing) {
+    return "Verified contact details are not available right now." + nextBestAction;
+  }
+
+  if (missing.has("phone") && missing.size === 1) {
+    return "I couldn't find a verified contact number for this place right now." + nextBestAction;
+  }
+
+  if (missing.has("website") && missing.size === 1) {
+    return "I couldn't find a verified website for this place right now." + nextBestAction;
+  }
+
+  if (missing.has("maps_url") && missing.size === 1) {
+    return "I couldn't find a verified map listing for this place right now." + nextBestAction;
+  }
+
+  if (missing.has("phone")) {
+    return "I couldn't find a verified contact number for this place right now." + nextBestAction;
+  }
+
+  if (missing.has("website")) {
+    return "I couldn't find a verified website for this place right now." + nextBestAction;
+  }
+
+  if (missing.has("maps_url")) {
+    return "I couldn't find a verified map listing for this place right now." + nextBestAction;
+  }
+
+  return "Verified contact details are not available right now." + nextBestAction;
 }
 
 function sanitizeGeneratedFacts(text) {
@@ -1467,12 +1679,16 @@ function detectGeneratedPhoneAttempt(text) {
     || hasContextualPhoneCandidate;
 }
 
-function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false } = {}) {
+function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, fallbackPathUsed = "" } = {}) {
   const phoneAction = actions.find((action) => action.type === "phone") || null;
   const hasLlmPhoneAttempt = Boolean(llmPhoneAttempt) || detectGeneratedPhoneAttempt(rawText);
   const ctaTypes = [...new Set(actions.map((action) => action.type))];
 
   return {
+    entity_match_confidence: Number(entityMatchConfidence) || 0,
+    fallback_triggered: Boolean(fallbackTriggered),
+    fallback_path_used: fallbackTriggered ? fallbackPathUsed : "",
+    missing_fields_list: entity?.missingFieldsList || truthLayerFactualFields,
     source_of_phone: phoneAction && entity?.phone ? "truth_layer" : hasLlmPhoneAttempt ? "llm_attempt" : "none",
     phone_llm_attempt_blocked: hasLlmPhoneAttempt && !phoneAction,
     cta_generated: actions.length > 0,
@@ -1480,51 +1696,6 @@ function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, acti
     intent,
     entity_id: entity?.entityId || "",
     truth_layer_phone_present: Boolean(entity?.phone)
-  };
-}
-
-function extractUniversalEntityName(userMessage, botResponse, affiliate) {
-  if (affiliate?.name && !/^(hotels|tours)$/i.test(String(affiliate.name).trim())) {
-    return String(affiliate.name).trim();
-  }
-
-  const cleanedUserMessage = stripUniversalCtaIntentPhrases(userMessage);
-  if (cleanedUserMessage && cleanedUserMessage.length <= 90) {
-    return cleanedUserMessage;
-  }
-
-  const titleLikeMatch = String(botResponse || "").match(/\b([A-ZΑ-Ω][\p{L}'’.-]+(?:\s+[A-ZΑ-Ω][\p{L}'’.-]+){0,4})\b/u);
-  return titleLikeMatch?.[1]?.trim() || "";
-}
-
-function extractUniversalEntity({ userMessage = "", botResponse = "", affiliate = null } = {}) {
-  const resolvedAffiliate = resolveStructuredEntity(affiliate);
-  const intent = classifyUniversalCtaIntent(userMessage);
-  const extractedName = extractUniversalEntityName(userMessage, botResponse, resolvedAffiliate);
-  const textForType = [userMessage, botResponse, resolvedAffiliate?.type, ...(resolvedAffiliate?.tags || [])].join(" ");
-  const inferredType = resolvedAffiliate
-    ? normalizeUniversalCtaEntityType(resolvedAffiliate.type, resolvedAffiliate.tags)
-    : inferUniversalCtaTypeFromText(textForType);
-  const type = inferredType || (intent === "general_info" ? "" : "general_place");
-  const websiteUrl = getEntityWebsiteUrl(resolvedAffiliate);
-  const mapsUrl = getEntityMapsUrl(resolvedAffiliate);
-  const phone = getEntityPhoneUrl(resolvedAffiliate);
-
-  if ((!extractedName || !type) && intent === "general_info" && !resolvedAffiliate) {
-    return null;
-  }
-
-  const name = extractedName || String(resolvedAffiliate?.name || "").trim() || stripUniversalCtaIntentPhrases(userMessage);
-
-  return {
-    entityId: resolvedAffiliate?.entityId || "",
-    name,
-    type: type || "general_place",
-    hasWebsite: Boolean(websiteUrl),
-    hasLocation: Boolean(mapsUrl),
-    websiteUrl,
-    mapsUrl,
-    phone
   };
 }
 
@@ -1552,203 +1723,6 @@ function addUniversalCta(actions, action) {
   }
 }
 
-function collectDetectedUrlCtas(actions, text, style = "secondary") {
-  const sourceText = String(text || "");
-  const seenRawUrls = new Set();
-  const collectDetectedUrl = (rawUrl) => {
-    const { url: displayUrl } = trimTrailingUrlPunctuation(rawUrl);
-    const safeUrl = normalizeUrl(displayUrl);
-
-    if (!safeUrl || isTelephoneUrl(safeUrl)) {
-      return;
-    }
-
-    const type = isGoogleMapsUrl(safeUrl) ? "maps" : "link";
-    const label = type === "maps" ? "Open in Maps" : "Visit Website";
-    addUniversalCta(actions, createUniversalCta(type, label, safeUrl, style));
-  };
-
-  sourceText.replace(markdownLinkPattern, (match, label, rawUrl) => {
-    if (rawUrl) {
-      seenRawUrls.add(rawUrl);
-      collectDetectedUrl(rawUrl);
-    }
-    return match;
-  });
-
-  sourceText.replace(rawUrlPattern, (match) => {
-    const { url: displayUrl } = trimTrailingUrlPunctuation(match);
-    if (!seenRawUrls.has(displayUrl)) {
-      collectDetectedUrl(displayUrl);
-    }
-    return match;
-  });
-}
-
-function collectStructuredDetectedCtas(actions, detectedCtas = []) {
-  if (!Array.isArray(detectedCtas)) {
-    return;
-  }
-
-  detectedCtas.forEach((cta) => {
-    const inputType = String(cta?.type || "").toLowerCase();
-    const type = inputType === "website" ? "link" : inputType;
-
-    if (!["maps", "link"].includes(type)) {
-      return;
-    }
-
-    const label = type === "maps" ? "Open in Maps" : "Visit Website";
-    addUniversalCta(actions, createUniversalCta(type, label, cta?.url, "secondary"));
-  });
-}
-
-function buildUniversalCtas({ userMessage = "", botResponse = "", affiliate = null, detectedCtas = [] } = {}) {
-  const resolvedEntity = resolveStructuredEntity(affiliate);
-
-  if (resolvedEntity) {
-    return {
-      intent: classifyUniversalCtaIntent(userMessage),
-      entity: resolvedEntity,
-      actions: buildTruthLayerActions(resolvedEntity)
-    };
-  }
-
-  const combinedIntentText = [userMessage, botResponse].filter(Boolean).join(" ");
-  const intent = classifyCriticalUniversalCtaIntent(combinedIntentText) || classifyUniversalCtaIntent(userMessage);
-  const isCriticalIntent = isCriticalUniversalCtaIntent(intent);
-  const entity = extractUniversalEntity({ userMessage, botResponse, affiliate });
-  const actions = new Map();
-
-  collectStructuredDetectedCtas(actions, detectedCtas);
-  collectDetectedUrlCtas(actions, botResponse, "secondary");
-
-  if (!entity?.type && !isCriticalIntent) {
-    return {
-      intent,
-      entity,
-      actions: Array.from(actions.values())
-    };
-  }
-
-  const mapsUrl = entity?.mapsUrl || "";
-  const explicitWebsiteRequest = universalCtaIntentPatterns.website_request.test(combinedIntentText);
-  const websiteUrl = entity?.websiteUrl || "";
-  const isPlaceEntity = universalCtaPlaceTypes.has(entity?.type);
-  const shouldForceMaps = isPlaceEntity && Boolean(mapsUrl);
-  const shouldForceWebsite = entity?.hasWebsite && Boolean(websiteUrl);
-
-  if (isCriticalIntent) {
-    if ((shouldForceMaps || mapsIntentPattern.test(combinedIntentText)) && mapsUrl) {
-      addUniversalCta(actions, createUniversalCta("maps", "Open in Maps", mapsUrl, "secondary"));
-    }
-
-    if (explicitWebsiteRequest && websiteUrl) {
-      addUniversalCta(actions, createUniversalCta("link", "Visit Website", websiteUrl, "secondary"));
-    }
-
-    const criticalActions = Array.from(actions.values())
-      .sort((a, b) => (criticalUniversalCtaPriority[a.type] || 99) - (criticalUniversalCtaPriority[b.type] || 99))
-      .map((action, index) => ({
-        ...action,
-        style: index === 0 ? "primary" : "secondary"
-      }));
-
-    return {
-      intent,
-      entity,
-      actions: criticalActions
-    };
-  }
-
-  if (shouldForceMaps && mapsUrl) {
-    addUniversalCta(actions, createUniversalCta("maps", "Open in Maps", mapsUrl, "primary"));
-  }
-
-  if (shouldForceWebsite) {
-    addUniversalCta(actions, createUniversalCta("link", "Visit Website", websiteUrl, actions.size ? "secondary" : "primary"));
-  }
-
-  const sortedActions = Array.from(actions.values())
-    .sort((a, b) => (universalCtaPriority[a.type] || 99) - (universalCtaPriority[b.type] || 99))
-    .map((action, index) => ({
-      ...action,
-      style: index === 0 ? "primary" : action.style || "secondary"
-    }));
-
-  return {
-    intent,
-    entity,
-    actions: sortedActions
-  };
-}
-
-function extractMapsCandidates(text, urlCandidates) {
-  const sourceText = String(text || "");
-  const candidates = [];
-  const seen = new Set();
-
-  urlCandidates.forEach((candidate) => {
-    if (!isGoogleMapsUrl(candidate.href) || seen.has(candidate.href)) {
-      return;
-    }
-
-    seen.add(candidate.href);
-    candidates.push(candidate);
-  });
-
-  return candidates;
-}
-
-function getConciergeAction(label, href) {
-  if (isTelephoneUrl(href)) {
-    return null;
-  }
-
-  if (isGoogleMapsUrl(href)) {
-    return {
-      url: href,
-      label: "Open in Maps",
-      type: "maps",
-      style: "primary"
-    };
-  }
-
-  return {
-    url: href,
-    label: "Visit Website",
-    type: "link",
-    style: "secondary"
-  };
-}
-
-function collectConciergeAction(actions, label, href) {
-  const action = getConciergeAction(label, href);
-  if (!action) return;
-  actions.set(`${action.type}:${action.url}`, action);
-}
-
-function collectFuzzyConciergeActions(actions, text) {
-  const sourceText = String(text || "");
-  const phoneCandidates = extractPhoneCandidates(text);
-  const urlCandidates = extractUrlCandidates(text);
-  const mapsCandidates = extractMapsCandidates(text, urlCandidates);
-
-  mapsCandidates.forEach((candidate) => {
-    collectConciergeAction(actions, candidate.raw, candidate.href);
-  });
-
-  askSantoriniTrafficLog("AskSantorini CTA debug - extracted phone candidates:", phoneCandidates);
-  askSantoriniTrafficLog("AskSantorini CTA debug - extracted URLs:", urlCandidates);
-  askSantoriniTrafficLog("AskSantorini CTA debug - generated actions before render:", Array.from(actions.values()));
-
-  return {
-    phoneCandidates,
-    urlCandidates,
-    mapsCandidates
-  };
-}
-
 function getRawPhoneRegexMatches(text) {
   const matches = [];
   const sourceText = String(text || "");
@@ -1767,242 +1741,8 @@ function getRawPhoneRegexMatches(text) {
   return matches;
 }
 
-function diagnosePhoneCtaFailure(text, phoneRegexMatches, phoneCandidates, actions) {
-  const telActions = actions.filter((action) => action.type === "phone");
-
-  if (!phoneRegexMatches.length) {
-    return "A) phone regex mismatch";
-  }
-
-  if (phoneRegexMatches.every((match) => !match.normalized)) {
-    return "B) normalization failure";
-  }
-
-  if (!phoneCandidates.length) {
-    return "C) post-processing skip";
-  }
-
-  if (!actions.length) {
-    return "D) action array overwrite";
-  }
-
-  if (!telActions.length) {
-    return "E) type filtering issue";
-  }
-
-  return "Phone CTA extraction OK";
-}
-
-function buildCtaDiagnosticResult(text) {
-  const sourceText = String(text || "");
-  const actions = new Map();
-  const phoneRegexMatches = getRawPhoneRegexMatches(sourceText);
-  const phoneCandidates = extractPhoneCandidates(sourceText);
-  const urlCandidates = extractUrlCandidates(sourceText);
-  const mapsCandidates = extractMapsCandidates(sourceText, urlCandidates);
-
-  urlCandidates.forEach((candidate) => {
-    collectConciergeAction(actions, candidate.raw, candidate.href);
-  });
-
-  mapsCandidates.forEach((candidate) => {
-    collectConciergeAction(actions, candidate.raw, candidate.href);
-  });
-
-  const actionOutput = Array.from(actions.values());
-
-  return {
-    rawInput: sourceText,
-    phoneRegexMatches,
-    detectedPhoneCandidates: phoneCandidates,
-    normalizedPhoneFormats: phoneRegexMatches.map((match) => match.normalized).filter(Boolean),
-    extractedUrls: urlCandidates,
-    extractedMaps: mapsCandidates,
-    finalCtaActionOutput: actionOutput,
-    diagnosis: diagnosePhoneCtaFailure(sourceText, phoneRegexMatches, phoneCandidates, actionOutput)
-  };
-}
-
-function runPhoneCtaExtractionDiagnosticTest() {
-  const phoneInputs = [
-    "+30 22860 353000",
-    "22860 353000",
-    "112",
-    "166",
-    "call 22860 353000",
-    "emergency number 112"
-  ];
-  const comparisonInputs = [
-    "https://www.google.com/maps/place/Fira+Santorini",
-    "www.google.com/maps/place/Fira+Santorini",
-    "https://asksantorini.ai"
-  ];
-
-  if (getTrafficSnapshot().trafficMode === "high" || getTrafficSnapshot().trafficMode === "degraded") {
-    return;
-  }
-
-  console.group("AskSantorini phone CTA extraction diagnostic");
-  phoneInputs.forEach((input) => {
-    console.log("Phone CTA diagnostic case:", buildCtaDiagnosticResult(input));
-  });
-  comparisonInputs.forEach((input) => {
-    console.log("Maps/URL comparison diagnostic case:", buildCtaDiagnosticResult(input));
-  });
-  console.log("Pipeline comparison notes:", {
-    phoneRegex: String(phoneCandidatePattern),
-    phoneRequiresContext: false,
-    phoneContextPatternRetainedForDebug: String(callIntentPattern),
-    emergencyBypass: String(emergencyIntentPattern),
-    urlRegex: String(rawUrlPattern),
-    mapsIntent: String(mapsIntentPattern),
-    likelyDifference: "Phone, URL, and maps candidates now become actions after normalization without requiring phone-specific intent permission."
-  });
-  console.groupEnd();
-}
-
-runPhoneCtaExtractionDiagnosticTest();
-
-function parseCtaDebugData(text) {
-  const sourceText = String(text || "");
-  const markdownLinks = [];
-  const rawUrls = [];
-  const urls = [];
-  const telLinks = [];
-  const mapsLinks = [];
-  const seen = new Set();
-
-  const collectUrl = (rawUrl, label = "") => {
-    const { url: displayUrl } = trimTrailingUrlPunctuation(rawUrl);
-    const safeUrl = normalizeUrl(displayUrl);
-
-    if (!safeUrl || seen.has(safeUrl)) {
-      return;
-    }
-
-    seen.add(safeUrl);
-
-    const item = {
-      raw: rawUrl,
-      href: safeUrl,
-      label: sanitizeLinkLabel(label, displayUrl)
-    };
-
-    if (isTelephoneUrl(safeUrl)) {
-      telLinks.push(item);
-    } else {
-      urls.push(item);
-    }
-
-    if (isGoogleMapsUrl(safeUrl)) {
-      mapsLinks.push(item);
-    }
-  };
-
-  sourceText.replace(markdownLinkPattern, (match, label, rawUrl) => {
-    markdownLinks.push({ match, label, rawUrl });
-    collectUrl(rawUrl, label);
-    return match;
-  });
-
-  sourceText.replace(rawUrlPattern, (match) => {
-    rawUrls.push(match);
-    collectUrl(match);
-    return match;
-  });
-
-  const phoneCandidates = extractPhoneCandidates(sourceText);
-  const urlCandidates = extractUrlCandidates(sourceText);
-  const mapsCandidates = extractMapsCandidates(sourceText, urlCandidates);
-
-  return {
-    markdownLinks,
-    rawUrls,
-    urls,
-    telLinks,
-    mapsLinks,
-    phoneCandidates,
-    urlCandidates,
-    mapsCandidates
-  };
-}
-
-function transformBotMessageToSafeFragment(text, context = {}) {
-  const resolvedEntity = resolveStructuredEntity(context.resolvedEntity || context.affiliate || null);
-  const rawText = String(text || "");
-  const sourceText = sanitizeGeneratedFacts(rawText);
-  const fragment = document.createDocumentFragment();
-  const textContainer = document.createElement("div");
-  const actions = new Map();
-
-  textContainer.className = "chat-message-text";
-  textContainer.appendChild(document.createTextNode(sourceText || getTruthLayerFallbackMessage()));
-
-  const universalCtaResult = buildUniversalCtas({
-    userMessage: context.userMessage || "",
-    botResponse: rawText,
-    affiliate: resolvedEntity || context.affiliate || null,
-    detectedCtas: context.detectedCtas || []
-  });
-  universalCtaResult.actions.forEach((action) => addUniversalCta(actions, action));
-  fragment.appendChild(textContainer);
-
-  askSantoriniTrafficLog("AskSantorini CTA debug - after parsing:", parseCtaDebugData(sourceText));
-  askSantoriniTrafficLog("AskSantorini Universal CTA Engine v2:", universalCtaResult);
-  askSantoriniTrafficLog("AskSantorini CTA Enforcement Layer v2:", getCtaEnforcementDebug({
-    rawText,
-    intent: universalCtaResult.intent,
-    entity: universalCtaResult.entity,
-    actions: Array.from(actions.values()),
-    llmPhoneAttempt: context.ctaDebug?.phone_llm_attempt_blocked
-  }));
-
-  if (!actions.size) {
-    askSantoriniTrafficLog("AskSantorini CTA debug - after transformation:", {
-      actions: [],
-      html: getFragmentHtml(fragment)
-    });
-    return fragment;
-  }
-
-  const actionList = document.createElement("div");
-  actionList.className = "chat-action-layer";
-
-  actions.forEach((action) => {
-    const actionLink = document.createElement("a");
-
-    actionLink.href = action.url;
-    actionLink.className = `chat-action-button chat-action-${action.type} chat-action-${action.style || "secondary"}`;
-    actionLink.appendChild(document.createTextNode(sanitizeLinkLabel(action.label, action.url)));
-    actionLink.dataset.chatAction = action.type;
-
-    if (action.type !== "phone") {
-      actionLink.target = "_blank";
-      actionLink.rel = "noopener noreferrer";
-    }
-
-    actionList.appendChild(actionLink);
-  });
-
-  fragment.appendChild(actionList);
-
-  askSantoriniTrafficLog("AskSantorini CTA debug - after transformation:", {
-    actions: Array.from(actions.values()),
-    html: getFragmentHtml(fragment)
-  });
-
-  return fragment;
-}
-
 function processMessage(text, className, context = {}) {
   const fragment = document.createDocumentFragment();
-  const isInteractiveBotMessage = String(className).includes("bot-message")
-    && !String(className).includes("loading")
-    && !String(className).includes("error");
-
-  if (isInteractiveBotMessage) {
-    return transformBotMessageToSafeFragment(text, context);
-  }
 
   fragment.appendChild(document.createTextNode(String(text || "")));
 
@@ -2018,6 +1758,13 @@ function getFragmentHtml(fragment) {
 
 function appendMessage(text, className, context = {}) {
   if (!chatBox) return null;
+
+  const isFinalBotMessage = String(className).includes("bot-message")
+    && !String(className).includes("loading");
+
+  if (isFinalBotMessage) {
+    throw new Error("Final bot responses must use finalizeResponse().");
+  }
 
   const msgDiv = document.createElement("div");
   const id = "msg-" + Date.now() + "-" + Math.random().toString(36).slice(2);
@@ -2426,8 +2173,8 @@ function normalizeAffiliateRow(row) {
     return null;
   }
 
-  if (!phone || !url || !mapsUrl) {
-    logDataGovernanceEvent("invalid row rejected: invalid factual fields", {
+  if (!phone && !url && !mapsUrl) {
+    logDataGovernanceEvent("invalid row rejected: no valid factual fields", {
       rowNumber,
       entityId,
       hasValidPhone: Boolean(phone),
@@ -2469,7 +2216,7 @@ function normalizeAffiliateRow(row) {
   return {
     entityId,
     name,
-    normalizedName: name.toLowerCase(),
+    normalizedName: normalizeEntityLookupText(name),
     type,
     tags: String(row.tags || "").split(/[|,]/).map((tag) => tag.trim()).filter(Boolean),
     priority,
@@ -2485,6 +2232,7 @@ function normalizeAffiliateRow(row) {
     address: String(row.address || "").trim(),
     mapsUrl,
     phone,
+    missingFieldsList: getTruthLayerMissingFields({ phone, websiteUrl: url, mapsUrl }),
     rowNumber,
     score
   };
@@ -2496,35 +2244,204 @@ function detectConciergeIntent(message) {
   return Object.entries(conciergeIntentPatterns).find(([, pattern]) => pattern.test(cleanMessage))?.[0] || null;
 }
 
-function normalizeEntityLookupText(value) {
+const greeklishLookupMap = {
+  α: "a",
+  β: "v",
+  γ: "g",
+  δ: "d",
+  ε: "e",
+  ζ: "z",
+  η: "i",
+  θ: "th",
+  ι: "i",
+  κ: "k",
+  λ: "l",
+  μ: "m",
+  ν: "n",
+  ξ: "x",
+  ο: "o",
+  π: "p",
+  ρ: "r",
+  σ: "s",
+  ς: "s",
+  τ: "t",
+  υ: "y",
+  φ: "f",
+  χ: "ch",
+  ψ: "ps",
+  ω: "o"
+};
+
+const greeklishPlaceAliases = [
+  ["fira", ["thira", "thera", "fyra", "φηρα", "θυρα"]],
+  ["oia", ["ia", "oinia", "οια"]],
+  ["imerovigli", ["imerovili", "ημεροβιγλι"]],
+  ["firostefani", ["firostefani", "φυροστεφανι", "φηροστεφανι"]],
+  ["perissa", ["περισσα"]],
+  ["perivolos", ["περιβολος"]],
+  ["kamari", ["καμαρι"]]
+];
+
+function transliterateGreekToLatin(value) {
   return String(value || "")
+    .split("")
+    .map((char) => greeklishLookupMap[char] || char)
+    .join("");
+}
+
+function applyGreeklishAliases(value) {
+  let normalizedValue = ` ${value} `;
+
+  greeklishPlaceAliases.forEach(([canonical, aliases]) => {
+    [canonical, ...aliases].forEach((alias) => {
+      const pattern = new RegExp(`\\b${escapeRegExp(alias)}\\b`, "g");
+      normalizedValue = normalizedValue.replace(pattern, canonical);
+    });
+  });
+
+  return normalizedValue.trim();
+}
+
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeEntityLookupText(value, { transliterate = true } = {}) {
+  const normalized = String(value || "")
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9α-ωάέήίόύώϊϋΐΰ]+/gi, " ")
+    .replace(/[^a-z0-9α-ω]+/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+  const greeklish = transliterate ? transliterateGreekToLatin(normalized) : normalized;
+
+  return applyGreeklishAliases(greeklish)
+    .replace(/[^a-z0-9]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getLookupTokens(value) {
+  return normalizeEntityLookupText(value)
+    .split(" ")
+    .filter((token) => token.length > 1);
+}
+
+function levenshteinDistance(a, b) {
+  const left = String(a || "");
+  const right = String(b || "");
+  const matrix = Array.from({ length: right.length + 1 }, (_, row) => [row]);
+
+  for (let column = 0; column <= left.length; column += 1) {
+    matrix[0][column] = column;
+  }
+
+  for (let row = 1; row <= right.length; row += 1) {
+    for (let column = 1; column <= left.length; column += 1) {
+      const substitutionCost = right[row - 1] === left[column - 1] ? 0 : 1;
+      matrix[row][column] = Math.min(
+        matrix[row - 1][column] + 1,
+        matrix[row][column - 1] + 1,
+        matrix[row - 1][column - 1] + substitutionCost
+      );
+    }
+  }
+
+  return matrix[right.length][left.length];
+}
+
+function getSimilarityScore(a, b) {
+  const left = normalizeEntityLookupText(a);
+  const right = normalizeEntityLookupText(b);
+
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+  if (left.includes(right) || right.includes(left)) {
+    return Math.min(Math.min(left.length, right.length) / Math.max(left.length, right.length) + 0.2, 0.96);
+  }
+
+  const distance = levenshteinDistance(left, right);
+  return Math.max(0, 1 - distance / Math.max(left.length, right.length));
+}
+
+function scoreTruthLayerEntityMatch(message, entity) {
+  const normalizedMessage = normalizeEntityLookupText(message);
+  const normalizedName = normalizeEntityLookupText(entity.name);
+  const normalizedEntityId = normalizeEntityLookupText(entity.entityId);
+  const entityTokens = getLookupTokens(entity.name);
+  const messageTokens = new Set(getLookupTokens(message));
+
+  if (!normalizedMessage || !normalizedName) return 0;
+  if (normalizedMessage.includes(normalizedName) || normalizedMessage.includes(normalizedEntityId)) return 1;
+
+  const tokenMatches = entityTokens.filter((token) => messageTokens.has(token)).length;
+  const tokenCoverage = entityTokens.length ? tokenMatches / entityTokens.length : 0;
+  const tokenSimilarityScores = entityTokens.map((token) => {
+    return Math.max(...Array.from(messageTokens).map((messageToken) => getSimilarityScore(messageToken, token)), 0);
+  });
+  const averageTokenSimilarity = tokenSimilarityScores.length
+    ? tokenSimilarityScores.reduce((total, score) => total + score, 0) / tokenSimilarityScores.length
+    : 0;
+  const fuzzyScore = Math.max(getSimilarityScore(normalizedMessage, normalizedName), averageTokenSimilarity);
+
+  return Math.max(Math.min(tokenCoverage * 1.24, 0.86), fuzzyScore * 0.92);
+}
+
+function normalizeTruthLayerMatchResult(entity, confidence, candidates = [], ambiguous = false) {
+  return {
+    entity,
+    confidence: Number(confidence.toFixed(3)),
+    candidates,
+    ambiguous,
+    fallbackTriggered: Boolean(!entity || ambiguous)
+  };
 }
 
 function findTruthLayerEntityInMessage(message) {
   const normalizedMessage = normalizeEntityLookupText(message);
 
-  if (!normalizedMessage) return null;
+  if (!normalizedMessage) return normalizeTruthLayerMatchResult(null, 0);
 
-  return conciergeAffiliates
-    .filter((entity) => {
-      const normalizedName = normalizeEntityLookupText(entity.name);
-      const normalizedEntityId = normalizeEntityLookupText(entity.entityId);
-
-      return (normalizedName && normalizedMessage.includes(normalizedName))
-        || (normalizedEntityId && normalizedMessage.includes(normalizedEntityId));
-    })
+  const scoredMatches = conciergeAffiliates
+    .map((entity) => ({
+      entity,
+      confidence: scoreTruthLayerEntityMatch(message, entity)
+    }))
+    .filter((match) => match.confidence >= 0.62)
     .sort((a, b) => {
-      const lengthDelta = String(b.name || "").length - String(a.name || "").length;
+      if (b.confidence !== a.confidence) return b.confidence - a.confidence;
+      const lengthDelta = String(b.entity.name || "").length - String(a.entity.name || "").length;
       if (lengthDelta !== 0) return lengthDelta;
-      if (b.priority !== a.priority) return b.priority - a.priority;
-      return String(a.entityId || "").localeCompare(String(b.entityId || ""));
-    })[0] || null;
+      if (b.entity.priority !== a.entity.priority) return b.entity.priority - a.entity.priority;
+      return String(a.entity.entityId || "").localeCompare(String(b.entity.entityId || ""));
+    });
+
+  if (!scoredMatches.length) {
+    return normalizeTruthLayerMatchResult(null, 0);
+  }
+
+  const [topMatch, secondMatch] = scoredMatches;
+  const ambiguous = Boolean(secondMatch && topMatch.confidence < 0.98 && (topMatch.confidence - secondMatch.confidence) < 0.08);
+
+  if (ambiguous) {
+    return normalizeTruthLayerMatchResult(null, topMatch.confidence, scoredMatches.slice(0, 3).map((match) => ({
+      entityId: match.entity.entityId,
+      name: match.entity.name,
+      confidence: Number(match.confidence.toFixed(3))
+    })), true);
+  }
+
+  return normalizeTruthLayerMatchResult(
+    topMatch.entity,
+    topMatch.confidence,
+    scoredMatches.slice(0, 3).map((match) => ({
+      entityId: match.entity.entityId,
+      name: match.entity.name,
+      confidence: Number(match.confidence.toFixed(3))
+    }))
+  );
 }
 
 function getConciergeIntent(message) {
@@ -3345,6 +3262,7 @@ async function sendMessage(text) {
   let selectedAffiliate = null;
   let resolvedEntity = null;
   let selectedOptimizationContext = null;
+  let entityMatchDebug = normalizeTruthLayerMatchResult(null, 0);
 
   appendMessage(cleanText, "user-message");
   userInput.value = "";
@@ -3363,8 +3281,9 @@ async function sendMessage(text) {
 
     const activeEntityId = getActiveEntityId();
     const activeEntity = activeEntityId ? hydrateTruthLayerEntity(activeEntityId, "session_memory_request") : null;
-    const mentionedEntityMatch = activeEntity ? null : findTruthLayerEntityInMessage(cleanText);
-    const mentionedEntity = activeEntity || (mentionedEntityMatch ? hydrateTruthLayerEntity(mentionedEntityMatch.entityId, "message_match") : null);
+    const mentionedEntityMatch = activeEntity ? normalizeTruthLayerMatchResult(activeEntity, 1) : findTruthLayerEntityInMessage(cleanText);
+    entityMatchDebug = mentionedEntityMatch || entityMatchDebug;
+    const mentionedEntity = activeEntity || (mentionedEntityMatch?.entity ? hydrateTruthLayerEntity(mentionedEntityMatch.entity.entityId, "message_match") : null);
 
     if (activeEntity) {
       selectedAffiliate = activeEntity;
@@ -3380,6 +3299,10 @@ async function sendMessage(text) {
       selectedIntent = selectedIntent || mentionedEntity.type;
       setActiveEntity(mentionedEntity);
       latestConciergeSelectionContext = null;
+    } else if (mentionedEntityMatch?.ambiguous) {
+      selectedAffiliate = null;
+      selectedIntent = selectedIntent || classifyUniversalCtaIntent(cleanText);
+      latestConciergeSelectionContext = null;
     } else if (!selectedIntent && activeEntity && isFactualContactIntent(cleanText)) {
       selectedIntent = activeEntity.type;
       selectedAffiliate = activeEntity;
@@ -3392,17 +3315,59 @@ async function sendMessage(text) {
       : null;
     selectedAffiliate = resolvedEntity || selectedAffiliate;
 
-    if ((isFactualContactIntent(cleanText) && !resolvedEntity) || (resolvedEntity && !resolvedEntity.hasAuthoritativeFacts)) {
-      const loadingEl = loadingId ? document.getElementById(loadingId) : null;
-      if (loadingEl) loadingEl.remove();
+    const truthComplete = Boolean(resolvedEntity && hasTruthCompleteness(resolvedEntity));
+    const fallbackRequired = Boolean(
+      mentionedEntityMatch?.ambiguous
+      || (isFactualContactIntent(cleanText) && !resolvedEntity)
+      || (resolvedEntity && !truthComplete)
+    );
 
-      const fallbackMessage = getTruthLayerFallbackMessage();
-      appendMessage(fallbackMessage, "bot-message error");
+    if (fallbackRequired) {
+      const sessionFallbackEntity = activeEntityId
+        ? hydrateTruthLayerEntity(activeEntityId, "fallback_session_reuse")
+        : null;
+      if (sessionFallbackEntity) {
+        resolvedEntity = sessionFallbackEntity;
+        selectedAffiliate = sessionFallbackEntity;
+        selectedIntent = selectedIntent || sessionFallbackEntity.type;
+      }
+      const fallbackPathUsed = activeEntityId && !mentionedEntityMatch?.ambiguous
+        ? "session_reuse"
+        : "clarification_request";
+      const fallbackMessage = mentionedEntityMatch?.ambiguous
+        ? "I found more than one similar place. Please send the full business name so I can use only verified details."
+        : getTruthLayerFallbackMessage(resolvedEntity?.missingFieldsList || truthLayerFactualFields, {
+            entity: resolvedEntity,
+            intent: selectedIntent,
+            fallbackPathUsed
+          });
+      askSantoriniTrafficLog("AskSantorini Helpful Action Fallback Layer v1:", {
+        sessionId: getConciergeSessionId(),
+        sessionEntityId: activeEntityId,
+        resolvedEntityId: resolvedEntity?.entityId || "",
+        fallback_path_used: fallbackPathUsed,
+        fallback_triggered: true
+      });
+      const finalResponse = await finalizeResponse({
+        userMessage: cleanText,
+        llmText: fallbackMessage,
+        selectedIntent,
+        entity: fallbackPathUsed === "clarification_request" ? null : resolvedEntity,
+        entityMatchConfidence: entityMatchDebug.confidence,
+        fallbackTriggered: true,
+        fallbackPathUsed,
+        className: "bot-message error",
+        messageId,
+        onBeforeRender: () => {
+          const loadingEl = loadingId ? document.getElementById(loadingId) : null;
+          if (loadingEl) loadingEl.remove();
+        }
+      });
       latestInteractionEvent = buildEvent({
         userMessage: cleanText,
-        botResponse: fallbackMessage,
-        intent: selectedIntent,
-        affiliate: "",
+        botResponse: finalResponse.text,
+        intent: finalResponse.intent,
+        affiliate: fallbackPathUsed === "session_reuse" ? selectedAffiliate : "",
         eventType: "message",
         messageId
       });
@@ -3419,46 +3384,51 @@ async function sendMessage(text) {
       optimizationContext: selectedOptimizationContext
     });
     const workerMessage = buildConciergePrompt(cleanText, selectedAffiliate);
-
-    const response = await fetch(workerUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message: cleanText,
-        prompt: workerMessage
-      })
-    });
-
-    let data = null;
-
-    try {
-      data = await response.json();
-    } catch (jsonError) {
-      throw new Error("Worker did not return valid JSON.");
-    }
-
-    if (!response.ok) {
-      throw new Error(data?.error || "Worker request failed.");
-    }
-
-    const loadingEl = loadingId ? document.getElementById(loadingId) : null;
-    if (loadingEl) loadingEl.remove();
-
-    const reply = sanitizeGeneratedFacts(data?.reply || copy.noReplyMessage);
-    askSantoriniTrafficLog("AskSantorini CTA debug - raw bot response:", reply);
-    appendMessage(reply, "bot-message", {
+    const finalResponse = await finalizeResponse({
       userMessage: cleanText,
-      affiliate: selectedAffiliate,
-      resolvedEntity,
-      detectedCtas: data?.detected_ctas || [],
-      ctaDebug: data?.cta_debug || null
+      generateLlmText: async () => {
+        const response = await fetch(workerUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: cleanText,
+            prompt: workerMessage
+          })
+        });
+        let data = null;
+
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          throw new Error("Worker did not return valid JSON.");
+        }
+
+        if (!response.ok) {
+          throw new Error(data?.error || "Worker request failed.");
+        }
+
+        return {
+          text: data?.reply || copy.noReplyMessage,
+          ctaDebug: data?.cta_debug || null
+        };
+      },
+      selectedIntent,
+      entity: resolvedEntity,
+      entityMatchConfidence: entityMatchDebug.confidence,
+      fallbackPathUsed: getActiveEntityId() ? "session_reuse" : "clarification_request",
+      className: "bot-message",
+      messageId,
+      onBeforeRender: () => {
+        const loadingEl = loadingId ? document.getElementById(loadingId) : null;
+        if (loadingEl) loadingEl.remove();
+      }
     });
     latestInteractionEvent = buildEvent({
       userMessage: cleanText,
-      botResponse: reply,
-      intent: selectedIntent,
+      botResponse: finalResponse.text,
+      intent: finalResponse.intent,
       affiliate: selectedAffiliate,
       eventType: "message",
       messageId,
@@ -3470,14 +3440,23 @@ async function sendMessage(text) {
   } catch (error) {
     console.error("AskSantorini chat error:", error);
 
-    const loadingEl = loadingId ? document.getElementById(loadingId) : null;
-    if (loadingEl) loadingEl.remove();
-
-    appendMessage(copy.disconnectedMessage, "bot-message error");
+    const finalResponse = await finalizeResponse({
+      userMessage: cleanText,
+      llmText: copy.disconnectedMessage,
+      selectedIntent,
+      entity: resolvedEntity,
+      entityMatchConfidence: entityMatchDebug.confidence,
+      className: "bot-message error",
+      messageId,
+      onBeforeRender: () => {
+        const loadingEl = loadingId ? document.getElementById(loadingId) : null;
+        if (loadingEl) loadingEl.remove();
+      }
+    });
     latestInteractionEvent = buildEvent({
       userMessage: cleanText,
-      botResponse: copy.disconnectedMessage,
-      intent: selectedIntent,
+      botResponse: finalResponse.text,
+      intent: finalResponse.intent,
       affiliate: selectedAffiliate,
       eventType: "message",
       messageId,
