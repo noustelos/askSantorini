@@ -997,6 +997,27 @@ const callIntentPattern = /\b(call|phone|contact|emergency|dial|number|τηλέ�
 const emergencyIntentPattern = /\b(hospital|emergency|urgent care|police|ambulance|doctor|clinic|medical|health center|health centre|νοσοκομείο|έκτακτ|επείγον|αστυνομία|ασθενοφόρο|γιατρός|κλινική|κέντρο υγείας)\b/i;
 const mapsIntentPattern = /\b(maps?|google\s+maps?|directions?|navigate|navigation|location|address|route|χάρτης|χάρτες|οδηγίες|τοποθεσία|διεύθυνση)\b/i;
 const coordinatePattern = /-?\d{1,2}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}/;
+const universalCtaPlaceTypes = new Set(["hotel", "villa", "restaurant", "beach", "club", "place", "general_place"]);
+const universalCtaPhoneTypes = new Set(["hotel", "restaurant", "service", "transport/service"]);
+const universalCtaPriority = {
+  maps: 1,
+  website: 2,
+  phone: 3
+};
+const universalCtaIntentPatterns = {
+  website_request: /\b(website|web\s*site|site|official\s+site|official\s+website|url|link|page|homepage|ιστοσελίδα|site|σάιτ|σελίδα|link|λινκ)\b/i,
+  location_request: /\b(where\s+is|where's|location|address|map|maps|google\s+maps|pin|directions?\s+to|τοποθεσία|πού\s+είναι|που\s+είναι|διεύθυνση|χάρτης|χάρτες)\b/i,
+  booking_request: /\b(book|booking|reserve|reservation|availability|available|κράτηση|κρατήσω|διαθεσιμότητα|διαθέσιμο)\b/i,
+  navigation_request: /\b(how\s+(?:do|can)\s+i\s+get\s+to|how\s+to\s+get\s+to|navigate|route|directions|go\s+to|οδηγίες|πώς\s+πάω|πως\s+πάω|διαδρομή)\b/i
+};
+const universalCtaEntityTypePatterns = [
+  { type: "hotel", pattern: /\b(hotel|hotels|suite|suites|resort|stay|accommodation|ξενοδοχείο|ξενοδοχειο|διαμονή)\b/i },
+  { type: "villa", pattern: /\b(villa|villas|βίλα|βιλα)\b/i },
+  { type: "restaurant", pattern: /\b(restaurant|taverna|tavern|bar|cafe|café|seafood|dinner|lunch|εστιατόριο|ταβέρνα|καφέ|φαγητό)\b/i },
+  { type: "beach", pattern: /\b(beach|beaches|παραλία|παραλια)\b/i },
+  { type: "club", pattern: /\b(club|beach\s+bar|nightclub|bar|κλαμπ)\b/i },
+  { type: "transport/service", pattern: /\b(taxi|transfer|transfers|driver|chauffeur|service|transport|airport|port|ferry|ταξί|μεταφορά|οδηγός|λιμάνι|αεροδρόμιο)\b/i }
+];
 
 function sanitizeLinkLabel(label, fallback = "Open link") {
   const cleanLabel = String(label || "").replace(/\s+/g, " ").trim();
@@ -1181,6 +1202,183 @@ function buildMapsSearchUrl(query) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanQuery)}`;
 }
 
+function buildWebsiteSearchUrl(query) {
+  const cleanQuery = String(query || "").replace(/\s+/g, " ").trim();
+
+  if (!cleanQuery) {
+    return "";
+  }
+
+  return `https://www.google.com/search?q=${encodeURIComponent(`${cleanQuery} official website`)}`;
+}
+
+function classifyUniversalCtaIntent(userMessage) {
+  const sourceText = String(userMessage || "");
+
+  if (universalCtaIntentPatterns.website_request.test(sourceText)) return "website_request";
+  if (universalCtaIntentPatterns.location_request.test(sourceText)) return "location_request";
+  if (universalCtaIntentPatterns.navigation_request.test(sourceText)) return "navigation_request";
+  if (universalCtaIntentPatterns.booking_request.test(sourceText)) return "booking_request";
+
+  return "general_info";
+}
+
+function normalizeUniversalCtaEntityType(type, tags = []) {
+  const cleanType = String(type || "").trim().toLowerCase();
+  const cleanTags = Array.isArray(tags) ? tags.map((tag) => String(tag).toLowerCase()) : [];
+
+  if (cleanType === "transport" || cleanType === "service") return "transport/service";
+  if (cleanType === "tour") return "transport/service";
+  if (cleanType === "place") return "general_place";
+  if (cleanType === "hotel" && cleanTags.some((tag) => /\bvillas?\b/i.test(tag))) return "villa";
+
+  return cleanType || "";
+}
+
+function inferUniversalCtaTypeFromText(text) {
+  const sourceText = String(text || "");
+  return universalCtaEntityTypePatterns.find(({ pattern }) => pattern.test(sourceText))?.type || "";
+}
+
+function stripUniversalCtaIntentPhrases(text) {
+  return String(text || "")
+    .replace(/\b(what\s+is|what's|tell\s+me|please|can\s+you|could\s+you|give\s+me|show\s+me|find|open)\b/gi, " ")
+    .replace(/\b(the\s+)?(website|web\s*site|site|official\s+site|official\s+website|url|link|page|homepage)\b/gi, " ")
+    .replace(/\b(where\s+is|where's|location|address|map|maps|google\s+maps|pin|directions?\s+to|how\s+to\s+get\s+to|how\s+(?:do|can)\s+i\s+get\s+to|navigate|route|go\s+to)\b/gi, " ")
+    .replace(/\b(ιστοσελίδα|σάιτ|σελίδα|λινκ|πού\s+είναι|που\s+είναι|τοποθεσία|διεύθυνση|χάρτης|χάρτες|οδηγίες|πώς\s+πάω|πως\s+πάω|διαδρομή)\b/gi, " ")
+    .replace(/[?!.,;:()[\]{}"“”]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^(?:of|for|to|του|της|στο|στη|στον|στην)\s+/i, "")
+    .trim();
+}
+
+function buildUniversalMapsQuery(name) {
+  const cleanName = String(name || "").replace(/\s+/g, " ").trim();
+
+  if (!cleanName) return "";
+  if (/\b(santorini|mykonos|greece|θήρα|σαντορίνη|μύκονος)\b/i.test(cleanName)) return cleanName;
+
+  return `${cleanName} Santorini`;
+}
+
+function extractUniversalEntityName(userMessage, botResponse, affiliate) {
+  if (affiliate?.name && !/^(hotels|tours)$/i.test(String(affiliate.name).trim())) {
+    return String(affiliate.name).trim();
+  }
+
+  const cleanedUserMessage = stripUniversalCtaIntentPhrases(userMessage);
+  if (cleanedUserMessage && cleanedUserMessage.length <= 90) {
+    return cleanedUserMessage;
+  }
+
+  const titleLikeMatch = String(botResponse || "").match(/\b([A-ZΑ-Ω][\p{L}'’.-]+(?:\s+[A-ZΑ-Ω][\p{L}'’.-]+){0,4})\b/u);
+  return titleLikeMatch?.[1]?.trim() || "";
+}
+
+function extractUniversalEntity({ userMessage = "", botResponse = "", affiliate = null } = {}) {
+  const intent = classifyUniversalCtaIntent(userMessage);
+  const extractedName = extractUniversalEntityName(userMessage, botResponse, affiliate);
+  const textForType = [userMessage, botResponse, affiliate?.type, ...(affiliate?.tags || [])].join(" ");
+  const inferredType = affiliate
+    ? normalizeUniversalCtaEntityType(affiliate.type, affiliate.tags)
+    : inferUniversalCtaTypeFromText(textForType);
+  const type = inferredType || (intent === "general_info" ? "" : "general_place");
+  const websiteUrl = normalizeUrl(affiliate?.url || "");
+  const phoneCandidate = extractPhoneCandidates(botResponse)[0] || extractPhoneCandidates(userMessage)[0] || null;
+  const phone = normalizeUrl(affiliate?.phone || "") || phoneCandidate?.href || "";
+
+  if ((!extractedName || !type) && intent === "general_info" && !affiliate) {
+    return null;
+  }
+
+  const name = extractedName || String(affiliate?.name || "").trim() || stripUniversalCtaIntentPhrases(userMessage);
+  const googleMapsQuery = buildUniversalMapsQuery(name);
+
+  return {
+    name,
+    type: type || "general_place",
+    hasWebsite: Boolean(websiteUrl),
+    hasLocation: Boolean(googleMapsQuery),
+    websiteUrl,
+    googleMapsQuery,
+    phone
+  };
+}
+
+function createUniversalCta(type, label, url, style = "secondary") {
+  const safeUrl = type === "phone" ? normalizeUrl(url) : normalizeUrl(url);
+
+  if (!["maps", "website", "phone"].includes(type) || !safeUrl) {
+    return null;
+  }
+
+  return {
+    type,
+    label: sanitizeLinkLabel(label, safeUrl),
+    url: safeUrl,
+    style
+  };
+}
+
+function addUniversalCta(actions, action) {
+  if (!action) return;
+
+  const key = `${action.type}:${action.url}`;
+  if (!actions.has(key)) {
+    actions.set(key, action);
+  }
+}
+
+function buildUniversalCtas({ userMessage = "", botResponse = "", affiliate = null } = {}) {
+  const intent = classifyUniversalCtaIntent(userMessage);
+  const entity = extractUniversalEntity({ userMessage, botResponse, affiliate });
+  const actions = new Map();
+
+  if (!entity?.type) {
+    return {
+      intent,
+      entity,
+      actions: []
+    };
+  }
+
+  const entityName = entity.name || entity.googleMapsQuery || String(userMessage || "").slice(0, 80);
+  const mapsUrl = buildMapsSearchUrl(entity.googleMapsQuery || entityName);
+  const websiteUrl = entity.websiteUrl || (intent === "website_request" ? buildWebsiteSearchUrl(entityName) : "");
+  const isPlaceEntity = universalCtaPlaceTypes.has(entity.type);
+  const shouldForceMaps = isPlaceEntity || intent === "location_request" || intent === "navigation_request";
+  const shouldForceWebsite = entity.hasWebsite || intent === "website_request";
+
+  if (shouldForceMaps && mapsUrl) {
+    addUniversalCta(actions, createUniversalCta("maps", "📍 Open in Maps", mapsUrl, "primary"));
+  }
+
+  if (shouldForceWebsite) {
+    addUniversalCta(actions, createUniversalCta("website", "🔗 Visit Website", websiteUrl, actions.size ? "secondary" : "primary"));
+  }
+
+  if (universalCtaPhoneTypes.has(entity.type) && entity.phone) {
+    addUniversalCta(actions, createUniversalCta("phone", "📞 Call Now", entity.phone, actions.size ? "secondary" : "primary"));
+  }
+
+  if (!actions.size && mapsUrl) {
+    addUniversalCta(actions, createUniversalCta("maps", "📍 Open in Maps", mapsUrl, "primary"));
+  }
+
+  const sortedActions = Array.from(actions.values())
+    .sort((a, b) => (universalCtaPriority[a.type] || 99) - (universalCtaPriority[b.type] || 99))
+    .map((action, index) => ({
+      ...action,
+      style: index === 0 ? "primary" : action.style || "secondary"
+    }));
+
+  return {
+    intent,
+    entity,
+    actions: sortedActions
+  };
+}
+
 function extractMapsCandidates(text, urlCandidates) {
   const sourceText = String(text || "");
   const candidates = [];
@@ -1281,32 +1479,33 @@ function createChatLink(label, href) {
 function getConciergeAction(label, href) {
   if (isTelephoneUrl(href)) {
     return {
-      href,
-      value: href,
+      url: href,
       label: "📞 Call Now",
-      type: "tel"
+      type: "phone",
+      style: "secondary"
     };
   }
 
   if (isGoogleMapsUrl(href)) {
     return {
-      href,
-      value: href,
+      url: href,
       label: "📍 Open in Maps",
-      type: "maps"
+      type: "maps",
+      style: "primary"
     };
   }
 
   return {
-    href,
-    value: href,
+    url: href,
     label: sanitizeLinkLabel(label, href),
-    type: "link"
+    type: "website",
+    style: "secondary"
   };
 }
 
 function collectConciergeAction(actions, label, href) {
-  actions.set(href, getConciergeAction(label, href));
+  const action = getConciergeAction(label, href);
+  actions.set(`${action.type}:${action.url}`, action);
 }
 
 function collectFuzzyConciergeActions(actions, text) {
@@ -1369,7 +1568,7 @@ function getRawPhoneRegexMatches(text) {
 }
 
 function diagnosePhoneCtaFailure(text, phoneRegexMatches, phoneCandidates, actions) {
-  const telActions = actions.filter((action) => action.type === "tel");
+  const telActions = actions.filter((action) => action.type === "phone");
 
   if (!phoneRegexMatches.length) {
     return "A) phone regex mismatch";
@@ -1532,24 +1731,25 @@ function parseCtaDebugData(text) {
   };
 }
 
-function transformBotMessageToSafeFragment(text) {
+function transformBotMessageToSafeFragment(text, context = {}) {
   const sourceText = String(text || "");
   const fragment = document.createDocumentFragment();
   const textContainer = document.createElement("div");
   const actions = new Map();
+  const inlineLinkActions = new Map();
   let cursor = 0;
 
   textContainer.className = "chat-message-text";
 
   sourceText.replace(markdownLinkPattern, (match, label, rawUrl, offset) => {
-    appendTextWithRawLinks(textContainer, sourceText.slice(cursor, offset), actions);
+    appendTextWithRawLinks(textContainer, sourceText.slice(cursor, offset), inlineLinkActions);
 
     const safeUrl = normalizeUrl(rawUrl);
 
     if (safeUrl) {
       const link = createChatLink(label, safeUrl);
       textContainer.appendChild(link);
-      collectConciergeAction(actions, label, safeUrl);
+      collectConciergeAction(inlineLinkActions, label, safeUrl);
     } else {
       textContainer.appendChild(document.createTextNode(match));
     }
@@ -1558,11 +1758,17 @@ function transformBotMessageToSafeFragment(text) {
     return match;
   });
 
-  appendTextWithRawLinks(textContainer, sourceText.slice(cursor), actions);
-  collectFuzzyConciergeActions(actions, sourceText);
+  appendTextWithRawLinks(textContainer, sourceText.slice(cursor), inlineLinkActions);
+  const universalCtaResult = buildUniversalCtas({
+    userMessage: context.userMessage || "",
+    botResponse: sourceText,
+    affiliate: context.affiliate || null
+  });
+  universalCtaResult.actions.forEach((action) => addUniversalCta(actions, action));
   fragment.appendChild(textContainer);
 
   askSantoriniTrafficLog("AskSantorini CTA debug - after parsing:", parseCtaDebugData(sourceText));
+  askSantoriniTrafficLog("AskSantorini Universal CTA Engine v1:", universalCtaResult);
 
   if (!actions.size) {
     askSantoriniTrafficLog("AskSantorini CTA debug - after transformation:", {
@@ -1578,12 +1784,12 @@ function transformBotMessageToSafeFragment(text) {
   actions.forEach((action) => {
     const actionLink = document.createElement("a");
 
-    actionLink.href = action.href;
-    actionLink.className = `chat-action-button chat-action-${action.type}`;
-    actionLink.appendChild(document.createTextNode(sanitizeLinkLabel(action.label, action.href)));
+    actionLink.href = action.url;
+    actionLink.className = `chat-action-button chat-action-${action.type} chat-action-${action.style || "secondary"}`;
+    actionLink.appendChild(document.createTextNode(sanitizeLinkLabel(action.label, action.url)));
     actionLink.dataset.chatAction = action.type;
 
-    if (action.type !== "tel") {
+    if (action.type !== "phone") {
       actionLink.target = "_blank";
       actionLink.rel = "noopener noreferrer";
     }
@@ -1601,14 +1807,14 @@ function transformBotMessageToSafeFragment(text) {
   return fragment;
 }
 
-function processMessage(text, className) {
+function processMessage(text, className, context = {}) {
   const fragment = document.createDocumentFragment();
   const isInteractiveBotMessage = String(className).includes("bot-message")
     && !String(className).includes("loading")
     && !String(className).includes("error");
 
   if (isInteractiveBotMessage) {
-    return transformBotMessageToSafeFragment(text);
+    return transformBotMessageToSafeFragment(text, context);
   }
 
   fragment.appendChild(document.createTextNode(String(text || "")));
@@ -1623,7 +1829,7 @@ function getFragmentHtml(fragment) {
   return debugWrapper.innerHTML;
 }
 
-function appendMessage(text, className) {
+function appendMessage(text, className, context = {}) {
   if (!chatBox) return null;
 
   const msgDiv = document.createElement("div");
@@ -1631,7 +1837,7 @@ function appendMessage(text, className) {
 
   msgDiv.id = id;
   msgDiv.className = className;
-  const processedMessage = processMessage(text, className);
+  const processedMessage = processMessage(text, className, context);
 
   if (String(className).includes("bot-message")) {
     askSantoriniTrafficLog("AskSantorini CTA debug - before render:", {
@@ -1917,6 +2123,7 @@ function normalizeAffiliateRow(row) {
     contextBoost,
     baseScoreBreakdown,
     url,
+    phone: normalizePhoneCandidate(row.phone || row.telephone || row.tel || ""),
     score
   };
 }
@@ -2731,7 +2938,10 @@ async function sendMessage(text) {
 
     const reply = data?.reply || copy.noReplyMessage;
     askSantoriniTrafficLog("AskSantorini CTA debug - raw bot response:", reply);
-    appendMessage(reply, "bot-message");
+    appendMessage(reply, "bot-message", {
+      userMessage: cleanText,
+      affiliate: selectedAffiliate
+    });
     latestInteractionEvent = buildEvent({
       userMessage: cleanText,
       botResponse: reply,

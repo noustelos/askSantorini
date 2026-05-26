@@ -374,8 +374,13 @@
     0 0 24px rgba(159, 216, 210, 0.18);
 }
 
-.chat-action-tel {
+.chat-action-phone {
   border-color: rgba(216, 154, 115, 0.28);
+}
+
+.chat-action-primary {
+  border-color: rgba(79, 143, 138, 0.38);
+  background: linear-gradient(135deg, rgba(184, 227, 221, 0.92), rgba(255, 248, 236, 0.88));
 }
 
 .chat-box .user-message {
