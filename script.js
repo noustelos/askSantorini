@@ -1475,6 +1475,7 @@ function appendMessage(text, className) {
 const conciergeMonetizationSheetUrl = "https://docs.google.com/spreadsheets/d/1iOYyrEkTfhmUCXRRjRaQsc0XCWDRWFSQzBME0xj_W0U/export?format=csv&gid=0";
 const conciergeRotationStorageKey = "askSantoriniConciergeRotation";
 const conciergeSessionStorageKey = "askSantoriniConciergeSession";
+const conciergeOptimizationStorageKey = "askSantoriniAutonomousOptimization";
 let conciergeAffiliates = [];
 let conciergeAffiliateLoadPromise = null;
 let latestInteractionEvent = null;
@@ -1509,6 +1510,21 @@ const conciergeOptimizationConfig = {
     multiplier: 2.0,
     minModifier: -0.60,
     maxModifier: 0.80
+  },
+  autonomous: {
+    batchSize: 25,
+    learningRate: 0.05,
+    explorationRate: 0.20,
+    defaultWeights: {
+      priority: 0.4,
+      ctr: 3.0,
+      intentStrength: 1.5,
+      contextBoost: 1.2
+    },
+    weightBounds: {
+      min: 0.2,
+      max: 5.0
+    }
   }
 };
 
@@ -1600,6 +1616,60 @@ function clampNumber(value, min, max) {
   return Math.min(Math.max(number, min), max);
 }
 
+function clampOptimizationWeight(value) {
+  const bounds = conciergeOptimizationConfig.autonomous.weightBounds;
+  return clampNumber(value, bounds.min, bounds.max);
+}
+
+function getDefaultOptimizationWeights() {
+  return { ...conciergeOptimizationConfig.autonomous.defaultWeights };
+}
+
+function getAutonomousOptimizationState() {
+  try {
+    const state = JSON.parse(getStoredValue(conciergeOptimizationStorageKey) || "{}") || {};
+    return {
+      eventCount: Number(state.eventCount) || 0,
+      intents: state.intents && typeof state.intents === "object" ? state.intents : {}
+    };
+  } catch {
+    return {
+      eventCount: 0,
+      intents: {}
+    };
+  }
+}
+
+function setAutonomousOptimizationState(state) {
+  setStoredValue(conciergeOptimizationStorageKey, JSON.stringify(state || {}));
+}
+
+function getAffiliateOptimizationKey(affiliate) {
+  return String(affiliate?.url || affiliate?.name || "").trim().toLowerCase();
+}
+
+function ensureIntentOptimizationState(state, intentType) {
+  const intent = String(intentType || "general");
+
+  if (!state.intents[intent]) {
+    state.intents[intent] = {
+      weights: getDefaultOptimizationWeights(),
+      previousAverageCtr: 0,
+      affiliates: {},
+      variants: {}
+    };
+  }
+
+  state.intents[intent].weights = {
+    ...getDefaultOptimizationWeights(),
+    ...(state.intents[intent].weights || {})
+  };
+  state.intents[intent].affiliates = state.intents[intent].affiliates || {};
+  state.intents[intent].variants = state.intents[intent].variants || {};
+
+  return state.intents[intent];
+}
+
 function isActiveAffiliateRow(row) {
   return ["true", "1"].includes(String(row?.active || "").trim().toLowerCase());
 }
@@ -1616,11 +1686,12 @@ function normalizeAffiliateRow(row) {
   const ctr = Math.min(clicks / (impressions + 1), 1);
   const intentStrength = clampNumber(row.intent_strength, 0, 5);
   const contextBoost = clampNumber(row.context_boost, 0, 3);
+  const defaultWeights = getDefaultOptimizationWeights();
   const baseScoreBreakdown = {
-    priority: priority * 0.4,
-    ctr: ctr * 3.0,
-    intentStrength: intentStrength * 1.5,
-    contextBoost: contextBoost * 1.2
+    priority: priority * defaultWeights.priority,
+    ctr: ctr * defaultWeights.ctr,
+    intentStrength: intentStrength * defaultWeights.intentStrength,
+    contextBoost: contextBoost * defaultWeights.contextBoost
   };
   const score = Object.values(baseScoreBreakdown).reduce((total, value) => total + value, 0);
 
@@ -1703,6 +1774,7 @@ function buildEvent({ userMessage = "", botResponse = "", intent = "", affiliate
     seasonalMode: event.seasonal_mode || "",
     intent: event.intent_category || event.intent,
     affiliate: event.affiliate || "",
+    isExplorationPick: Boolean(optimizationContext?.isExplorationPick),
     scoreBreakdown: optimizationContext?.scoreBreakdown || null
   });
 
@@ -1744,6 +1816,13 @@ async function sendAffiliateImpressionOnce({ messageId, userMessage, intent, aff
     affiliate,
     eventType: "impression",
     messageId,
+    optimizationContext
+  });
+
+  recordAffiliatePerformance({
+    intent,
+    affiliate,
+    eventType: "impression",
     optimizationContext
   });
 
@@ -1820,17 +1899,42 @@ function getSeasonalModifier(affiliate, seasonalMode) {
   return Number(conciergeOptimizationConfig.seasonalBoosts[seasonalMode]?.[affiliate?.type] || 0);
 }
 
+function getIntentOptimizationWeights(intentType) {
+  const state = getAutonomousOptimizationState();
+  const intentState = ensureIntentOptimizationState(state, intentType);
+
+  return {
+    ...getDefaultOptimizationWeights(),
+    ...intentState.weights
+  };
+}
+
+function getAffiliatePerformanceMemory(intentType, affiliate) {
+  const state = getAutonomousOptimizationState();
+  const intentState = ensureIntentOptimizationState(state, intentType);
+  const key = getAffiliateOptimizationKey(affiliate);
+
+  return key ? intentState.affiliates[key] || null : null;
+}
+
 function getIntentPerformanceStats(intentType) {
   const matches = conciergeAffiliates.filter((affiliate) => affiliate.type === intentType);
   const clicks = matches.reduce((total, affiliate) => total + (Number(affiliate.clicks) || 0), 0);
   const impressions = matches.reduce((total, affiliate) => total + (Number(affiliate.impressions) || 0), 0);
-  const averageCtr = impressions > 0 ? Math.min(clicks / (impressions + 1), 1) : 0;
+  const state = getAutonomousOptimizationState();
+  const intentState = ensureIntentOptimizationState(state, intentType);
+  const memoryValues = Object.values(intentState.affiliates || {});
+  const memoryClicks = memoryValues.reduce((total, affiliate) => total + (Number(affiliate.clicks) || 0), 0);
+  const memoryImpressions = memoryValues.reduce((total, affiliate) => total + (Number(affiliate.impressions) || 0), 0);
+  const totalClicks = clicks + memoryClicks;
+  const totalImpressions = impressions + memoryImpressions;
+  const averageCtr = totalImpressions > 0 ? Math.min(totalClicks / (totalImpressions + 1), 1) : 0;
 
   return {
     averageCtr,
     affiliateCount: matches.length,
-    totalClicks: clicks,
-    totalImpressions: impressions
+    totalClicks,
+    totalImpressions
   };
 }
 
@@ -1846,20 +1950,29 @@ function getAbTestModifier(affiliate, variant) {
 
 function getDriftModifier(affiliate, intentStats) {
   const config = conciergeOptimizationConfig.drift;
-  const impressions = Number(affiliate.impressions) || 0;
+  const memory = getAffiliatePerformanceMemory(affiliate.type, affiliate);
+  const sheetImpressions = Number(affiliate.impressions) || 0;
+  const memoryImpressions = Number(memory?.impressions) || 0;
+  const impressions = sheetImpressions + memoryImpressions;
+  const sheetClicks = Number(affiliate.clicks) || 0;
+  const memoryClicks = Number(memory?.clicks) || 0;
+  const combinedCtr = impressions > 0 ? Math.min((sheetClicks + memoryClicks) / (impressions + 1), 1) : Number(affiliate.ctr) || 0;
   const confidence = Math.min(impressions / config.confidenceSampleSize, 1);
-  const relativeCtr = (Number(affiliate.ctr) || 0) - (Number(intentStats.averageCtr) || 0);
+  const relativeCtr = combinedCtr - (Number(intentStats.averageCtr) || 0);
   const rawModifier = relativeCtr * config.multiplier * confidence;
 
   if (impressions < config.minSamplesForDecay && rawModifier < 0) {
     return 0;
   }
 
-  return clampNumber(rawModifier, config.minModifier, config.maxModifier);
+  const trendModifier = memory?.trendDirection === "up" ? 0.08 : memory?.trendDirection === "down" ? -0.08 : 0;
+
+  return clampNumber(rawModifier + trendModifier, config.minModifier, config.maxModifier);
 }
 
 function buildAffiliateScoreContext({ affiliate, intentType, userMessage, variant, seasonalMode, intentStats }) {
   const normalizedMessage = String(userMessage || "").toLowerCase();
+  const weights = getIntentOptimizationWeights(intentType);
   const tagScore = getAffiliateTags(affiliate).reduce((score, tag) => {
     return tag && normalizedMessage.includes(tag) ? score + 1 : score;
   }, 0);
@@ -1867,7 +1980,10 @@ function buildAffiliateScoreContext({ affiliate, intentType, userMessage, varian
   const seasonalModifier = getSeasonalModifier(affiliate, seasonalMode);
   const driftModifier = getDriftModifier(affiliate, intentStats);
   const scoreBreakdown = {
-    ...(affiliate.baseScoreBreakdown || {}),
+    priority: affiliate.priority * weights.priority,
+    ctr: affiliate.ctr * weights.ctr,
+    intentStrength: affiliate.intentStrength * weights.intentStrength,
+    contextBoost: affiliate.contextBoost * weights.contextBoost,
     abTestModifier,
     seasonalModifier,
     driftModifier,
@@ -1886,6 +2002,171 @@ function buildAffiliateScoreContext({ affiliate, intentType, userMessage, varian
   };
 }
 
+function getTrendDirection(previousCtr, currentCtr) {
+  const delta = currentCtr - previousCtr;
+
+  if (delta > 0.015) return "up";
+  if (delta < -0.015) return "down";
+  return "stable";
+}
+
+function getTopAndWorstAffiliateMemory(affiliates) {
+  const sorted = [...affiliates].sort((a, b) => {
+    if (b.ctr !== a.ctr) return b.ctr - a.ctr;
+    return b.impressions - a.impressions;
+  });
+
+  return {
+    top: sorted[0] || null,
+    worst: sorted[sorted.length - 1] || null
+  };
+}
+
+function updateAutonomousWeightsForIntent(intentType, intentState) {
+  const config = conciergeOptimizationConfig.autonomous;
+  const affiliates = Object.values(intentState.affiliates || {});
+  const totalClicks = affiliates.reduce((total, affiliate) => total + (Number(affiliate.clicks) || 0), 0);
+  const totalImpressions = affiliates.reduce((total, affiliate) => total + (Number(affiliate.impressions) || 0), 0);
+
+  if (totalImpressions < config.batchSize) {
+    return;
+  }
+
+  const currentAverageCtr = totalClicks / (totalImpressions + 1);
+  const previousAverageCtr = Number(intentState.previousAverageCtr) || 0;
+  const trendDirection = getTrendDirection(previousAverageCtr, currentAverageCtr);
+  const weights = {
+    ...getDefaultOptimizationWeights(),
+    ...(intentState.weights || {})
+  };
+  const { top, worst } = getTopAndWorstAffiliateMemory(affiliates);
+  const variantPerformance = Object.entries(intentState.variants || {}).map(([variant, value]) => ({
+    variant,
+    impressions: Number(value.impressions) || 0,
+    clicks: Number(value.clicks) || 0,
+    ctr: Number(value.impressions) > 0 ? (Number(value.clicks) || 0) / ((Number(value.impressions) || 0) + 1) : 0
+  })).sort((a, b) => b.ctr - a.ctr);
+  const adjustment = config.learningRate;
+
+  if (trendDirection === "up") {
+    weights.ctr = clampOptimizationWeight(weights.ctr + adjustment);
+    weights.intentStrength = clampOptimizationWeight(weights.intentStrength + adjustment / 2);
+    weights.priority = clampOptimizationWeight(weights.priority - adjustment / 2);
+  } else if (trendDirection === "down") {
+    weights.ctr = clampOptimizationWeight(weights.ctr - adjustment / 2);
+    weights.contextBoost = clampOptimizationWeight(weights.contextBoost + adjustment / 2);
+    weights.priority = clampOptimizationWeight(weights.priority + adjustment / 4);
+  } else {
+    weights.ctr = clampOptimizationWeight(weights.ctr + adjustment / 5);
+  }
+
+  const variantA = variantPerformance.find((variant) => variant.variant === "A");
+  const variantB = variantPerformance.find((variant) => variant.variant === "B");
+
+  if (variantA && variantB && variantA.impressions >= 5 && variantB.impressions >= 5) {
+    if (variantB.ctr > variantA.ctr + 0.02) {
+      weights.ctr = clampOptimizationWeight(weights.ctr + adjustment / 2);
+      weights.priority = clampOptimizationWeight(weights.priority - adjustment / 4);
+    } else if (variantA.ctr > variantB.ctr + 0.02) {
+      weights.priority = clampOptimizationWeight(weights.priority + adjustment / 4);
+      weights.ctr = clampOptimizationWeight(weights.ctr - adjustment / 4);
+    }
+  }
+
+  intentState.weights = weights;
+  intentState.previousAverageCtr = currentAverageCtr;
+
+  console.log("AskSantorini autonomous optimization weights updated:", {
+    intent: intentType,
+    weights,
+    trendDirection,
+    currentAverageCtr,
+    previousAverageCtr,
+    topAffiliate: top,
+    worstAffiliate: worst,
+    variantPerformance
+  });
+}
+
+function updateAutonomousOptimizationCycle(state) {
+  Object.entries(state.intents || {}).forEach(([intentType, intentState]) => {
+    updateAutonomousWeightsForIntent(intentType, intentState);
+  });
+}
+
+function recordAffiliatePerformance({ intent, affiliate, eventType, optimizationContext = null }) {
+  if (!affiliate || !intent || !["impression", "click"].includes(eventType)) {
+    return;
+  }
+
+  const state = getAutonomousOptimizationState();
+  const intentState = ensureIntentOptimizationState(state, intent);
+  const affiliateKey = getAffiliateOptimizationKey(affiliate);
+
+  if (!affiliateKey) {
+    return;
+  }
+
+  const current = intentState.affiliates[affiliateKey] || {
+    affiliate_id: affiliateKey,
+    name: affiliate.name || "",
+    impressions: 0,
+    clicks: 0,
+    ctr: 0,
+    previousCtr: 0,
+    trendDirection: "stable"
+  };
+
+  current.previousCtr = Number(current.ctr) || 0;
+
+  if (eventType === "impression") {
+    current.impressions += 1;
+  }
+
+  if (eventType === "click") {
+    current.clicks += 1;
+  }
+
+  current.ctr = current.impressions > 0 ? current.clicks / (current.impressions + 1) : 0;
+  current.trendDirection = getTrendDirection(current.previousCtr, current.ctr);
+  intentState.affiliates[affiliateKey] = current;
+
+  const variant = optimizationContext?.variant;
+
+  if (variant) {
+    const variantState = intentState.variants[variant] || {
+      impressions: 0,
+      clicks: 0
+    };
+
+    if (eventType === "impression") {
+      variantState.impressions += 1;
+    }
+
+    if (eventType === "click") {
+      variantState.clicks += 1;
+    }
+
+    intentState.variants[variant] = variantState;
+  }
+
+  state.eventCount += 1;
+
+  if (state.eventCount % conciergeOptimizationConfig.autonomous.batchSize === 0) {
+    updateAutonomousOptimizationCycle(state);
+  }
+
+  setAutonomousOptimizationState(state);
+
+  console.log("AskSantorini autonomous affiliate performance memory:", {
+    intent,
+    eventType,
+    affiliate: current,
+    variants: intentState.variants,
+    eventCount: state.eventCount
+  });
+}
+
 function getNextConciergeRotationIndex(intentType, matchCount) {
   if (!intentType || matchCount < 2) return 0;
 
@@ -1897,6 +2178,14 @@ function getNextConciergeRotationIndex(intentType, matchCount) {
   setConciergeRotationState(state);
 
   return selectedIndex;
+}
+
+function shouldExploreAffiliate(intentType, userMessage) {
+  const sessionId = getConciergeSessionId();
+  const hash = Math.abs(hashString(`${sessionId}:${intentType}:${userMessage}:${getConciergeRotationState()[intentType] || 0}`));
+  const bucket = (hash % 100) / 100;
+
+  return bucket < conciergeOptimizationConfig.autonomous.explorationRate;
 }
 
 function chooseConciergeAffiliate(intentType, userMessage) {
@@ -1925,13 +2214,23 @@ function chooseConciergeAffiliate(intentType, userMessage) {
   if (!matches.length) return null;
 
   const topMatches = matches.slice(0, Math.min(3, matches.length));
-  const selectedIndex = getNextConciergeRotationIndex(intentType, topMatches.length);
-  latestConciergeSelectionContext = topMatches[selectedIndex] || null;
+  const explorationPool = matches.slice(3, Math.min(6, matches.length));
+  const isExplorationPick = shouldExploreAffiliate(intentType, userMessage) && explorationPool.length > 0;
+  const selectionPool = isExplorationPick ? explorationPool : topMatches;
+  const selectedIndex = getNextConciergeRotationIndex(intentType, selectionPool.length);
+  latestConciergeSelectionContext = selectionPool[selectedIndex] || null;
+
+  if (latestConciergeSelectionContext) {
+    latestConciergeSelectionContext.isExplorationPick = isExplorationPick;
+    latestConciergeSelectionContext.explorationRate = conciergeOptimizationConfig.autonomous.explorationRate;
+  }
 
   console.log("AskSantorini concierge optimization selection:", {
     intent: intentType,
     variant,
     seasonalMode,
+    isExplorationPick,
+    explorationRate: conciergeOptimizationConfig.autonomous.explorationRate,
     selectedAffiliate: latestConciergeSelectionContext?.affiliate?.name || "",
     scoreBreakdown: latestConciergeSelectionContext?.scoreBreakdown || {},
     finalScore: latestConciergeSelectionContext?.finalScore || 0,
@@ -2105,6 +2404,15 @@ document.addEventListener("click", (event) => {
   if (chatAction) {
     eventPayload.action_type = chatAction;
     eventPayload.action_url = affiliateLink.href;
+  }
+
+  if (affiliate) {
+    recordAffiliatePerformance({
+      intent: latestInteractionEvent?.intent || affiliate.type,
+      affiliate,
+      eventType: "click",
+      optimizationContext: getOptimizationContextFromEvent(latestInteractionEvent)
+    });
   }
 
   sendEvent(eventPayload).catch(() => {});
