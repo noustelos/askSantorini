@@ -1004,6 +1004,23 @@ const universalCtaPriority = {
   website: 2,
   phone: 3
 };
+const criticalIntentPhoneFallbacks = {
+  emergency_service_request: "tel:112",
+  hospital_request: "tel:166",
+  police_request: "tel:100",
+  urgent_help_request: "tel:112"
+};
+const criticalUniversalCtaPriority = {
+  phone: 1,
+  maps: 2,
+  website: 3
+};
+const criticalIntentPatterns = {
+  emergency_service_request: /\b(emergency|emergencies|ambulance|fire\s*(?:department|brigade|service)?|paramedic|911|112|166|199|έκτακτ|επείγον|επείγουσα|επείγουσα\s+ανάγκη|ασθενοφόρο|πυροσβεστική)\b/i,
+  hospital_request: /\b(hospital|hospitals|urgent\s+care|emergency\s+room|er\b|doctor|doctors|medical\s+(?:help|care|center|centre)|health\s+(?:center|centre)|clinic|νοσοκομείο|νοσοκομεια|γιατρ|κλινική|κέντρο\s+υγείας|κεντρο\s+υγειας)\b/i,
+  police_request: /\b(police|police\s+station|cop|cops|law\s+enforcement|100|αστυνομία|αστυνομικο|αστυνομικό\s+τμήμα|αστυνομικο\s+τμημα)\b/i,
+  urgent_help_request: /\b(urgent|urgently|help\s+now|need\s+help|need\s+assistance|critical|danger|unsafe|stranded|lost\s+passport|stolen|theft|robbed|accident|injured|injury|άμεσα|αμεσα|βοήθεια|βοηθεια|κίνδυνος|κινδυνος|ατύχημα|ατυχημα|τραυματ)\b/i
+};
 const universalCtaIntentPatterns = {
   website_request: /\b(website|web\s*site|site|official\s+site|official\s+website|url|link|page|homepage|ιστοσελίδα|site|σάιτ|σελίδα|link|λινκ)\b/i,
   location_request: /\b(where\s+is|where's|location|address|map|maps|google\s+maps|pin|directions?\s+to|τοποθεσία|πού\s+είναι|που\s+είναι|διεύθυνση|χάρτης|χάρτες)\b/i,
@@ -1212,8 +1229,26 @@ function buildWebsiteSearchUrl(query) {
   return `https://www.google.com/search?q=${encodeURIComponent(`${cleanQuery} official website`)}`;
 }
 
+function classifyCriticalUniversalCtaIntent(text) {
+  const sourceText = String(text || "");
+
+  return Object.entries(criticalIntentPatterns)
+    .find(([, pattern]) => pattern.test(sourceText))?.[0] || "";
+}
+
+function isCriticalUniversalCtaIntent(intent) {
+  return Boolean(criticalIntentPhoneFallbacks[intent]);
+}
+
+function getCriticalFallbackPhone(intent) {
+  return criticalIntentPhoneFallbacks[intent] || criticalIntentPhoneFallbacks.emergency_service_request;
+}
+
 function classifyUniversalCtaIntent(userMessage) {
   const sourceText = String(userMessage || "");
+  const criticalIntent = classifyCriticalUniversalCtaIntent(sourceText);
+
+  if (criticalIntent) return criticalIntent;
 
   if (universalCtaIntentPatterns.website_request.test(sourceText)) return "website_request";
   if (universalCtaIntentPatterns.location_request.test(sourceText)) return "location_request";
@@ -1330,11 +1365,13 @@ function addUniversalCta(actions, action) {
 }
 
 function buildUniversalCtas({ userMessage = "", botResponse = "", affiliate = null } = {}) {
-  const intent = classifyUniversalCtaIntent(userMessage);
+  const combinedIntentText = [userMessage, botResponse].filter(Boolean).join(" ");
+  const intent = classifyCriticalUniversalCtaIntent(combinedIntentText) || classifyUniversalCtaIntent(userMessage);
+  const isCriticalIntent = isCriticalUniversalCtaIntent(intent);
   const entity = extractUniversalEntity({ userMessage, botResponse, affiliate });
   const actions = new Map();
 
-  if (!entity?.type) {
+  if (!entity?.type && !isCriticalIntent) {
     return {
       intent,
       entity,
@@ -1342,12 +1379,43 @@ function buildUniversalCtas({ userMessage = "", botResponse = "", affiliate = nu
     };
   }
 
-  const entityName = entity.name || entity.googleMapsQuery || String(userMessage || "").slice(0, 80);
-  const mapsUrl = buildMapsSearchUrl(entity.googleMapsQuery || entityName);
-  const websiteUrl = entity.websiteUrl || (intent === "website_request" ? buildWebsiteSearchUrl(entityName) : "");
-  const isPlaceEntity = universalCtaPlaceTypes.has(entity.type);
+  const entityName = entity?.name || entity?.googleMapsQuery || String(userMessage || "").slice(0, 80);
+  const mapsUrl = buildMapsSearchUrl(entity?.googleMapsQuery || entityName);
+  const explicitWebsiteRequest = universalCtaIntentPatterns.website_request.test(combinedIntentText);
+  const websiteUrl = entity?.websiteUrl || (explicitWebsiteRequest || intent === "website_request" ? buildWebsiteSearchUrl(entityName) : "");
+  const isPlaceEntity = universalCtaPlaceTypes.has(entity?.type);
   const shouldForceMaps = isPlaceEntity || intent === "location_request" || intent === "navigation_request";
-  const shouldForceWebsite = entity.hasWebsite || intent === "website_request";
+  const shouldForceWebsite = entity?.hasWebsite || intent === "website_request";
+
+  if (isCriticalIntent) {
+    const detectedPhone = extractPhoneCandidates(botResponse)[0]?.href
+      || extractPhoneCandidates(userMessage)[0]?.href
+      || "";
+    const phoneUrl = entity?.phone || detectedPhone || getCriticalFallbackPhone(intent);
+
+    addUniversalCta(actions, createUniversalCta("phone", "Call Now", phoneUrl, "primary"));
+
+    if ((shouldForceMaps || mapsIntentPattern.test(combinedIntentText)) && mapsUrl) {
+      addUniversalCta(actions, createUniversalCta("maps", "📍 Open in Maps", mapsUrl, "secondary"));
+    }
+
+    if (explicitWebsiteRequest && websiteUrl) {
+      addUniversalCta(actions, createUniversalCta("website", "🔗 Visit Website", websiteUrl, "secondary"));
+    }
+
+    const criticalActions = Array.from(actions.values())
+      .sort((a, b) => (criticalUniversalCtaPriority[a.type] || 99) - (criticalUniversalCtaPriority[b.type] || 99))
+      .map((action, index) => ({
+        ...action,
+        style: index === 0 ? "primary" : "secondary"
+      }));
+
+    return {
+      intent,
+      entity,
+      actions: criticalActions
+    };
+  }
 
   if (shouldForceMaps && mapsUrl) {
     addUniversalCta(actions, createUniversalCta("maps", "📍 Open in Maps", mapsUrl, "primary"));
