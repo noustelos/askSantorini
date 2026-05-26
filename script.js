@@ -1380,7 +1380,7 @@ function buildSfpTruthCtas(entity, intent) {
     }));
 }
 
-function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = "", llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, fallbackPathUsed = "" } = {}) {
+function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = "", llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", fallbackPathUsed = "" } = {}) {
   const resolvedEntity = resolveStructuredEntity(entity);
   const allowedUrls = resolvedEntity ? {
     phone: resolvedEntity.phone,
@@ -1429,6 +1429,7 @@ function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = ""
       llmPhoneAttempt,
       fallbackTriggered,
       entityMatchConfidence,
+      entityResolutionSource,
       fallbackPathUsed
     })
   };
@@ -1500,6 +1501,7 @@ async function finalizeResponse({
   selectedIntent = "",
   entity = null,
   entityMatchConfidence = 0,
+  entityResolutionSource = "",
   fallbackTriggered = false,
   fallbackPathUsed = "",
   className = "bot-message",
@@ -1547,6 +1549,7 @@ async function finalizeResponse({
     llmPhoneAttempt: generatedCtaDebug?.phone_llm_attempt_blocked,
     fallbackTriggered: truthFallbackTriggered,
     entityMatchConfidence,
+    entityResolutionSource,
     fallbackPathUsed
   });
   pipelineStepLog.push("enforce");
@@ -1560,6 +1563,7 @@ async function finalizeResponse({
     actions: enforced.actions,
     cta_debug: enforced.debug,
     entity_match_confidence: entityMatchConfidence,
+    entity_resolution_source: entityResolutionSource,
     fallback_triggered: truthFallbackTriggered,
     fallback_path_used: truthFallbackTriggered ? fallbackPathUsed : "",
     missing_fields_list: missingFieldsList,
@@ -1569,6 +1573,7 @@ async function finalizeResponse({
   if (truthFallbackTriggered) {
     askSantoriniTrafficLog("AskSantorini Helpful Action Fallback Layer v1:", {
       entityId: hydratedEntity?.entityId || "",
+      entity_resolution_source: entityResolutionSource,
       fallback_path_used: fallbackPathUsed,
       fallback_triggered: true,
       missing_fields_list: missingFieldsList
@@ -1679,13 +1684,14 @@ function detectGeneratedPhoneAttempt(text) {
     || hasContextualPhoneCandidate;
 }
 
-function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, fallbackPathUsed = "" } = {}) {
+function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", fallbackPathUsed = "" } = {}) {
   const phoneAction = actions.find((action) => action.type === "phone") || null;
   const hasLlmPhoneAttempt = Boolean(llmPhoneAttempt) || detectGeneratedPhoneAttempt(rawText);
   const ctaTypes = [...new Set(actions.map((action) => action.type))];
 
   return {
     entity_match_confidence: Number(entityMatchConfidence) || 0,
+    entity_resolution_source: entityResolutionSource,
     fallback_triggered: Boolean(fallbackTriggered),
     fallback_path_used: fallbackTriggered ? fallbackPathUsed : "",
     missing_fields_list: entity?.missingFieldsList || truthLayerFactualFields,
@@ -3263,6 +3269,7 @@ async function sendMessage(text) {
   let resolvedEntity = null;
   let selectedOptimizationContext = null;
   let entityMatchDebug = normalizeTruthLayerMatchResult(null, 0);
+  let entityResolutionSource = "fallback_prompt";
 
   appendMessage(cleanText, "user-message");
   userInput.value = "";
@@ -3288,6 +3295,7 @@ async function sendMessage(text) {
     if (activeEntity) {
       selectedAffiliate = activeEntity;
       selectedIntent = selectedIntent || activeEntity.type;
+      entityResolutionSource = "session";
       latestConciergeSelectionContext = null;
       askSantoriniTrafficLog("AskSantorini Session-State v1 follow-up entity reuse:", {
         sessionId: getConciergeSessionId(),
@@ -3297,18 +3305,17 @@ async function sendMessage(text) {
     } else if (mentionedEntity) {
       selectedAffiliate = mentionedEntity;
       selectedIntent = selectedIntent || mentionedEntity.type;
+      entityResolutionSource = "new_match";
       setActiveEntity(mentionedEntity);
       latestConciergeSelectionContext = null;
     } else if (mentionedEntityMatch?.ambiguous) {
       selectedAffiliate = null;
       selectedIntent = selectedIntent || classifyUniversalCtaIntent(cleanText);
-      latestConciergeSelectionContext = null;
-    } else if (!selectedIntent && activeEntity && isFactualContactIntent(cleanText)) {
-      selectedIntent = activeEntity.type;
-      selectedAffiliate = activeEntity;
+      entityResolutionSource = "fallback_prompt";
       latestConciergeSelectionContext = null;
     } else {
       selectedAffiliate = affiliates.length ? chooseConciergeAffiliate(selectedIntent, cleanText) : null;
+      entityResolutionSource = selectedAffiliate?.entityId ? "new_match" : "fallback_prompt";
     }
     resolvedEntity = selectedAffiliate?.entityId
       ? hydrateTruthLayerEntity(selectedAffiliate.entityId, activeEntity ? "follow_up_request" : "resolved_request")
@@ -3317,7 +3324,7 @@ async function sendMessage(text) {
 
     const truthComplete = Boolean(resolvedEntity && hasTruthCompleteness(resolvedEntity));
     const fallbackRequired = Boolean(
-      mentionedEntityMatch?.ambiguous
+      (!activeEntity && mentionedEntityMatch?.ambiguous)
       || (isFactualContactIntent(cleanText) && !resolvedEntity)
       || (resolvedEntity && !truthComplete)
     );
@@ -3331,10 +3338,11 @@ async function sendMessage(text) {
         selectedAffiliate = sessionFallbackEntity;
         selectedIntent = selectedIntent || sessionFallbackEntity.type;
       }
-      const fallbackPathUsed = activeEntityId && !mentionedEntityMatch?.ambiguous
+      const fallbackPathUsed = activeEntityId && sessionFallbackEntity
         ? "session_reuse"
         : "clarification_request";
-      const fallbackMessage = mentionedEntityMatch?.ambiguous
+      entityResolutionSource = fallbackPathUsed === "session_reuse" ? "session" : "fallback_prompt";
+      const fallbackMessage = !activeEntity && mentionedEntityMatch?.ambiguous
         ? "I found more than one similar place. Please send the full business name so I can use only verified details."
         : getTruthLayerFallbackMessage(resolvedEntity?.missingFieldsList || truthLayerFactualFields, {
             entity: resolvedEntity,
@@ -3345,6 +3353,7 @@ async function sendMessage(text) {
         sessionId: getConciergeSessionId(),
         sessionEntityId: activeEntityId,
         resolvedEntityId: resolvedEntity?.entityId || "",
+        entity_resolution_source: entityResolutionSource,
         fallback_path_used: fallbackPathUsed,
         fallback_triggered: true
       });
@@ -3354,6 +3363,7 @@ async function sendMessage(text) {
         selectedIntent,
         entity: fallbackPathUsed === "clarification_request" ? null : resolvedEntity,
         entityMatchConfidence: entityMatchDebug.confidence,
+        entityResolutionSource,
         fallbackTriggered: true,
         fallbackPathUsed,
         className: "bot-message error",
@@ -3417,6 +3427,7 @@ async function sendMessage(text) {
       selectedIntent,
       entity: resolvedEntity,
       entityMatchConfidence: entityMatchDebug.confidence,
+      entityResolutionSource,
       fallbackPathUsed: getActiveEntityId() ? "session_reuse" : "clarification_request",
       className: "bot-message",
       messageId,
@@ -3446,6 +3457,7 @@ async function sendMessage(text) {
       selectedIntent,
       entity: resolvedEntity,
       entityMatchConfidence: entityMatchDebug.confidence,
+      entityResolutionSource,
       className: "bot-message error",
       messageId,
       onBeforeRender: () => {
