@@ -39,7 +39,7 @@ export default {
   }
 };
 
-const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbwEqy4SSGX1U_n4KAfa33zFlYAobweU2tYLR-_B3NcH6FYceplSwPDWvTrSoEhV5_RG/exec";
+const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbzocLCBjm8m0C7-Y_nczceGvpLwsWDIBSa9O_AlEvMKgdVupauB6fEg5JYxMJ8mi5S7RQ/exec";
 const eventForwardUrls = [eventWebhookUrl];
 
 function normalizeEventPayload(payload) {
@@ -65,16 +65,10 @@ async function forwardEvent(payload) {
   const event = normalizeEventPayload(payload);
 
   await Promise.allSettled(eventForwardUrls.map(async (url) => {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(event)
-    });
+    const response = await postEventWithRetry(url, event);
 
-    if (!response.ok) {
-      console.warn("AskSantorini event proxy received non-OK response:", url, response.status);
+    if (!response?.ok) {
+      console.warn("AskSantorini event proxy received non-OK response:", url, response?.status || "no-response");
     }
   })).then((results) => {
     results.forEach((result, index) => {
@@ -83,6 +77,33 @@ async function forwardEvent(payload) {
       }
     });
   });
+}
+
+async function postEventWithRetry(url, event) {
+  const request = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(event)
+  };
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetch(url, request);
+
+      if (response.ok || attempt === 1) {
+        return response;
+      }
+    } catch (error) {
+      if (attempt === 1) {
+        console.warn("AskSantorini event proxy failed after retry:", error);
+        return null;
+      }
+    }
+  }
+
+  return null;
 }
 
 async function callGemini(env, prompt) {
