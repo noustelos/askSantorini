@@ -29,9 +29,26 @@ export default {
         return jsonResponse({ error: "Prompt is required." }, 400);
       }
 
-      const reply = sanitizeGeneratedFacts(await callGemini(env, prompt));
+      const generatedText = await callGemini(env, prompt);
+      const reply = sanitizeGeneratedFacts(generatedText);
+      const detectedCtas = extractGeneratedUrlCtas(generatedText);
+      const phoneLlmAttempt = detectGeneratedPhoneAttempt(generatedText);
 
-      return jsonResponse({ reply });
+      console.log("AskSantorini CTA Enforcement Layer v2 Worker:", {
+        source_of_phone: phoneLlmAttempt ? "llm_attempt" : "none",
+        phone_llm_attempt_blocked: phoneLlmAttempt,
+        cta_generated: detectedCtas.length > 0,
+        cta_type: [...new Set(detectedCtas.map((cta) => cta.type))]
+      });
+
+      return jsonResponse({
+        reply,
+        detected_ctas: detectedCtas,
+        cta_debug: {
+          source_of_phone: phoneLlmAttempt ? "llm_attempt" : "none",
+          phone_llm_attempt_blocked: phoneLlmAttempt
+        }
+      });
     } catch (error) {
       console.error("AskSantorini Worker error:", error);
       return jsonResponse({ error: "Could not generate a reply." }, 500);
@@ -178,6 +195,92 @@ function sanitizeGeneratedFacts(text) {
     .replace(/[ \t]{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function normalizeUrl(rawUrl) {
+  const cleanUrl = String(rawUrl || "").trim();
+
+  if (!cleanUrl || /^tel:/i.test(cleanUrl)) {
+    return "";
+  }
+
+  try {
+    const url = new URL(/^www\./i.test(cleanUrl) ? `https://${cleanUrl}` : cleanUrl);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function isGoogleMapsUrl(url) {
+  try {
+    const parsedUrl = new URL(url);
+    const host = parsedUrl.hostname.replace(/^www\./, "").toLowerCase();
+    const path = parsedUrl.pathname.toLowerCase();
+
+    return (
+      host === "goo.gl" && path.startsWith("/maps") ||
+      host === "maps.app.goo.gl" ||
+      host === "maps.google.com" ||
+      (host === "google.com" && path.startsWith("/maps"))
+    );
+  } catch {
+    return false;
+  }
+}
+
+function trimTrailingUrlPunctuation(url) {
+  return String(url || "").replace(/[.,!?;:]+$/, "");
+}
+
+function extractGeneratedUrlCtas(text) {
+  const sourceText = String(text || "");
+  const rawUrlPattern = /\b(?:(?:https?:\/\/|www\.)[^\s<>()]+|tel:\+?[0-9().\-\s]+[0-9])/gi;
+  const markdownLinkPattern = /\[([^\]]+)\]\(([^)\s]+)\)/g;
+  const actions = new Map();
+  const addUrl = (rawUrl) => {
+    const safeUrl = normalizeUrl(trimTrailingUrlPunctuation(rawUrl));
+
+    if (!safeUrl) {
+      return;
+    }
+
+    const type = isGoogleMapsUrl(safeUrl) ? "maps" : "link";
+    const label = type === "maps" ? "Open in Maps" : "Visit Website";
+    actions.set(`${type}:${safeUrl}`, { type, label, url: safeUrl });
+  };
+
+  sourceText.replace(markdownLinkPattern, (match, label, rawUrl) => {
+    addUrl(rawUrl || label);
+    return match;
+  });
+
+  sourceText.replace(rawUrlPattern, (match) => {
+    addUrl(match);
+    return match;
+  });
+
+  return Array.from(actions.values());
+}
+
+function detectGeneratedPhoneAttempt(text) {
+  const sourceText = String(text || "");
+  const phoneCandidatePattern = /(?:\+30[\s().-]*)?(?:\d[\s().-]*){7,14}\d/g;
+  const emergencyPhonePattern = /\b(?:100|112|166|199)\b/;
+  const phoneContextPattern = /\b(call|phone|telephone|tel|contact|dial|number|emergency|τηλέφωνο|κάλεσε|επικοινωνία|έκτακτη)\b/i;
+  let hasContextualPhoneCandidate = false;
+
+  sourceText.replace(phoneCandidatePattern, (match, offset) => {
+    const contextStart = Math.max(0, offset - 48);
+    const contextEnd = Math.min(sourceText.length, offset + String(match || "").length + 48);
+    hasContextualPhoneCandidate = hasContextualPhoneCandidate || phoneContextPattern.test(sourceText.slice(contextStart, contextEnd));
+    return match;
+  });
+
+  return /\btel:\+?[0-9().\-\s]+[0-9]\b/i.test(sourceText)
+    || /\+30[\s().-]*(?:\d[\s().-]*){8,14}\d/.test(sourceText)
+    || emergencyPhonePattern.test(sourceText)
+    || hasContextualPhoneCandidate;
 }
 
 function jsonResponse(payload, status = 200) {

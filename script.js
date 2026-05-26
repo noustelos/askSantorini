@@ -999,16 +999,15 @@ const emergencyIntentPattern = /\b(hospital|emergency|urgent care|police|ambulan
 const mapsIntentPattern = /\b(maps?|google\s+maps?|directions?|navigate|navigation|location|address|route|χάρτης|χάρτες|οδηγίες|τοποθεσία|διεύθυνση)\b/i;
 const coordinatePattern = /-?\d{1,2}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}/;
 const universalCtaPlaceTypes = new Set(["hotel", "villa", "restaurant", "beach", "club", "place", "general_place"]);
-const universalCtaPhoneTypes = new Set(["hotel", "restaurant", "service", "transport/service"]);
 const universalCtaPriority = {
   phone: 1,
-  website: 2,
+  link: 2,
   maps: 3
 };
 const criticalUniversalCtaPriority = {
   phone: 1,
   maps: 2,
-  website: 3
+  link: 3
 };
 const criticalIntentPatterns = {
   emergency_service_request: /\b(emergency|emergencies|ambulance|fire\s*(?:department|brigade|service)?|paramedic|911|112|166|199|έκτακτ|επείγον|επείγουσα|επείγουσα\s+ανάγκη|ασθενοφόρο|πυροσβεστική)\b/i,
@@ -1017,6 +1016,7 @@ const criticalIntentPatterns = {
   urgent_help_request: /\b(urgent|urgently|help\s+now|need\s+help|need\s+assistance|critical|danger|unsafe|stranded|lost\s+passport|stolen|theft|robbed|accident|injured|injury|άμεσα|αμεσα|βοήθεια|βοηθεια|κίνδυνος|κινδυνος|ατύχημα|ατυχημα|τραυματ)\b/i
 };
 const universalCtaIntentPatterns = {
+  phone_request: /\b(call|phone|telephone|tel|contact|dial|number|τηλέφωνο|κάλεσε|επικοινωνία)\b/i,
   website_request: /\b(website|web\s*site|site|official\s+site|official\s+website|url|link|page|homepage|ιστοσελίδα|site|σάιτ|σελίδα|link|λινκ)\b/i,
   location_request: /\b(where\s+is|where's|location|address|map|maps|google\s+maps|pin|directions?\s+to|τοποθεσία|πού\s+είναι|που\s+είναι|διεύθυνση|χάρτης|χάρτες)\b/i,
   booking_request: /\b(book|booking|reserve|reservation|availability|available|κράτηση|κρατήσω|διαθεσιμότητα|διαθέσιμο)\b/i,
@@ -1227,17 +1227,14 @@ function isCriticalUniversalCtaIntent(intent) {
   return Object.prototype.hasOwnProperty.call(criticalIntentPatterns, intent);
 }
 
-function getCriticalFallbackPhone(intent) {
-  return "";
-}
-
 function classifyUniversalCtaIntent(userMessage) {
   const sourceText = String(userMessage || "");
   const criticalIntent = classifyCriticalUniversalCtaIntent(sourceText);
 
   if (criticalIntent) return criticalIntent;
 
-  if (universalCtaIntentPatterns.website_request.test(sourceText)) return "website_request";
+  if (universalCtaIntentPatterns.phone_request.test(sourceText)) return "phone";
+  if (universalCtaIntentPatterns.website_request.test(sourceText)) return "website";
   if (universalCtaIntentPatterns.location_request.test(sourceText)) return "location_request";
   if (universalCtaIntentPatterns.navigation_request.test(sourceText)) return "navigation_request";
   if (universalCtaIntentPatterns.booking_request.test(sourceText)) return "booking_request";
@@ -1423,7 +1420,7 @@ function buildTruthLayerActions(entity) {
   if (!resolvedEntity) return [];
 
   addUniversalCta(actions, createUniversalCta("phone", "Call Now", resolvedEntity.phone, "primary"));
-  addUniversalCta(actions, createUniversalCta("website", "Visit Website", resolvedEntity.websiteUrl, actions.size ? "secondary" : "primary"));
+  addUniversalCta(actions, createUniversalCta("link", "Visit Website", resolvedEntity.websiteUrl, actions.size ? "secondary" : "primary"));
   addUniversalCta(actions, createUniversalCta("maps", "Open in Maps", resolvedEntity.mapsUrl, actions.size ? "secondary" : "primary"));
 
   return Array.from(actions.values()).map((action, index) => ({
@@ -1436,6 +1433,7 @@ function isFactualContactIntent(text) {
   const sourceText = String(text || "");
 
   return callIntentPattern.test(sourceText)
+    || universalCtaIntentPatterns.phone_request.test(sourceText)
     || universalCtaIntentPatterns.website_request.test(sourceText)
     || universalCtaIntentPatterns.location_request.test(sourceText)
     || universalCtaIntentPatterns.navigation_request.test(sourceText)
@@ -1457,6 +1455,32 @@ function sanitizeGeneratedFacts(text) {
     .replace(/[ \t]{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+function detectGeneratedPhoneAttempt(text) {
+  const sourceText = String(text || "");
+  const hasContextualPhoneCandidate = getRawPhoneRegexMatches(sourceText)
+    .some((match) => Boolean(match.normalized && match.hasPhoneContext));
+
+  return /\btel:\+?[0-9().\-\s]+[0-9]\b/i.test(sourceText)
+    || /\+30[\s().-]*(?:\d[\s().-]*){8,14}\d/.test(sourceText)
+    || hasContextualPhoneCandidate;
+}
+
+function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false } = {}) {
+  const phoneAction = actions.find((action) => action.type === "phone") || null;
+  const hasLlmPhoneAttempt = Boolean(llmPhoneAttempt) || detectGeneratedPhoneAttempt(rawText);
+  const ctaTypes = [...new Set(actions.map((action) => action.type))];
+
+  return {
+    source_of_phone: phoneAction && entity?.phone ? "truth_layer" : hasLlmPhoneAttempt ? "llm_attempt" : "none",
+    phone_llm_attempt_blocked: hasLlmPhoneAttempt && !phoneAction,
+    cta_generated: actions.length > 0,
+    cta_type: ctaTypes.length === 1 ? ctaTypes[0] : ctaTypes,
+    intent,
+    entity_id: entity?.entityId || "",
+    truth_layer_phone_present: Boolean(entity?.phone)
+  };
 }
 
 function extractUniversalEntityName(userMessage, botResponse, affiliate) {
@@ -1507,7 +1531,7 @@ function extractUniversalEntity({ userMessage = "", botResponse = "", affiliate 
 function createUniversalCta(type, label, url, style = "secondary") {
   const safeUrl = type === "phone" ? normalizeUrl(url) : normalizeUrl(url);
 
-  if (!["maps", "website", "phone"].includes(type) || !safeUrl) {
+  if (!["maps", "link", "phone"].includes(type) || !safeUrl) {
     return null;
   }
 
@@ -1528,7 +1552,58 @@ function addUniversalCta(actions, action) {
   }
 }
 
-function buildUniversalCtas({ userMessage = "", botResponse = "", affiliate = null } = {}) {
+function collectDetectedUrlCtas(actions, text, style = "secondary") {
+  const sourceText = String(text || "");
+  const seenRawUrls = new Set();
+  const collectDetectedUrl = (rawUrl) => {
+    const { url: displayUrl } = trimTrailingUrlPunctuation(rawUrl);
+    const safeUrl = normalizeUrl(displayUrl);
+
+    if (!safeUrl || isTelephoneUrl(safeUrl)) {
+      return;
+    }
+
+    const type = isGoogleMapsUrl(safeUrl) ? "maps" : "link";
+    const label = type === "maps" ? "Open in Maps" : "Visit Website";
+    addUniversalCta(actions, createUniversalCta(type, label, safeUrl, style));
+  };
+
+  sourceText.replace(markdownLinkPattern, (match, label, rawUrl) => {
+    if (rawUrl) {
+      seenRawUrls.add(rawUrl);
+      collectDetectedUrl(rawUrl);
+    }
+    return match;
+  });
+
+  sourceText.replace(rawUrlPattern, (match) => {
+    const { url: displayUrl } = trimTrailingUrlPunctuation(match);
+    if (!seenRawUrls.has(displayUrl)) {
+      collectDetectedUrl(displayUrl);
+    }
+    return match;
+  });
+}
+
+function collectStructuredDetectedCtas(actions, detectedCtas = []) {
+  if (!Array.isArray(detectedCtas)) {
+    return;
+  }
+
+  detectedCtas.forEach((cta) => {
+    const inputType = String(cta?.type || "").toLowerCase();
+    const type = inputType === "website" ? "link" : inputType;
+
+    if (!["maps", "link"].includes(type)) {
+      return;
+    }
+
+    const label = type === "maps" ? "Open in Maps" : "Visit Website";
+    addUniversalCta(actions, createUniversalCta(type, label, cta?.url, "secondary"));
+  });
+}
+
+function buildUniversalCtas({ userMessage = "", botResponse = "", affiliate = null, detectedCtas = [] } = {}) {
   const resolvedEntity = resolveStructuredEntity(affiliate);
 
   if (resolvedEntity) {
@@ -1545,11 +1620,14 @@ function buildUniversalCtas({ userMessage = "", botResponse = "", affiliate = nu
   const entity = extractUniversalEntity({ userMessage, botResponse, affiliate });
   const actions = new Map();
 
+  collectStructuredDetectedCtas(actions, detectedCtas);
+  collectDetectedUrlCtas(actions, botResponse, "secondary");
+
   if (!entity?.type && !isCriticalIntent) {
     return {
       intent,
       entity,
-      actions: []
+      actions: Array.from(actions.values())
     };
   }
 
@@ -1561,16 +1639,12 @@ function buildUniversalCtas({ userMessage = "", botResponse = "", affiliate = nu
   const shouldForceWebsite = entity?.hasWebsite && Boolean(websiteUrl);
 
   if (isCriticalIntent) {
-    const phoneUrl = getCriticalFallbackPhone(intent);
-
-    addUniversalCta(actions, createUniversalCta("phone", "Call Now", phoneUrl, "primary"));
-
     if ((shouldForceMaps || mapsIntentPattern.test(combinedIntentText)) && mapsUrl) {
-      addUniversalCta(actions, createUniversalCta("maps", "📍 Open in Maps", mapsUrl, "secondary"));
+      addUniversalCta(actions, createUniversalCta("maps", "Open in Maps", mapsUrl, "secondary"));
     }
 
     if (explicitWebsiteRequest && websiteUrl) {
-      addUniversalCta(actions, createUniversalCta("website", "Visit Website", websiteUrl, "secondary"));
+      addUniversalCta(actions, createUniversalCta("link", "Visit Website", websiteUrl, "secondary"));
     }
 
     const criticalActions = Array.from(actions.values())
@@ -1592,11 +1666,7 @@ function buildUniversalCtas({ userMessage = "", botResponse = "", affiliate = nu
   }
 
   if (shouldForceWebsite) {
-    addUniversalCta(actions, createUniversalCta("website", "Visit Website", websiteUrl, actions.size ? "secondary" : "primary"));
-  }
-
-  if (universalCtaPhoneTypes.has(entity.type) && entity.phone) {
-    addUniversalCta(actions, createUniversalCta("phone", "Call Now", entity.phone, actions.size ? "secondary" : "primary"));
+    addUniversalCta(actions, createUniversalCta("link", "Visit Website", websiteUrl, actions.size ? "secondary" : "primary"));
   }
 
   const sortedActions = Array.from(actions.values())
@@ -1630,73 +1700,15 @@ function extractMapsCandidates(text, urlCandidates) {
   return candidates;
 }
 
-function appendTextWithRawLinks(parent, text, actions) {
-  const sourceText = String(text || "");
-  let cursor = 0;
-
-  sourceText.replace(rawUrlPattern, (match, offset) => {
-    const before = sourceText.slice(cursor, offset);
-
-    if (before) {
-      parent.appendChild(document.createTextNode(before));
-    }
-
-    const { url: displayUrl, trailingText } = trimTrailingUrlPunctuation(match);
-    const safeUrl = normalizeUrl(displayUrl);
-
-    if (safeUrl) {
-      const link = createChatLink(displayUrl, safeUrl);
-      parent.appendChild(link);
-      collectConciergeAction(actions, displayUrl, safeUrl);
-    } else {
-      parent.appendChild(document.createTextNode(match));
-    }
-
-    if (trailingText) {
-      parent.appendChild(document.createTextNode(trailingText));
-    }
-
-    cursor = offset + match.length;
-    return match;
-  });
-
-  const rest = sourceText.slice(cursor);
-
-  if (rest) {
-    parent.appendChild(document.createTextNode(rest));
-  }
-}
-
-function createChatLink(label, href) {
-  const link = document.createElement("a");
-
-  link.href = href;
-  link.appendChild(document.createTextNode(sanitizeLinkLabel(label, href)));
-  link.className = "chat-inline-link";
-  link.dataset.chatAction = "link";
-
-  if (!isTelephoneUrl(href)) {
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-  }
-
-  return link;
-}
-
 function getConciergeAction(label, href) {
   if (isTelephoneUrl(href)) {
-    return {
-      url: href,
-      label: "📞 Call Now",
-      type: "phone",
-      style: "secondary"
-    };
+    return null;
   }
 
   if (isGoogleMapsUrl(href)) {
     return {
       url: href,
-      label: "📍 Open in Maps",
+      label: "Open in Maps",
       type: "maps",
       style: "primary"
     };
@@ -1704,14 +1716,15 @@ function getConciergeAction(label, href) {
 
   return {
     url: href,
-    label: sanitizeLinkLabel(label, href),
-    type: "website",
+    label: "Visit Website",
+    type: "link",
     style: "secondary"
   };
 }
 
 function collectConciergeAction(actions, label, href) {
   const action = getConciergeAction(label, href);
+  if (!action) return;
   actions.set(`${action.type}:${action.url}`, action);
 }
 
@@ -1720,10 +1733,6 @@ function collectFuzzyConciergeActions(actions, text) {
   const phoneCandidates = extractPhoneCandidates(text);
   const urlCandidates = extractUrlCandidates(text);
   const mapsCandidates = extractMapsCandidates(text, urlCandidates);
-
-  phoneCandidates.forEach((candidate) => {
-    collectConciergeAction(actions, candidate.raw, candidate.href);
-  });
 
   mapsCandidates.forEach((candidate) => {
     collectConciergeAction(actions, candidate.raw, candidate.href);
@@ -1793,10 +1802,6 @@ function buildCtaDiagnosticResult(text) {
   const mapsCandidates = extractMapsCandidates(sourceText, urlCandidates);
 
   urlCandidates.forEach((candidate) => {
-    collectConciergeAction(actions, candidate.raw, candidate.href);
-  });
-
-  phoneCandidates.forEach((candidate) => {
     collectConciergeAction(actions, candidate.raw, candidate.href);
   });
 
@@ -1924,48 +1929,33 @@ function parseCtaDebugData(text) {
 
 function transformBotMessageToSafeFragment(text, context = {}) {
   const resolvedEntity = resolveStructuredEntity(context.resolvedEntity || context.affiliate || null);
-  const sourceText = sanitizeGeneratedFacts(text || "");
+  const rawText = String(text || "");
+  const sourceText = sanitizeGeneratedFacts(rawText);
   const fragment = document.createDocumentFragment();
   const textContainer = document.createElement("div");
   const actions = new Map();
-  const inlineLinkActions = new Map();
-  let cursor = 0;
 
   textContainer.className = "chat-message-text";
-
-  if (resolvedEntity) {
-    textContainer.appendChild(document.createTextNode(sourceText || getTruthLayerFallbackMessage()));
-  } else {
-    sourceText.replace(markdownLinkPattern, (match, label, rawUrl, offset) => {
-      appendTextWithRawLinks(textContainer, sourceText.slice(cursor, offset), inlineLinkActions);
-
-      const safeUrl = normalizeUrl(rawUrl);
-
-      if (safeUrl) {
-        const link = createChatLink(label, safeUrl);
-        textContainer.appendChild(link);
-        collectConciergeAction(inlineLinkActions, label, safeUrl);
-      } else {
-        textContainer.appendChild(document.createTextNode(match));
-      }
-
-      cursor = offset + match.length;
-      return match;
-    });
-
-    appendTextWithRawLinks(textContainer, sourceText.slice(cursor), inlineLinkActions);
-  }
+  textContainer.appendChild(document.createTextNode(sourceText || getTruthLayerFallbackMessage()));
 
   const universalCtaResult = buildUniversalCtas({
     userMessage: context.userMessage || "",
-    botResponse: sourceText,
-    affiliate: resolvedEntity || context.affiliate || null
+    botResponse: rawText,
+    affiliate: resolvedEntity || context.affiliate || null,
+    detectedCtas: context.detectedCtas || []
   });
   universalCtaResult.actions.forEach((action) => addUniversalCta(actions, action));
   fragment.appendChild(textContainer);
 
   askSantoriniTrafficLog("AskSantorini CTA debug - after parsing:", parseCtaDebugData(sourceText));
-  askSantoriniTrafficLog("AskSantorini Universal CTA Engine v1:", universalCtaResult);
+  askSantoriniTrafficLog("AskSantorini Universal CTA Engine v2:", universalCtaResult);
+  askSantoriniTrafficLog("AskSantorini CTA Enforcement Layer v2:", getCtaEnforcementDebug({
+    rawText,
+    intent: universalCtaResult.intent,
+    entity: universalCtaResult.entity,
+    actions: Array.from(actions.values()),
+    llmPhoneAttempt: context.ctaDebug?.phone_llm_attempt_blocked
+  }));
 
   if (!actions.size) {
     askSantoriniTrafficLog("AskSantorini CTA debug - after transformation:", {
@@ -3461,7 +3451,9 @@ async function sendMessage(text) {
     appendMessage(reply, "bot-message", {
       userMessage: cleanText,
       affiliate: selectedAffiliate,
-      resolvedEntity
+      resolvedEntity,
+      detectedCtas: data?.detected_ctas || [],
+      ctaDebug: data?.cta_debug || null
     });
     latestInteractionEvent = buildEvent({
       userMessage: cleanText,
