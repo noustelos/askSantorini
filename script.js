@@ -1193,28 +1193,31 @@ function classifyRoutingIntent(userMessage) {
   const sourceText = String(userMessage || "");
   const hasLocationIntent = routingIntentPatterns.location.test(sourceText);
   const hasBusinessIntent = routingIntentPatterns.business.test(sourceText);
+  const createRoutingResult = (detectedIntentType, intentConfidenceScore, routingPath) => Object.freeze({
+    detected_intent_type: detectedIntentType,
+    intent_confidence_score: intentConfidenceScore,
+    routing_path: routingPath,
+    original_routing_path: routingPath,
+    routing_path_locked: routingPath === "location"
+  });
 
   if (hasLocationIntent) {
-    return {
-      detected_intent_type: "location",
-      intent_confidence_score: hasBusinessIntent ? 0.86 : 0.95,
-      routing_path: "location"
-    };
+    return createRoutingResult("location", hasBusinessIntent ? 0.86 : 0.95, "location");
   }
 
   if (hasBusinessIntent || classifyCriticalUniversalCtaIntent(sourceText)) {
-    return {
-      detected_intent_type: "business",
-      intent_confidence_score: hasBusinessIntent ? 0.92 : 0.88,
-      routing_path: "business"
-    };
+    return createRoutingResult("business", hasBusinessIntent ? 0.92 : 0.88, "business");
   }
 
-  return {
-    detected_intent_type: "general",
-    intent_confidence_score: 0.55,
-    routing_path: "general"
-  };
+  return createRoutingResult("general", 0.55, "general");
+}
+
+function getFallbackAttemptedRoutingOverride(intentRouting, attemptedRoutingPath = "") {
+  return Boolean(
+    intentRouting?.routing_path_locked
+    && attemptedRoutingPath
+    && attemptedRoutingPath !== intentRouting.routing_path
+  );
 }
 
 function normalizeEntityId(value) {
@@ -1412,7 +1415,7 @@ function buildSfpTruthCtas(entity, intent) {
     }));
 }
 
-function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = "", llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackPathUsed = "" } = {}) {
+function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = "", llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackAttemptedOverride = false, fallbackPathUsed = "" } = {}) {
   const resolvedEntity = resolveStructuredEntity(entity);
   const allowedUrls = resolvedEntity ? {
     phone: resolvedEntity.phone,
@@ -1463,6 +1466,7 @@ function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = ""
       entityMatchConfidence,
       entityResolutionSource,
       intentRouting,
+      fallbackAttemptedOverride,
       fallbackPathUsed
     })
   };
@@ -1536,6 +1540,7 @@ async function finalizeResponse({
   entityMatchConfidence = 0,
   entityResolutionSource = "",
   intentRouting = null,
+  fallbackAttemptedOverride = false,
   fallbackTriggered = false,
   fallbackPathUsed = "",
   className = "bot-message",
@@ -1545,7 +1550,13 @@ async function finalizeResponse({
 } = {}) {
   const pipelineStepLog = [];
   const hydratedEntity = resolveStructuredEntity(entity);
-  const routingDebug = intentRouting || classifyRoutingIntent(userMessage);
+  const routingDebug = intentRouting || Object.freeze({
+    detected_intent_type: "unknown",
+    intent_confidence_score: 0,
+    routing_path: "unknown",
+    original_routing_path: "unknown",
+    routing_path_locked: false
+  });
   let generatedText = llmText;
   let generatedCtaDebug = ctaDebug;
 
@@ -1586,6 +1597,7 @@ async function finalizeResponse({
     entityMatchConfidence,
     entityResolutionSource,
     intentRouting: routingDebug,
+    fallbackAttemptedOverride,
     fallbackPathUsed
   });
   pipelineStepLog.push("enforce");
@@ -1603,6 +1615,8 @@ async function finalizeResponse({
     detected_intent_type: routingDebug.detected_intent_type,
     intent_confidence_score: routingDebug.intent_confidence_score,
     routing_path: routingDebug.routing_path,
+    routing_path_locked: Boolean(routingDebug.routing_path_locked),
+    fallback_attempted_override: Boolean(fallbackAttemptedOverride),
     fallback_triggered: truthFallbackTriggered,
     fallback_path_used: truthFallbackTriggered ? fallbackPathUsed : "",
     missing_fields_list: missingFieldsList,
@@ -1715,14 +1729,15 @@ function detectGeneratedPhoneAttempt(text) {
     || hasContextualPhoneCandidate;
 }
 
-function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackPathUsed = "" } = {}) {
+function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackAttemptedOverride = false, fallbackPathUsed = "" } = {}) {
   const phoneAction = actions.find((action) => action.type === "phone") || null;
   const hasLlmPhoneAttempt = Boolean(llmPhoneAttempt) || detectGeneratedPhoneAttempt(rawText);
   const ctaTypes = [...new Set(actions.map((action) => action.type))];
   const routingDebug = intentRouting || {
     detected_intent_type: "",
     intent_confidence_score: 0,
-    routing_path: ""
+    routing_path: "",
+    routing_path_locked: false
   };
 
   return {
@@ -1731,6 +1746,8 @@ function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, acti
     detected_intent_type: routingDebug.detected_intent_type,
     intent_confidence_score: routingDebug.intent_confidence_score,
     routing_path: routingDebug.routing_path,
+    routing_path_locked: Boolean(routingDebug.routing_path_locked),
+    fallback_attempted_override: Boolean(fallbackAttemptedOverride),
     fallback_triggered: Boolean(fallbackTriggered),
     fallback_path_used: fallbackTriggered ? fallbackPathUsed : "",
     missing_fields_list: entity?.missingFieldsList || truthLayerFactualFields,
@@ -3310,6 +3327,7 @@ async function sendMessage(text) {
   let selectedOptimizationContext = null;
   let entityMatchDebug = normalizeTruthLayerMatchResult(null, 0);
   let entityResolutionSource = "fallback_prompt";
+  let fallbackAttemptedOverride = false;
 
   appendMessage(cleanText, "user-message");
   userInput.value = "";
@@ -3363,10 +3381,17 @@ async function sendMessage(text) {
     selectedAffiliate = resolvedEntity || selectedAffiliate;
 
     const truthComplete = Boolean(resolvedEntity && hasTruthCompleteness(resolvedEntity));
+    const fallbackAttemptedRoutingPath = (!activeEntity && mentionedEntityMatch?.ambiguous) || !resolvedEntity || (resolvedEntity && !truthComplete)
+      ? "business"
+      : "";
+    fallbackAttemptedOverride = getFallbackAttemptedRoutingOverride(intentRouting, fallbackAttemptedRoutingPath);
     const fallbackRequired = Boolean(
-      (intentRouting.routing_path === "business" && !activeEntity && mentionedEntityMatch?.ambiguous)
-      || (isBusinessContactIntent(cleanText) && !resolvedEntity)
-      || (intentRouting.routing_path === "business" && resolvedEntity && !truthComplete)
+      !fallbackAttemptedOverride
+      && (
+        (intentRouting.routing_path === "business" && !activeEntity && mentionedEntityMatch?.ambiguous)
+        || (isBusinessContactIntent(cleanText) && !resolvedEntity)
+        || (intentRouting.routing_path === "business" && resolvedEntity && !truthComplete)
+      )
     );
 
     if (fallbackRequired) {
@@ -3397,6 +3422,8 @@ async function sendMessage(text) {
         detected_intent_type: intentRouting.detected_intent_type,
         intent_confidence_score: intentRouting.intent_confidence_score,
         routing_path: intentRouting.routing_path,
+        routing_path_locked: Boolean(intentRouting.routing_path_locked),
+        fallback_attempted_override: fallbackAttemptedOverride,
         fallback_path_used: fallbackPathUsed,
         fallback_triggered: true
       });
@@ -3408,6 +3435,7 @@ async function sendMessage(text) {
         entityMatchConfidence: entityMatchDebug.confidence,
         entityResolutionSource,
         intentRouting,
+        fallbackAttemptedOverride,
         fallbackTriggered: true,
         fallbackPathUsed,
         className: "bot-message error",
@@ -3473,6 +3501,7 @@ async function sendMessage(text) {
       entityMatchConfidence: entityMatchDebug.confidence,
       entityResolutionSource,
       intentRouting,
+      fallbackAttemptedOverride,
       fallbackPathUsed: getActiveEntityId() ? "session_reuse" : "clarification_request",
       className: "bot-message",
       messageId,
@@ -3504,6 +3533,7 @@ async function sendMessage(text) {
       entityMatchConfidence: entityMatchDebug.confidence,
       entityResolutionSource,
       intentRouting,
+      fallbackAttemptedOverride,
       className: "bot-message error",
       messageId,
       onBeforeRender: () => {
