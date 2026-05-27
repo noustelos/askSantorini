@@ -3,3 +3,11 @@
 
 # Local QA artifacts
 qa-screenshots/
+
+# Wrangler local cache / state
+.wrangler/
+.dev.vars
+
+# Node
+node_modules/
+npm-debug.log*
