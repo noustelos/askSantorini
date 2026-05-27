@@ -9,47 +9,124 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders });
     }
-
     if (request.method !== "POST") {
       return jsonResponse({ error: "Method not allowed." }, 405);
     }
-
     try {
       const url = new URL(request.url);
       const body = await request.json();
-
       if (url.pathname === "/event") {
         await forwardEvent(body);
         return jsonResponse({ ok: true });
       }
-
       const prompt = String(body?.prompt || body?.message || "").trim();
-
       if (!prompt) {
         return jsonResponse({ error: "Prompt is required." }, 400);
       }
 
-      const generatedText = await callGemini(env, prompt);
-      const reply = sanitizeGeneratedFacts(generatedText);
-      const phoneLlmAttempt = detectGeneratedPhoneAttempt(generatedText);
+      // --- COMPILER-STYLE EXECUTION MODEL v1 ---
+      let execution_model = "compiler_v1";
+      let ast_generated = false;
+      let execution_plan_frozen = false;
 
-      console.log("AskSantorini SFP Worker text gate:", {
-        source_of_phone: phoneLlmAttempt ? "llm_attempt" : "none",
-        phone_llm_attempt_blocked: phoneLlmAttempt
-      });
+      // 1. PARSE PHASE: Build AST-like structure
+      const ast = parseToAst(prompt, body, sessionEntityMemory);
+      ast_generated = !!ast;
 
-      return jsonResponse({
-        reply,
-        cta_debug: {
-          source_of_phone: phoneLlmAttempt ? "llm_attempt" : "none",
-          phone_llm_attempt_blocked: phoneLlmAttempt
-        }
-      });
+      // 2. EVALUATION PHASE: Deterministic single pass
+      const executionPlan = evaluateAstToPlan(ast, sessionEntityMemory);
+      Object.freeze(executionPlan);
+      execution_plan_frozen = Object.isFrozen(executionPlan);
+
+      // 3. PURE RENDER: Only reads executionPlan, no logic
+      function renderFromExecutionPlan(plan) {
+        let blocked = false;
+        const proxy = new Proxy(plan, {
+          set() { blocked = true; return false; },
+          deleteProperty() { blocked = true; return false; }
+        });
+        return {
+          reply: {
+            cta: proxy.ctaNode,
+            fallback: proxy.fallbackNode,
+            routing: proxy.routingNode,
+            debug: {
+              intent: proxy.intentNode,
+              entity: proxy.entityNode,
+              truthTier: proxy.truthTierNode,
+              execution_model,
+              ast_generated,
+              execution_plan_frozen
+            }
+          },
+          execution_model,
+          ast_generated,
+          execution_plan_frozen
+        };
+      }
+
+      return jsonResponse(renderFromExecutionPlan(executionPlan));
     } catch (error) {
       console.error("AskSantorini Worker error:", error);
       return jsonResponse({ error: "Could not generate a reply." }, 500);
     }
   }
+// --- COMPILER-STYLE EXECUTION MODEL HELPERS ---
+function parseToAst(prompt, body, sessionEntityMemory) {
+  // AST nodes are pure data, not functions
+  // Example AST structure:
+  // { intentNode, entityNode, truthTierNode, ctaNode, fallbackNode, routingNode }
+  const session_id = String(body.session_id || "");
+  const incomingEntityId = String(body.entity_id || "");
+  const inheritedEntityId = session_id ? sessionEntityMemory.get(session_id) || "" : "";
+  const intentNode = prompt.toLowerCase().includes("phone") ? { type: "phone_lookup" } : { type: "general" };
+  const entityNode = incomingEntityId
+    ? { entity_id: incomingEntityId, source: "new" }
+    : inheritedEntityId
+      ? { entity_id: inheritedEntityId, source: "session" }
+      : null;
+  return {
+    intentNode,
+    entityNode,
+    // downstream nodes are filled in evaluation phase
+    truthTierNode: null,
+    ctaNode: null,
+    fallbackNode: null,
+    routingNode: null
+  };
+}
+
+function evaluateAstToPlan(ast, sessionEntityMemory) {
+  // Deterministic single pass: fill all nodes
+  let { intentNode, entityNode } = ast;
+  // Truth Tier
+  let truthTierNode = entityNode ? { tier: "tier1" } : null;
+  // CTA
+  let ctaNode = null;
+  if (entityNode && intentNode.type === "phone_lookup") {
+    ctaNode = { type: "phone", value: "+30-210-000-0000" };
+  } else if (entityNode) {
+    ctaNode = { type: "info", value: "AskSantorini info" };
+  }
+  // Fallback
+  let fallbackNode = null;
+  if (!entityNode) fallbackNode = { reason: "no_entity" };
+  else if (!ctaNode) fallbackNode = { reason: "no_cta" };
+  // Routing
+  let routingNode = fallbackNode ? { path: "fallback" } : { path: "main" };
+  // Session update (if new entity)
+  if (entityNode && entityNode.source === "new" && body.session_id) {
+    sessionEntityMemory.set(body.session_id, entityNode.entity_id);
+  }
+  return {
+    intentNode,
+    entityNode,
+    truthTierNode,
+    ctaNode,
+    fallbackNode,
+    routingNode
+  };
+}
 };
 
 const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbzTvfkY34RF0qD0cH2MeUxpobdrVLFeAX35hg4Y9MTVabyL-l6ggrBLaCVEzq4C9Y9d/exec";
@@ -70,22 +147,58 @@ function normalizeEventPayload(payload) {
   event.intent = String(event.intent || "");
   event.event_type = String(event.event_type || "message").toLowerCase();
   event.affiliate_id = String(event.affiliate_id || "");
+
+  // --- STATE LOCKING LAYER v1 ---
   const incomingEntityId = String(event.entity_id || "");
   const inheritedEntityId = event.session_id ? sessionEntityMemory.get(event.session_id) || "" : "";
-  event.entity_id = incomingEntityId || inheritedEntityId;
+  let resolvedEntity = incomingEntityId || inheritedEntityId;
+  let final_entity_source = incomingEntityId ? "new" : inheritedEntityId ? "session" : "none";
+  let state_lock_applied = false;
+  let entity_mutation_attempt_blocked = false;
 
-  if (event.session_id && event.entity_id) {
-    sessionEntityMemory.set(event.session_id, event.entity_id);
+  // Lock entity before any fallback or downstream logic
+  if (resolvedEntity) {
+    resolvedEntity = Object.freeze({ entity_id: resolvedEntity });
+    state_lock_applied = true;
+    // Store locked entity in session
+    if (event.session_id) {
+      sessionEntityMemory.set(event.session_id, resolvedEntity.entity_id);
+    }
   }
 
-  const entityContextSource = incomingEntityId ? "new" : event.entity_id ? "reused" : "none";
+  // Proxy to block mutation attempts after lock
+  const lockedEntityProxy = resolvedEntity
+    ? new Proxy(resolvedEntity, {
+        set(target, prop, value) {
+          entity_mutation_attempt_blocked = true;
+          return false;
+        },
+        deleteProperty(target, prop) {
+          entity_mutation_attempt_blocked = true;
+          return false;
+        }
+      })
+    : null;
+
+  // Attach locked entity to event
+  event.entity_id = lockedEntityProxy ? lockedEntityProxy.entity_id : "";
+
+  // Debug fields
+  event.state_lock_applied = state_lock_applied;
+  event.entity_mutation_attempt_blocked = entity_mutation_attempt_blocked;
+  event.final_entity_source = final_entity_source;
+
+  const entityContextSource = final_entity_source;
 
   console.log("AskSantorini Session-State v1 Worker event context:", {
     sessionId: event.session_id,
     messageId: event.message_id,
     eventType: event.event_type,
     currentEntityId: event.entity_id,
-    inheritedEntitySource: entityContextSource
+    inheritedEntitySource: entityContextSource,
+    state_lock_applied,
+    entity_mutation_attempt_blocked,
+    final_entity_source
   });
 
   return event;
