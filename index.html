@@ -500,36 +500,55 @@
 
     <script src="script.js" defer></script>
     <script>
-      // Floating chat bubble logic — land the user IN the chat:
-      // scroll the chat card to the top with a header offset, then
-      // focus the input so the keyboard appears on mobile.
-      const bubble = document.getElementById('floating-chat-bubble');
-      if (bubble) {
+      // Floating chat bubble — land the user IN the chat reliably.
+      // Strategy: compute target with live header height, smooth-scroll,
+      // re-correct after the scroll settles (covers font/layout shifts
+      // and mobile URL-bar collapse), then highlight the card. Focus the
+      // input only on devices with a real keyboard so we don't pop the
+      // soft keyboard unexpectedly on touch devices.
+      (function () {
+        const bubble = document.getElementById('floating-chat-bubble');
+        if (!bubble) return;
+
+        const getOffset = () => {
+          const header = document.querySelector('.site-header');
+          const h = header ? header.getBoundingClientRect().height : 0;
+          return h + 16;
+        };
+
+        const targetTopFor = (el) =>
+          Math.max(0, el.getBoundingClientRect().top + window.pageYOffset - getOffset());
+
         bubble.addEventListener('click', (event) => {
           event.preventDefault();
           const chat = document.getElementById('ask-ai');
           if (!chat) return;
 
-          const header = document.querySelector('.site-header');
-          const headerH = header ? header.getBoundingClientRect().height : 0;
-          const offset = headerH + 16;
-          const top = chat.getBoundingClientRect().top + window.pageYOffset - offset;
+          window.scrollTo({ top: targetTopFor(chat), behavior: 'smooth' });
 
-          window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+          if (window.location.hash !== '#ask-ai') {
+            try { history.pushState(null, '', '#ask-ai'); } catch (_) { /* ignore */ }
+          }
 
           chat.classList.add('chat-highlight');
-          setTimeout(() => chat.classList.remove('chat-highlight'), 1200);
+          window.setTimeout(() => chat.classList.remove('chat-highlight'), 1400);
 
-          // Focus the textarea once the smooth scroll settles so the
-          // mobile keyboard rises and the user is truly "in" the chat.
-          setTimeout(() => {
-            const input = document.getElementById('user-input');
-            if (input) {
-              try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
+          // Settle correction + desktop-only input focus once the
+          // smooth-scroll has finished.
+          window.setTimeout(() => {
+            const delta = chat.getBoundingClientRect().top - (getOffset() - 16);
+            if (Math.abs(delta) > 24) {
+              window.scrollTo({ top: targetTopFor(chat), behavior: 'auto' });
             }
-          }, 650);
+            if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+              const input = document.getElementById('user-input');
+              if (input) {
+                try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
+              }
+            }
+          }, 700);
         });
-      }
+      })();
     </script>
   </body>
 </html>
