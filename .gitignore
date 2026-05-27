@@ -7,6 +7,7 @@ qa-screenshots/
 # Wrangler local cache / state
 .wrangler/
 .dev.vars
+wrangler.toml.local
 
 # Node
 node_modules/
