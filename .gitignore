@@ -11,3 +11,5 @@ qa-screenshots/
 # Node
 node_modules/
 npm-debug.log*
+wrangler.toml
+.github/workflows/deploy-worker.yml
