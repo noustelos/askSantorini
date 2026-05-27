@@ -1346,7 +1346,6 @@ function hydrateTruthLayerEntity(entityId, source = "unknown") {
     entityId: normalizedEntityId,
     hydrationSuccess: Boolean(resolvedEntity),
     phonePresent: Boolean(resolvedEntity?.phone),
-    truthComplete: Boolean(resolvedEntity?.truthComplete),
     missingFieldsList: resolvedEntity?.missingFieldsList || [],
     source
   });
@@ -1411,16 +1410,12 @@ function resolveStructuredEntity(entity) {
   const website = getEntityWebsiteUrl(canonicalEntity);
   const maps = getEntityMapsUrl(canonicalEntity);
   const missingFieldsList = getTruthLayerMissingFields(canonicalEntity);
-  const truthComplete = missingFieldsList.length < truthLayerFactualFields.length;
-
   return {
     ...canonicalEntity,
     phone,
     websiteUrl: website,
     mapsUrl: maps,
-    missingFieldsList,
-    truthComplete,
-    hasAuthoritativeFacts: truthComplete
+    missingFieldsList
   };
 }
 
@@ -1644,7 +1639,7 @@ async function finalizeResponse({
   pipelineStepLog.push("hydration");
   const intent = getSfpIntent(userMessage, selectedIntent, hydratedEntity);
   pipelineStepLog.push("intent");
-  const truthComplete = Boolean(hydratedEntity && hasTruthCompleteness(hydratedEntity));
+  // truthComplete removed: intent-based validation is now used
   const missingFieldsList = hydratedEntity?.missingFieldsList || truthLayerFactualFields;
   const requestedMissingField = getRequestedMissingTruthField(intent, missingFieldsList);
   const truthFallbackTriggered = Boolean(fallbackTriggered || requestedMissingField);
@@ -1742,7 +1737,6 @@ function getRequestedMissingTruthField(intent, missingFields = []) {
 
 function getTruthLayerFallbackMessage(missingFields = truthLayerFactualFields, { entity = null, intent = "", fallbackPathUsed = "" } = {}) {
   const missing = Array.isArray(missingFields) ? new Set(missingFields) : new Set();
-  const hasAllContactFieldsMissing = truthLayerFactualFields.every((field) => missing.has(field));
   const hasWebsite = Boolean(getEntityWebsiteUrl(entity));
   const hasMaps = Boolean(getEntityMapsUrl(entity));
   const hasPhone = Boolean(getEntityPhoneUrl(entity));
@@ -1758,35 +1752,62 @@ function getTruthLayerFallbackMessage(missingFields = truthLayerFactualFields, {
       ? " Please send the full business name so I can check only verified details."
       : " I’ll keep using the place from this chat and show verified actions when they are available.";
 
-  if (hasAllContactFieldsMissing) {
+  // Intent-based required field logic
+  let intentRequiredField = null;
+  if (intent === "phone") intentRequiredField = "phone";
+  else if (intent === "website") intentRequiredField = "website";
+  else if (intent === "maps" || intent === "maps_url" || intent === "location_request" || intent === "navigation_request") intentRequiredField = "maps_url";
+
+  let entitySatisfiedFields = [];
+  if (entity) {
+    if (getEntityPhoneUrl(entity)) entitySatisfiedFields.push("phone");
+    if (getEntityWebsiteUrl(entity)) entitySatisfiedFields.push("website");
+    if (getEntityMapsUrl(entity)) entitySatisfiedFields.push("maps_url");
+  }
+
+  let validationReason = "";
+  let fallbackRequired = false;
+
+  if (!entity) {
+    fallbackRequired = true;
+    validationReason = "entity is null";
+  } else if (intentRequiredField && !entitySatisfiedFields.includes(intentRequiredField)) {
+    fallbackRequired = true;
+    validationReason = `entity missing required field for intent: ${intentRequiredField}`;
+  } else {
+    fallbackRequired = false;
+    validationReason = "entity satisfies intent-required field";
+  }
+
+  // Debug logging
+  if (typeof askSantoriniTrafficLog === "function") {
+    askSantoriniTrafficLog("TruthLayer Intent Validation Debug", {
+      intent,
+      intent_required_field: intentRequiredField,
+      entity_satisfied_fields: entitySatisfiedFields,
+      validation_reason: validationReason,
+      fallback_required: fallbackRequired
+    });
+  }
+
+  if (fallbackRequired) {
+    if (!entity) {
+      return "Verified contact details are not available right now." + nextBestAction;
+    }
+    if (intentRequiredField === "phone") {
+      return "I couldn't find a verified contact number for this place right now." + nextBestAction;
+    }
+    if (intentRequiredField === "website") {
+      return "I couldn't find a verified website for this place right now." + nextBestAction;
+    }
+    if (intentRequiredField === "maps_url") {
+      return "I couldn't find a verified map listing for this place right now." + nextBestAction;
+    }
     return "Verified contact details are not available right now." + nextBestAction;
   }
 
-  if (missing.has("phone") && missing.size === 1) {
-    return "I couldn't find a verified contact number for this place right now." + nextBestAction;
-  }
-
-  if (missing.has("website") && missing.size === 1) {
-    return "I couldn't find a verified website for this place right now." + nextBestAction;
-  }
-
-  if (missing.has("maps_url") && missing.size === 1) {
-    return "I couldn't find a verified map listing for this place right now." + nextBestAction;
-  }
-
-  if (missing.has("phone")) {
-    return "I couldn't find a verified contact number for this place right now." + nextBestAction;
-  }
-
-  if (missing.has("website")) {
-    return "I couldn't find a verified website for this place right now." + nextBestAction;
-  }
-
-  if (missing.has("maps_url")) {
-    return "I couldn't find a verified map listing for this place right now." + nextBestAction;
-  }
-
-  return "Verified contact details are not available right now." + nextBestAction;
+  // If entity is valid for intent, do not trigger fallback
+  return "";
 }
 
 function getLocationFallbackMessage(userMessage = "") {
