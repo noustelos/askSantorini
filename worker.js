@@ -61,7 +61,8 @@ export default {
       const rawReply = gemini.text;
       const llmPhoneAttempt = detectGeneratedPhoneAttempt(rawReply);
       const sources = dedupeSources(gemini.grounding);
-      const cta = buildCtaList({ rawText: rawReply, sources });
+      const isGreek = /[\u0370-\u03ff\u1f00-\u1fff]/.test(prompt);
+      const cta = buildCtaList({ rawText: rawReply, sources, isGreek });
       // When grounding produced verified CTAs, trust the LLM text (already sourced).
       // Otherwise apply defensive sanitization to strip unverified phones/URLs.
       const reply = cta && cta.length
@@ -254,15 +255,17 @@ function dedupeSources(sources) {
   return result.slice(0, 5);
 }
 
-function buildCtaList({ rawText, sources }) {
+function buildCtaList({ rawText, sources, isGreek = false }) {
   const ctas = [];
+  const callLabel = isGreek ? "\uD83D\uDCDE \u039A\u03BB\u03AE\u03C3\u03B7" : "\uD83D\uDCDE Call";
+  const websiteLabel = isGreek ? "\uD83C\uDF10 \u0399\u03C3\u03C4\u03BF\u03C3\u03B5\u03BB\u03AF\u03B4\u03B1" : "\uD83C\uDF10 Visit website";
   const phoneMatch = String(rawText || "").match(/\+?30[\s().-]*(?:\d[\s().-]*){8,12}/);
 
   if (phoneMatch && sources.length > 0) {
     const normalised = phoneMatch[0].replace(/[^\d+]/g, "");
     if (normalised.length >= 10) {
       const telHref = normalised.startsWith("+") ? `tel:${normalised}` : `tel:+${normalised}`;
-      ctas.push({ type: "phone", label: "\uD83D\uDCDE Call", url: telHref, style: "primary" });
+      ctas.push({ type: "phone", label: callLabel, url: telHref, style: "primary" });
     }
   }
 
@@ -286,7 +289,7 @@ function buildCtaList({ rawText, sources }) {
   });
 
   if (websiteSource) {
-    ctas.push({ type: "link", label: "\uD83C\uDF10 Visit website", url: websiteSource.uri, style: "secondary" });
+    ctas.push({ type: "link", label: websiteLabel, url: websiteSource.uri, style: "secondary" });
   }
 
   return ctas.length ? ctas : null;
