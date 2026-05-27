@@ -3673,3 +3673,72 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ============================================================ */
+/* Premium-polish pass — kill shimmer, slow ambient motion      */
+/* (final override block, must stay at end of file)             */
+/* ============================================================ */
+
+/* 1. Remove ALL shimmer sweeps — premium sites avoid them */
+.button-primary::after,
+.section-micro-cta::after,
+.chat-card .input-area button.send-btn::after,
+.concierge-card-cta::after,
+.network-destination.is-live::after,
+.chat-card .input-area::before {
+  content: none !important;
+  background: none !important;
+  animation: none !important;
+  display: none !important;
+}
+
+#floating-chat-bubble .shimmer {
+  display: none !important;
+  animation: none !important;
+}
+
+/* 2. Pulsing live-dot — slow, calm breath (~6s, gentler scale) */
+.chat-card-top .status-dot {
+  animation: livePulseCalm 6s ease-in-out infinite !important;
+}
+@keyframes livePulseCalm {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+    box-shadow: 0 0 10px rgba(0, 255, 160, 0.22);
+  }
+}
+
+/* 3. Chat input border — much subtler ambient breath
+      (slower cycle, smaller shadow delta, no halo expansion)   */
+.chat-card .input-area {
+  animation: inputAmbientGlowSubtle 9s ease-in-out infinite !important;
+}
+.chat-card .input-area:hover,
+.chat-card .input-area:focus-within {
+  animation-duration: 9s !important;
+}
+@keyframes inputAmbientGlowSubtle {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.9) inset,
+      0 4px 14px -4px rgba(31, 95, 96, 0.20),
+      0 0 0 4px rgba(42, 126, 127, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 1) inset,
+      0 6px 16px -4px rgba(31, 95, 96, 0.26),
+      0 0 0 4px rgba(42, 126, 127, 0.10);
+  }
+}
+
+/* 4. Secondary input-area (.input-area without .chat-card) — disable pulse */
+.input-area {
+  animation: none !important;
+}
+
