@@ -14,20 +14,35 @@ const translations = {
     startAsking: "Start Chat",
     seeQuestions: "See Suggestions",
     heroTitle: "JUST ASK",
-    heroSubtitle: "Your AI travel concierge for Santorini.",
+    heroSubtitle: "Your AI concierge for Santorini.",
+    heroReinforce: "A local AI concierge in your pocket — open all day, every day.",
     noAppPart: "Free.",
     noSignupPart: "No app.",
     justAskPart: "No sign-up.",
     valueStrip: "Free. No app. No sign-up. Just ask.",
     heroValueStrip: "No app. No sign-up. Just answers.",
-    previewMode: "Live · Ask Santorini AI",
+    previewMode: "LIVE NOW · ASK SANTORINI AI",
     chatInstructionLine: "Ask anything about Santorini",
     chatEmptyHelper: "Start with a question",
     chatLanguageNote: "Ask in English, Greek, or your own language.",
     chatGreeting: "Hi! I'm your local Santorini AI. Ask me anything.",
     chatPlaceholder: "Ask Santorini AI...",
+    chatPlaceholderRotations: [
+      "Where's the best sunset tonight?",
+      "Best beach near me?",
+      "How do I get to Oia?",
+      "Where to eat tonight?",
+      "What can I do today?"
+    ],
     sendButton: "Send",
     micAria: "Speak to AI",
+    micHelper: "Tap the mic to speak",
+    sunModeAria: "Toggle outdoor (high-contrast) mode",
+    chipSunset: "☼ Sunset",
+    chipFood: "• Food",
+    chipBeach: "◒ Beach",
+    chipToday: "◇ Today",
+    recentLabel: "Recent",
     listeningAria: "Listening",
     thinkingMessage: "Thinking...",
     noReplyMessage: "Sorry, I could not generate a reply.",
@@ -44,16 +59,21 @@ const translations = {
     questionsTitle: "What do you want to know first?",
     questionsIntro: "Ask about hidden beaches, sunset viewpoints, grilled octopus by the sea, boat rides or the easiest plan for today.",
     starterLine: "Choose the question closest to your mood",
-    questionsMicroCta: "Ask now",
+    questionsMicroCta: "Just ask",
     featureBeaches: "Which beach fits today?",
     featureSunsets: "Where is sunset best?",
     featureTours: "Want the sea route?",
     featureFood: "Craving local food?",
     featureTransport: "How do you get there?",
     featureLine: "Ask for a direct Santorini answer",
+    featureBeachesLine: "Black sand, red cliffs or family calm — just ask.",
+    featureSunsetsLine: "Where the light actually lands tonight — not just Oia.",
+    featureToursLine: "Caldera, volcano, hot springs — chosen by locals.",
+    featureFoodLine: "Caldera tables locals actually book.",
+    featureTransportLine: "Bus, taxi, private transfer or helicopter — your call.",
     featureMicroCta: "Just ask",
     howEyebrow: "How to ask",
-    howTitle: "What should you ask first?",
+    howTitle: "How your AI concierge works",
     howLanguageTitle: "Want to ask naturally?",
     howLanguageText: "Type or speak in your language. The AI replies in the language you use.",
     step1Title: "Need a plan for today?",
@@ -62,10 +82,10 @@ const translations = {
     step2Text: "Compare Oia or Imerovigli, boat or beach, bus or private transfer.",
     step3Title: "Want the easiest next step?",
     step3Text: "Get a simple answer, then ask deeper if you need details.",
-    howMicroCta: "Get an instant answer",
+    howMicroCta: "Just ask",
     toursEyebrow: "Sea and sunset",
-    toursTitle: "Want a private boat experience?",
-    toursIntro: "Ask about sunset catamarans, volcanic swims, wine routes and sea days without overplanning.",
+    toursTitle: "Curated by locals. Booked through Ask Santorini AI.",
+    toursIntro: "Sunset catamarans, volcanic swims, slow wine routes — ask for the version that fits your day.",
     tourLabelPopular: "Popular",
     tourLabelClassic: "Relaxed",
     tourLabelRomantic: "Romantic",
@@ -82,7 +102,7 @@ const translations = {
     partnerDisclosure: "Some links may be partner recommendations.",
     toBeFeatured: "To be featured, contact",
     conciergeEyebrow: "Concierge",
-    toursMicroCta: "Ask now",
+    toursMicroCta: "Just ask",
     conciergeTitle: "Planning a moment that should feel effortless?",
     conciergeIntro: "Ask about photos, private transfers, beauty, proposals and special evenings with the right Santorini context.",
     conciergeSeoLine: "For couples, families and special moments that need calm local guidance.",
@@ -104,13 +124,13 @@ const translations = {
     conciergeDisclosure: "Featured services may include partner recommendations.",
     conciergeMicroCta: "Just ask",
     partnersEyebrow: "Partners",
-    partnersTitle: "Want visitors to find you when they ask?",
-    partnersText: "AskSantorini.ai connects visitor intent with relevant hotels, tours and local businesses when the answer naturally calls for them.",
+    partnersTitle: "Be the answer when guests asksantorini.ai",
+    partnersText: "AskSantorini.ai connects visitor intent with the right hotel, tour or local business — the moment the question naturally calls for one.",
     becomePartner: "Become a partner",
     instagramUpdates: "Follow updates on Instagram",
     instagramAria: "Visit Ask Santorini AI on Instagram",
     networkEyebrow: "Network",
-    partnersMicroCta: "Get an instant answer",
+    partnersMicroCta: "Just ask",
     networkTitle: "ASK AI TRAVEL NETWORK",
     networkIntro: "A growing ecosystem of AI travel assistants across global destinations.",
     networkSupport: "More places are being shaped around real traveler questions.",
@@ -120,11 +140,11 @@ const translations = {
     networkMicroCta: "Just ask",
     earlyAccessTitle: "Ready to ask your Santorini question?",
     earlyAccessIntro: "Use the live AI guide for beaches, sunset timing, grilled octopus by the sea, private boat rides or calm day plans.",
-    earlyAccessText: "No app. No sign-up. Just a direct answer.",
+    earlyAccessText: "One question away from your best Santorini day.",
     emailLabel: "Email address",
     companyLabel: "Company",
     notifyMe: "Ask now",
-    chatbotMicroCta: "Ask now",
+    chatbotMicroCta: "Just ask",
     contactCta: "Contact us",
     contactForNow: "For partnerships or questions, contact us at",
     footerNetworkLine: "Part of the ASK AI Travel Network",
@@ -192,21 +212,36 @@ const translations = {
     navEarlyAccess: "Ask AI",
     startAsking: "Ξεκίνα συνομιλία",
     seeQuestions: "Δες προτάσεις",
-    heroTitle: "JUST ASK",
-    heroSubtitle: "Your AI travel concierge for Santorini.",
+    heroTitle: "ΑΠΛΑ ΡΩΤΑ",
+    heroSubtitle: "Ο AI concierge σου για τη Σαντορίνη.",
+    heroReinforce: "Ένας τοπικός AI concierge στην τσέπη σου — διαθέσιμος όλη μέρα, κάθε μέρα.",
     noAppPart: "Δωρεάν.",
     noSignupPart: "Χωρίς εφαρμογή.",
     justAskPart: "Χωρίς εγγραφή.",
     valueStrip: "Δωρεάν. Χωρίς εφαρμογή. Χωρίς εγγραφή. Απλώς ρώτα.",
     heroValueStrip: "No app. No sign-up. Just answers.",
-    previewMode: "Live · Ask Santorini AI",
+    previewMode: "LIVE NOW · ASK SANTORINI AI",
     chatInstructionLine: "Ρώτησε ό,τι θέλεις για τη Σαντορίνη",
     chatEmptyHelper: "Ξεκίνα με μια ερώτηση",
     chatLanguageNote: "Ρώτησε στα Αγγλικά, στα Ελληνικά ή στη δική σου γλώσσα.",
     chatGreeting: "Γεια! Είμαι ο τοπικός AI οδηγός σου για τη Σαντορίνη. Ρώτησέ με ό,τι θέλεις.",
     chatPlaceholder: "Ρώτησε το Ask Santorini AI...",
+    chatPlaceholderRotations: [
+      "Πού είναι το καλύτερο ηλιοβασίλεμα απόψε;",
+      "Καλύτερη παραλία κοντά μου;",
+      "Πώς πάω στην Οία;",
+      "Πού να φάω απόψε;",
+      "Τι να κάνω σήμερα;"
+    ],
     sendButton: "Αποστολή",
     micAria: "Μίλησε στον AI οδηγό",
+    micHelper: "Πάτα το μικρόφωνο για να μιλήσεις",
+    sunModeAria: "Λειτουργία εξωτερικού χώρου (υψηλή αντίθεση)",
+    chipSunset: "☼ Ηλιοβασίλεμα",
+    chipFood: "• Φαγητό",
+    chipBeach: "◒ Παραλία",
+    chipToday: "◇ Σήμερα",
+    recentLabel: "Πρόσφατα",
     listeningAria: "Ακούω",
     thinkingMessage: "Σκέφτομαι...",
     noReplyMessage: "Συγγνώμη, δεν μπόρεσα να δημιουργήσω απάντηση.",
@@ -223,16 +258,21 @@ const translations = {
     questionsTitle: "Τι θέλεις να μάθεις πρώτα;",
     questionsIntro: "Ρώτησε για κρυφές παραλίες, σημεία για ηλιοβασίλεμα, χταπόδι δίπλα στη θάλασσα, βόλτες με σκάφος ή το πιο εύκολο πλάνο για σήμερα.",
     starterLine: "Διάλεξε την ερώτηση που ταιριάζει στη διάθεσή σου",
-    questionsMicroCta: "Ρώτησε τώρα",
+    questionsMicroCta: "Απλά ρώτα",
     featureBeaches: "Ποια παραλία ταιριάζει σήμερα;",
     featureSunsets: "Πού είναι καλύτερο το ηλιοβασίλεμα;",
     featureTours: "Θέλεις διαδρομή στη θάλασσα;",
     featureFood: "Θέλεις κάτι τοπικό;",
     featureTransport: "Πώς πας εκεί;",
     featureLine: "Ρώτησε για άμεση απάντηση στη Σαντορίνη",
-    featureMicroCta: "Απλώς ρώτα",
+    featureBeachesLine: "Μαύρη άμμος, κόκκινοι βράχοι ή οικογενειακή ηρεμία — απλά ρώτα.",
+    featureSunsetsLine: "Πού πέφτει πραγματικά το φως απόψε — όχι μόνο στην Οία.",
+    featureToursLine: "Καλντέρα, ηφαίστειο, θερμά νερά — επιλεγμένα από ντόπιους.",
+    featureFoodLine: "Τα τραπέζια με θέα που κλείνουν οι ντόπιοι.",
+    featureTransportLine: "Λεωφορείο, ταξί, ιδιωτική μεταφορά ή ελικόπτερο — εσύ αποφασίζεις.",
+    featureMicroCta: "Απλά ρώτα",
     howEyebrow: "Πώς να ρωτήσεις",
-    howTitle: "Τι αξίζει να ρωτήσεις πρώτα;",
+    howTitle: "Πώς δουλεύει ο AI concierge σου",
     howLanguageTitle: "Θέλεις να ρωτήσεις φυσικά;",
     howLanguageText: "Γράψε ή μίλησε στη γλώσσα σου. Το AI απαντά στη γλώσσα που χρησιμοποιείς.",
     step1Title: "Χρειάζεσαι πλάνο για σήμερα;",
@@ -241,10 +281,10 @@ const translations = {
     step2Text: "Σύγκρινε Οία ή Ημεροβίγλι, σκάφος ή παραλία, λεωφορείο ή ιδιωτική μεταφορά.",
     step3Title: "Θέλεις το πιο εύκολο επόμενο βήμα;",
     step3Text: "Πάρε μια απλή απάντηση και ρώτησε περισσότερα αν χρειαστεί.",
-    howMicroCta: "Πάρε άμεση απάντηση",
+    howMicroCta: "Απλά ρώτα",
     toursEyebrow: "Θάλασσα και ηλιοβασίλεμα",
-    toursTitle: "Θέλεις ιδιωτική εμπειρία με σκάφος;",
-    toursIntro: "Ρώτησε για καταμαράν στο ηλιοβασίλεμα, βουτιές κοντά στο ηφαίστειο, wine routes και μέρες στη θάλασσα χωρίς υπερβολικό πρόγραμμα.",
+    toursTitle: "Επιλεγμένα από ντόπιους. Κλείνονται μέσα από το Ask Santorini AI.",
+    toursIntro: "Καταμαράν στο ηλιοβασίλεμα, βουτιές στο ηφαίστειο, αργές διαδρομές κρασιού — ρώτα για την εκδοχή που ταιριάζει στη μέρα σου.",
     tourLabelPopular: "Δημοφιλές",
     tourLabelClassic: "Χαλαρό",
     tourLabelRomantic: "Ρομαντικό",
@@ -261,7 +301,7 @@ const translations = {
     partnerDisclosure: "Ορισμένοι σύνδεσμοι μπορεί να είναι συνεργατικές προτάσεις.",
     toBeFeatured: "Για προβολή, επικοινωνήστε στο",
     conciergeEyebrow: "Concierge",
-    toursMicroCta: "Ρώτησε τώρα",
+    toursMicroCta: "Απλά ρώτα",
     conciergeTitle: "Σχεδιάζεις μια στιγμή που πρέπει να κυλήσει ήρεμα;",
     conciergeIntro: "Ρώτησε για φωτογραφίες, ιδιωτικές μεταφορές, beauty, προτάσεις γάμου και ξεχωριστές βραδιές με σωστό τοπικό πλαίσιο.",
     conciergeSeoLine: "Για ζευγάρια, οικογένειες και ειδικές στιγμές που χρειάζονται ήρεμη τοπική καθοδήγηση.",
@@ -281,29 +321,29 @@ const translations = {
     conciergeAskOptions: "Ρώτησε το AI για επιλογές",
     conciergeCta: "Θέλεις να εμφανιστείς εδώ;",
     conciergeDisclosure: "Οι προτεινόμενες υπηρεσίες μπορεί να περιλαμβάνουν συνεργατικές προτάσεις.",
-    conciergeMicroCta: "Απλώς ρώτα",
+    conciergeMicroCta: "Απλά ρώτα",
     partnersEyebrow: "Συνεργάτες",
-    partnersTitle: "Θέλεις να σε βρίσκουν οι επισκέπτες όταν ρωτούν;",
-    partnersText: "Το AskSantorini.ai συνδέει την πρόθεση του επισκέπτη με σχετικά ξενοδοχεία, εκδρομές και τοπικές επιχειρήσεις όταν η απάντηση το χρειάζεται.",
+    partnersTitle: "Γίνε η απάντηση όταν οι επισκέπτες ρωτούν asksantorini.ai",
+    partnersText: "Το AskSantorini.ai συνδέει την πρόθεση του επισκέπτη με το σωστό ξενοδοχείο, εκδρομή ή τοπική επιχείρηση — τη στιγμή που η απάντηση το ζητάει φυσικά.",
     becomePartner: "Γίνετε συνεργάτης",
     instagramUpdates: "Ακολούθησε τα νέα στο Instagram",
     instagramAria: "Άνοιγμα του Ask Santorini AI στο Instagram",
     networkEyebrow: "Network",
-    partnersMicroCta: "Πάρε άμεση απάντηση",
+    partnersMicroCta: "Απλά ρώτα",
     networkTitle: "ASK AI TRAVEL NETWORK",
     networkIntro: "Ένα αναπτυσσόμενο οικοσύστημα AI ταξιδιωτικών βοηθών σε παγκόσμιους προορισμούς.",
     networkSupport: "Περισσότερα μέρη σχεδιάζονται γύρω από πραγματικές ερωτήσεις ταξιδιωτών.",
     networkLiveBadge: "Live",
     networkSoonBadge: "Coming soon",
     earlyAccessEyebrow: "Live τώρα",
-    networkMicroCta: "Απλώς ρώτα",
+    networkMicroCta: "Απλά ρώτα",
     earlyAccessTitle: "Έτοιμος να ρωτήσεις για τη Σαντορίνη;",
     earlyAccessIntro: "Χρησιμοποίησε τον live AI οδηγό για παραλίες, ώρα ηλιοβασιλέματος, χταπόδι δίπλα στη θάλασσα, ιδιωτικές βόλτες με σκάφος ή ήρεμα ημερήσια πλάνα.",
-    earlyAccessText: "Χωρίς εφαρμογή. Χωρίς εγγραφή. Μόνο άμεση απάντηση.",
+    earlyAccessText: "Μια ερώτηση μακριά από την καλύτερη μέρα σου στη Σαντορίνη.",
     emailLabel: "Email",
     companyLabel: "Εταιρεία",
     notifyMe: "Ρώτησε τώρα",
-    chatbotMicroCta: "Ρώτησε τώρα",
+    chatbotMicroCta: "Απλά ρώτα",
     contactCta: "Επικοινωνία",
     contactForNow: "Για συνεργασίες ή ερωτήσεις, επικοινώνησε μαζί μας στο",
     footerNetworkLine: "Μέρος του ASK AI Travel Network",
@@ -576,6 +616,8 @@ const setLanguage = (language, options = {}) => {
   if (options.updateUrl) {
     updateLanguageUrl(normalizedLanguage);
   }
+
+  document.dispatchEvent(new CustomEvent("languageChanged", { detail: { language: normalizedLanguage } }));
 };
 
 if (cookieBanner && !getCookiePreference()) {
@@ -3943,7 +3985,7 @@ if (sendBtn && userInput) {
   });
 
   userInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       sendMessage(userInput.value);
     }
@@ -4172,3 +4214,215 @@ if (micBtn && userInput && SpeechRecognition) {
 }
 
 setLanguage(getInitialLanguage());
+
+/* ============================================================ */
+/* Phase 2.2 — chat UX enhancements                              */
+/* Rotating placeholder, autogrow textarea, quick + recent       */
+/* suggestion chips, send bounce + haptic, mic helper, outdoor   */
+/* high-contrast toggle, typing-dots indicator.                  */
+/* ============================================================ */
+(function chatUxEnhancements() {
+  const input = document.getElementById("user-input");
+  const sendButton = document.getElementById("send-btn");
+  const chatBoxEl = document.getElementById("chat-box");
+  const chipsRow = document.getElementById("chat-suggestion-chips");
+  const recentRow = document.getElementById("chat-recent-chips");
+  const sunToggle = document.getElementById("chat-sun-toggle");
+  if (!input || !sendButton || !chatBoxEl) return;
+
+  /* ---- 1. Auto-grow textarea (max 5 lines) ---------------- */
+  const MAX_TEXTAREA_HEIGHT = 140;
+  function autogrow() {
+    input.style.height = "auto";
+    const newHeight = Math.min(input.scrollHeight, MAX_TEXTAREA_HEIGHT);
+    input.style.height = newHeight + "px";
+    input.style.overflowY = input.scrollHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden";
+  }
+  input.addEventListener("input", autogrow);
+  // Reset height after send (sendMessage clears value)
+  const observer = new MutationObserver(() => {
+    if (!input.value) {
+      input.style.height = "";
+      input.style.overflowY = "hidden";
+    }
+  });
+  // Also reset on value change via JS — observe via property setter
+  const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
+  if (valueDescriptor && valueDescriptor.set) {
+    Object.defineProperty(input, "value", {
+      get() { return valueDescriptor.get.call(this); },
+      set(v) {
+        valueDescriptor.set.call(this, v);
+        if (!v) {
+          this.style.height = "";
+          this.style.overflowY = "hidden";
+        }
+      }
+    });
+  }
+
+  /* ---- 2. Rotating placeholder ---------------------------- */
+  let placeholderTimer = null;
+  let rotationIndex = 0;
+  function startPlaceholderRotation() {
+    stopPlaceholderRotation();
+    const lang = (typeof currentLanguage !== "undefined" && currentLanguage) || "en";
+    const copy = (typeof translations !== "undefined" && translations[lang]) || {};
+    const list = Array.isArray(copy.chatPlaceholderRotations) ? copy.chatPlaceholderRotations : [];
+    if (!list.length) return;
+    placeholderTimer = setInterval(() => {
+      if (document.activeElement === input || input.value) return;
+      rotationIndex = (rotationIndex + 1) % list.length;
+      input.classList.add("placeholder-fading");
+      setTimeout(() => {
+        input.setAttribute("placeholder", list[rotationIndex]);
+        input.classList.remove("placeholder-fading");
+      }, 220);
+    }, 3200);
+  }
+  function stopPlaceholderRotation() {
+    if (placeholderTimer) {
+      clearInterval(placeholderTimer);
+      placeholderTimer = null;
+    }
+  }
+  document.addEventListener("languageChanged", startPlaceholderRotation);
+  // Initial start (delay so setLanguage already ran)
+  setTimeout(startPlaceholderRotation, 600);
+
+  /* ---- 3. Quick-suggestion chips above input -------------- */
+  if (chipsRow) {
+    chipsRow.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chat-chip");
+      if (!chip) return;
+      const lang = (typeof currentLanguage !== "undefined" && currentLanguage) || "en";
+      const text = chip.getAttribute(`data-chip-${lang}`) || chip.getAttribute("data-chip-en") || chip.textContent.trim();
+      if (typeof sendMessage === "function") {
+        sendMessage(text);
+      }
+    });
+  }
+
+  /* ---- 4. Recent-questions chip row (last 3 in localStorage) */
+  const RECENT_KEY = "askSantoriniRecentQuestions";
+  const RECENT_MAX = 3;
+  function loadRecent() {
+    try {
+      return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]");
+    } catch { return []; }
+  }
+  function saveRecent(list) {
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch {}
+  }
+  function pushRecent(text) {
+    const clean = String(text || "").trim();
+    if (!clean) return;
+    let list = loadRecent().filter((q) => q.toLowerCase() !== clean.toLowerCase());
+    list.unshift(clean);
+    list = list.slice(0, RECENT_MAX);
+    saveRecent(list);
+    renderRecent();
+  }
+  function renderRecent() {
+    if (!recentRow) return;
+    const list = loadRecent();
+    if (!list.length) {
+      recentRow.hidden = true;
+      recentRow.innerHTML = "";
+      return;
+    }
+    const lang = (typeof currentLanguage !== "undefined" && currentLanguage) || "en";
+    const copy = (typeof translations !== "undefined" && translations[lang]) || {};
+    const label = copy.recentLabel || "Recent";
+    recentRow.innerHTML = `<span class="chat-recent-label">${label}</span>` +
+      list.map((q) => {
+        const safe = q.replace(/[<>&"']/g, (c) => ({
+          "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;"
+        })[c]);
+        const truncated = q.length > 38 ? q.slice(0, 36) + "…" : q;
+        const safeTrunc = truncated.replace(/[<>&"']/g, (c) => ({
+          "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;"
+        })[c]);
+        return `<button type="button" class="chat-chip chat-chip-recent" data-recent="${safe}">${safeTrunc}</button>`;
+      }).join("");
+    recentRow.hidden = false;
+  }
+  if (recentRow) {
+    recentRow.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chat-chip-recent");
+      if (!chip) return;
+      const text = chip.getAttribute("data-recent") || chip.textContent.trim();
+      if (typeof sendMessage === "function") sendMessage(text);
+    });
+  }
+  document.addEventListener("languageChanged", renderRecent);
+  renderRecent();
+
+  /* ---- 5. Send-bounce + haptic feedback ------------------- */
+  function tinyHaptic() {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(12); } catch {}
+    }
+  }
+  function bounceSend() {
+    sendButton.classList.remove("send-bounce");
+    void sendButton.offsetWidth;
+    sendButton.classList.add("send-bounce");
+  }
+  function trackSend(text) {
+    pushRecent(text);
+    bounceSend();
+    tinyHaptic();
+  }
+  sendButton.addEventListener("click", () => {
+    const v = input.value.trim();
+    if (v) trackSend(v);
+  });
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      const v = input.value.trim();
+      if (v) trackSend(v);
+    }
+  });
+  // Also catch programmatic chip sends
+  if (chipsRow) {
+    chipsRow.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chat-chip");
+      if (!chip) return;
+      const lang = (typeof currentLanguage !== "undefined" && currentLanguage) || "en";
+      const text = chip.getAttribute(`data-chip-${lang}`) || chip.getAttribute("data-chip-en") || "";
+      if (text) trackSend(text);
+    });
+  }
+
+  /* ---- 6. Typing dots indicator (transform "Thinking..." msg) */
+  // Watch chat-box for added .loading messages and replace text with dots
+  const dotsObserver = new MutationObserver((mutations) => {
+    mutations.forEach((m) => {
+      m.addedNodes.forEach((node) => {
+        if (node.nodeType === 1 && node.classList && node.classList.contains("loading")) {
+          node.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span>';
+        }
+      });
+    });
+  });
+  dotsObserver.observe(chatBoxEl, { childList: true });
+
+  /* ---- 7. Outdoor sun-mode toggle (persists) -------------- */
+  const SUN_KEY = "askSantoriniSunMode";
+  function applySunMode(on) {
+    document.body.classList.toggle("sun-mode", !!on);
+    if (sunToggle) sunToggle.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+  let sunOn = false;
+  try { sunOn = localStorage.getItem(SUN_KEY) === "1"; } catch {}
+  applySunMode(sunOn);
+  if (sunToggle) {
+    sunToggle.addEventListener("click", () => {
+      sunOn = !sunOn;
+      applySunMode(sunOn);
+      try { localStorage.setItem(SUN_KEY, sunOn ? "1" : "0"); } catch {}
+      tinyHaptic();
+    });
+  }
+})();

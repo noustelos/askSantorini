@@ -28,7 +28,7 @@
     <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.min.css">
     <link rel="stylesheet" href="styles-override.css">
     <script type="application/ld+json">
@@ -90,6 +90,12 @@
   </head>
   <body id="top">
     <a class="skip-link" href="#main-content">Skip to main content</a>
+    <!-- Floating Chat Bubble -->
+    <button id="floating-chat-bubble" aria-label="Open Santorini AI Concierge" class="floating-chat-bubble pulse" style="position:fixed;">
+      <span class="bubble-emoji">💬</span>
+      <span class="bubble-text">Ask Concierge</span>
+      <span class="shimmer"></span>
+    </button>
     <header class="site-header">
       <a class="site-logo" href="#top" aria-label="Ask Santorini AI home">
         <picture>
@@ -108,7 +114,6 @@
         <a href="#concierge" data-i18n="navConcierge">Concierge</a>
         <a href="#partners" data-i18n="navPartners">Partners</a>
         <a class="mobile-social-link" href="https://www.instagram.com/asksantoriniai/" target="_blank" rel="noopener noreferrer" aria-label="Visit Ask Santorini AI on Instagram" data-i18n-attr="aria-label:instagramAria">Instagram</a>
-        <a class="nav-cta" href="#ask-ai" data-i18n="navEarlyAccess">Ask AI</a>
         <div class="language-toggle" role="group" aria-label="Language">
           <button type="button" data-language="en" aria-label="Switch to English" aria-pressed="true">EN</button>
           <span aria-hidden="true">/</span>
@@ -122,13 +127,14 @@
         <div class="hero-copy">
           <p class="eyebrow">AskSantorini.ai</p>
           <h1><a class="hero-title-link" href="#ask-ai" data-i18n="heroTitle">JUST ASK</a></h1>
-          <p class="hero-subtitle" data-i18n="heroSubtitle">Your AI travel concierge for Santorini.</p>
+          <p class="hero-subtitle" data-i18n="heroSubtitle">Your luxury AI concierge for Santorini holidays.</p>
           <div class="hero-value-strip" aria-label="No app, no sign-up, just answers">
             <span data-i18n="heroValueStrip">No app. No sign-up. Just answers.</span>
           </div>
+          <p class="preview-value-reinforce" data-i18n="heroReinforce">A local concierge in your pocket — open all day, every day.</p>
           <div class="hero-actions" role="group" aria-label="Primary actions">
-            <a class="button button-primary" href="#ask-ai" data-i18n="startAsking">Start Asking</a>
-            <a class="button button-secondary" href="#questions" data-i18n="seeQuestions">See Example Questions</a>
+            <a class="button button-primary pulse" href="#ask-ai" data-i18n="startAsking">Start Chat</a>
+            <a class="button button-secondary" href="#questions" data-i18n="seeQuestions">See Suggestions</a>
           </div>
         </div>
 
@@ -136,19 +142,27 @@
           <div class="chat-card-top">
             <span class="status-dot" aria-hidden="true"></span>
             <span data-i18n="previewMode">Live · Ask Santorini AI</span>
+            <button type="button" class="chat-sun-toggle" id="chat-sun-toggle" aria-pressed="false" title="Outdoor mode" aria-label="Toggle outdoor mode" data-i18n-attr="title:sunModeAria, aria-label:sunModeAria">☀</button>
           </div>
           <p class="chat-instruction-line" data-i18n="chatInstructionLine">Ask anything about Santorini</p>
-          <p class="chat-language-note" data-i18n="chatLanguageNote">Ask in English, Greek, or your own language.</p>
           <div id="chat-box" class="chat-thread chat-box" aria-live="polite">
             <p class="chat-empty-helper" data-i18n="chatEmptyHelper">Start with a question</p>
             <div class="bot-message" data-i18n="chatGreeting">Hi! I'm your local Santorini AI. Ask me anything.</div>
           </div>
+          <div class="chat-recent-chips" id="chat-recent-chips" hidden aria-label="Recent questions"></div>
+          <div class="chat-suggestion-chips" id="chat-suggestion-chips" aria-label="Quick suggestions">
+            <button type="button" class="chat-chip" data-chip-en="Best sunset spot tonight" data-chip-el="Καλύτερο σημείο για ηλιοβασίλεμα απόψε" data-i18n="chipSunset">☼ Sunset</button>
+            <button type="button" class="chat-chip" data-chip-en="Best local food near me" data-chip-el="Καλύτερο τοπικό φαγητό κοντά μου" data-i18n="chipFood">• Food</button>
+            <button type="button" class="chat-chip" data-chip-en="Best beach for today" data-chip-el="Καλύτερη παραλία για σήμερα" data-i18n="chipBeach">◒ Beach</button>
+            <button type="button" class="chat-chip" data-chip-en="Santorini plan for today" data-chip-el="Πρόγραμμα για σήμερα στη Σαντορίνη" data-i18n="chipToday">◇ Today</button>
+          </div>
           <div class="input-area">
-            <input type="text" id="user-input" data-i18n-attr="placeholder:chatPlaceholder" placeholder="Ask Santorini AI..." autocomplete="off">
-            <span id="mic-status" class="mic-status" aria-live="polite" style="min-width:60px"></span>
+            <textarea id="user-input" rows="1" data-i18n-attr="placeholder:chatPlaceholder" placeholder="Ask Santorini AI..." autocomplete="off"></textarea>
+            <span id="mic-status" class="mic-status" aria-live="polite"></span>
             <button id="mic-btn" class="mic-btn" type="button" title="Speak to AI" aria-label="Speak to AI" data-i18n-attr="title:micAria, aria-label:micAria">🎤</button>
             <button id="send-btn" class="send-btn" type="button" data-i18n="sendButton">Send</button>
           </div>
+          <p class="mic-helper-line" data-i18n="micHelper">Tap the mic to speak</p>
           <p class="chatbot-tech-note chat-disclaimer-note" data-i18n="geminiNote">AI answers may need verification for schedules, prices and availability.</p>
           <p class="chatbot-tech-note chat-ai-attribution" data-i18n="aiAttribution">Powered by advanced AI for real-time travel guidance.</p>
         </aside>
@@ -180,26 +194,26 @@
         <div class="feature-row section-shell">
           <article class="feature-card">
             <h3 data-i18n="featureBeaches">Which beach fits today?</h3>
-            <p data-i18n="featureLine">Ask for a direct Santorini answer</p>
+            <p data-i18n="featureBeachesLine">Black sand, red cliffs or family calm — just ask.</p>
           </article>
           <article class="feature-card">
             <h3 data-i18n="featureSunsets">Where is sunset best?</h3>
-            <p data-i18n="featureLine">Ask for a direct Santorini answer</p>
+            <p data-i18n="featureSunsetsLine">Where the light actually lands tonight — not just Oia.</p>
           </article>
           <article class="feature-card">
             <h3 data-i18n="featureTours">Want the sea route?</h3>
-            <p data-i18n="featureLine">Ask for a direct Santorini answer</p>
+            <p data-i18n="featureToursLine">Caldera, volcano, hot springs — chosen by locals.</p>
           </article>
           <article class="feature-card">
             <h3 data-i18n="featureFood">Craving local food?</h3>
-            <p data-i18n="featureLine">Ask for a direct Santorini answer</p>
+            <p data-i18n="featureFoodLine">Caldera tables locals actually book.</p>
           </article>
           <article class="feature-card">
             <h3 data-i18n="featureTransport">How do you get there?</h3>
-            <p data-i18n="featureLine">Ask for a direct Santorini answer</p>
+            <p data-i18n="featureTransportLine">Bus, taxi, private transfer or helicopter — your call.</p>
           </article>
         </div>
-        <a class="section-micro-cta" href="#ask-ai" data-i18n="featureMicroCta">Just ask</a>
+        <a class="section-micro-cta" href="#ask-ai" data-i18n="featureMicroCta">Ask the concierge</a>
       </section>
 
       <section class="how-section section-shell" id="how-it-works">
@@ -433,6 +447,9 @@
 
     <footer class="site-footer">
       <div class="footer-inner section-shell">
+        <div class="footer-value-strip">
+          <span class="footer-value-icon">✦</span> No app. No sign-up. Just answers. <span class="footer-value-icon">✦</span>
+        </div>
         <div class="footer-brand-group">
           <a class="footer-brand" href="#top">asksantorini.ai</a>
           <p class="footer-network-line" data-i18n="footerNetworkLine">Part of the ASK AI Travel Network</p>
@@ -482,5 +499,19 @@
     </dialog>
 
     <script src="script.js" defer></script>
+    <script>
+      // Floating chat bubble logic
+      const bubble = document.getElementById('floating-chat-bubble');
+      if (bubble) {
+        bubble.addEventListener('click', () => {
+          const chat = document.getElementById('ask-ai');
+          if (chat) {
+            chat.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            chat.classList.add('chat-highlight');
+            setTimeout(() => chat.classList.remove('chat-highlight'), 1200);
+          }
+        });
+      }
+    </script>
   </body>
 </html>

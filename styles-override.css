@@ -1,3 +1,698 @@
+.site-logo img {
+  height: 68px !important;
+  max-width: 270px !important;
+  transition: height 0.18s, max-width 0.18s;
+}
+@media (max-width: 700px) {
+  .site-logo img {
+    height: 48px !important;
+    max-width: 170px !important;
+  }
+}
+.site-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+}
+.site-logo img + span, .site-logo-text {
+  font-family: 'Playfair Display', var(--serif);
+  font-weight: 800;
+  font-size: 1.32rem;
+  color: #35747a;
+  letter-spacing: 0.01em;
+  margin-left: 0.18em;
+  text-shadow: 0 2px 12px #b8e3dd33;
+  text-transform: uppercase;
+  display: inline-block;
+}
+@media (max-width: 700px) {
+  .site-logo img + span, .site-logo-text {
+    font-size: 1.01rem;
+  }
+}
+/* Όλα τα section labels (eyebrow) με ίδιο apricot/gold χρώμα */
+.eyebrow {
+  color: #d89a73 !important;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  opacity: 0.98;
+}
+/* --- HEADER IMPROVEMENTS --- */
+.site-header {
+  font-family: 'Inter', var(--sans);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 24px rgba(79,143,138,0.07);
+  border: 1.5px solid #e0e6e8;
+  border-radius: 999px;
+  margin-top: 18px;
+  margin-bottom: 0;
+  position: static !important;
+}
+.site-logo img {
+  height: 54px !important;
+  max-width: 220px !important;
+}
+.site-nav {
+  gap: 8px;
+}
+.site-nav a, .footer-links a, .footer-links button {
+  color: #35747a !important;
+  font-size: 1.13rem !important;
+  font-family: 'Inter', var(--sans);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: color 0.18s;
+}
+.site-nav a:hover, .footer-links a:hover, .footer-links button:hover {
+  color: #4f8f8a !important;
+}
+.language-toggle {
+  font-size: 1.01rem !important;
+}
+@media (max-width: 700px) {
+  .site-header {
+    margin-top: 8px;
+    padding: 8px 6px;
+  }
+  .site-logo img {
+    height: 38px !important;
+    max-width: 140px !important;
+  }
+  .site-nav a {
+    font-size: 1.01rem !important;
+    padding: 10px 8px;
+  }
+}
+/* --- FOOTER HIERARCHY & ORDER --- */
+.site-footer {
+  border-top: 1.5px solid #e0e6e8;
+  background: linear-gradient(90deg, #f8f3e8 80%, #eaf6f8 100%);
+  padding-top: 0;
+}
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2.5rem 2rem;
+  padding: 38px 0 18px 0;
+  max-width: var(--max-width);
+}
+.footer-brand-group {
+  flex: 2 1 260px;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.footer-value-strip {
+  order: -1;
+  margin-bottom: 18px;
+  align-self: flex-start;
+}
+.footer-links {
+  flex: 1 1 160px;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  align-items: flex-end;
+  text-align: right;
+}
+.footer-credit-group {
+  flex: 1 1 180px;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3em;
+  margin-top: 0.5em;
+}
+.footer-copyright {
+  flex-basis: 100%;
+  width: 100%;
+  margin: 18px 0 0 0;
+  text-align: left;
+  font-size: 0.93rem;
+  color: var(--muted);
+}
+.footer-brand {
+  font-size: 1.18rem;
+  font-weight: 900;
+  color: var(--navy);
+  margin-bottom: 0.2em;
+}
+.footer-network-line {
+  color: var(--teal) !important;
+  font-size: 0.92rem !important;
+  font-weight: 800;
+  margin-bottom: 0.2em;
+}
+.footer-credit {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: right;
+}
+.footer-credit:hover {
+  color: var(--navy);
+}
+@media (max-width: 900px) {
+  .footer-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+    padding: 28px 0 12px 0;
+  }
+  .footer-links, .footer-credit-group {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .footer-value-strip {
+    align-self: stretch;
+    margin-bottom: 12px;
+  }
+  .footer-copyright {
+    margin-top: 10px;
+    text-align: left;
+  }
+}
+/* Gradient summer titles with outline for specific sections */
+.section-heading h2[data-i18n="questionsTitle"],
+.section-heading h2[data-i18n="howTitle"],
+.section-heading.split-heading h2[data-i18n="toursTitle"],
+.section-heading.split-heading h2[data-i18n="conciergeTitle"] {
+  background: linear-gradient(90deg, #3bb3c3 10%, #4f8f8a 40%, #d89a73 80%, #b8e3dd 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  text-fill-color: transparent !important;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-shadow:
+    0 2px 12px #b8e3dd33,
+    0 0 2px #fff,
+    0 0 0.5px #4f8f8a;
+  /* Subtle outline for lift */
+  filter: drop-shadow(0 1px 0 #fff) drop-shadow(0 0 2px #b8e3dd88);
+}
+/* --- HERO TITLE JUST ASK MOBILE BOOST --- */
+.hero-title-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--serif);
+  font-weight: 800;
+  background: linear-gradient(90deg, #3bb3c3 10%, #4f8f8a 40%, #d89a73 80%, #b8e3dd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  text-shadow: 0 4px 32px #b8e3dd44, 0 1px 0 #fff8ec;
+  letter-spacing: 0.01em;
+  margin-bottom: 0.18em;
+  margin-top: 0.18em;
+}
+.hero-title-link .hero-emoji {
+  margin-left: 0.18em;
+  font-size: 1.1em;
+  filter: drop-shadow(0 2px 6px #b8e3dd88);
+}
+@media (max-width: 700px) {
+  .hero-title-link {
+    font-size: 2.7rem !important;
+    padding-top: 0.18em;
+    padding-bottom: 0.18em;
+    text-shadow: 0 6px 32px #b8e3dd66, 0 1px 0 #fff8ec;
+  }
+}
+@media (max-width: 420px) {
+  .hero-title-link {
+    font-size: 2.1rem !important;
+    padding-top: 0.12em;
+    padding-bottom: 0.12em;
+  }
+}
+/* --- RADICAL SITE BG & SECTION TITLES --- */
+body {
+  background:
+    linear-gradient(120deg, #f8f3e8 0%, #eaf6f8 100%),
+    radial-gradient(circle at 80% 10%, #e0f7fa 0%, transparent 60%),
+    radial-gradient(circle at 20% 90%, #ffe6c1 0%, transparent 70%),
+    linear-gradient(180deg, #fff8ec 0%, #eaf6f8 100%);
+  background-blend-mode: lighten, screen, normal;
+  min-height: 100vh;
+}
+
+body::before, body::after {
+  display: none !important;
+}
+
+/* Section titles: flat muted teal, premium, χωρίς gradient/shadow */
+.section-heading h2, .split-heading h2, .network-copy h2, .policy-hero h1 {
+  color: #4f8f8a !important;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: unset !important;
+  background-clip: unset !important;
+  text-fill-color: unset !important;
+  text-shadow: none !important;
+}
+
+.eyebrow {
+  color: #4f8f8a !important;
+  opacity: 0.92;
+}
+
+/* Extra: section shells with soft glass effect */
+.hero-title-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--serif);
+  font-weight: 800;
+  color: #4f8f8a !important;
+  letter-spacing: 0.02em;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: unset !important;
+  background-clip: unset !important;
+  text-fill-color: unset !important;
+  text-shadow: none !important;
+  margin-bottom: 0.18em;
+  margin-top: 0.18em;
+}
+@media (max-width: 700px) {
+  .hero-title-link {
+    font-size: 2.3rem !important;
+    padding-top: 0.18em;
+    padding-bottom: 0.18em;
+  }
+}
+@media (max-width: 420px) {
+  .hero-title-link {
+    font-size: 1.7rem !important;
+    padding-top: 0.12em;
+    padding-bottom: 0.12em;
+  }
+}
+  100% { transform: translateX(120%); }
+}
+
+/* Fine-tuning: section spacing, cards, headings, micro-animations */
+.section-shell {
+  padding-left: 2vw;
+  padding-right: 2vw;
+}
+.section-heading h2, .split-heading h2 {
+  font-family: var(--serif);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--navy);
+  margin-bottom: 0.5em;
+  text-shadow: 0 2px 18px rgba(216,154,115,0.07);
+}
+.eyebrow {
+  letter-spacing: 0.13em;
+  color: var(--teal);
+  font-weight: 900;
+  opacity: 0.92;
+}
+.feature-card, .tour-card, .concierge-card, .step-card {
+  transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
+}
+.feature-card:hover, .tour-card:hover, .concierge-card:hover, .step-card:hover {
+  box-shadow: 0 12px 38px rgba(159,216,210,0.13), 0 0 0 2px var(--mint);
+  border-color: var(--mint);
+  transform: translateY(-2px) scale(1.01);
+}
+.question-card {
+  transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
+}
+.question-card:hover {
+  box-shadow: 0 10px 28px rgba(216,154,115,0.13);
+  border-color: var(--apricot);
+  transform: translateY(-2px) scale(1.01);
+}
+.chat-card {
+  box-shadow: 0 18px 54px rgba(22,59,92,0.13), 0 0 0 1.5px var(--mint);
+  border-radius: 24px;
+}
+.chat-card .input-area input {
+  background: rgba(255,255,255,0.98);
+  border: 1.5px solid var(--mint);
+  font-size: 1.08rem;
+  border-radius: 999px;
+  padding: 0 16px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.chat-card .input-area input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(159,216,210,0.13);
+}
+.chat-card .input-area button {
+  background: linear-gradient(135deg, #fff, var(--mint) 80%);
+  color: var(--navy);
+  border: 1.5px solid var(--teal);
+  border-radius: 999px;
+  font-weight: 700;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+.chat-card .input-area button:hover {
+  background: linear-gradient(135deg, var(--mint), #fff 80%);
+  color: var(--teal);
+  border-color: var(--teal);
+}
+.footer-value-strip {
+  background: rgba(255,255,255,0.92);
+  border-radius: 999px;
+  padding: 0.5em 1.2em;
+  box-shadow: 0 2px 12px rgba(159,216,210,0.07);
+}
+.cookie-value-strip {
+  background: rgba(255,255,255,0.92);
+  border-radius: 999px;
+  padding: 0.3em 1em;
+  box-shadow: 0 2px 12px rgba(159,216,210,0.07);
+}
+/* --- CTA BUTTONS CONSISTENCY & SUBTLE LUXURY --- */
+.button, .button-primary, .button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: 1.07rem;
+  line-height: 1.1;
+  border: 1.5px solid var(--aqua);
+  background: linear-gradient(135deg, #fff, var(--mint) 80%);
+  color: var(--navy);
+  box-shadow: 0 6px 18px rgba(22,59,92,0.07);
+  transition: box-shadow 0.18s, border-color 0.18s, background 0.18s, color 0.18s, transform 0.18s;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button-primary {
+  background: linear-gradient(135deg, #fff, var(--mint) 80%);
+  color: var(--navy);
+  border: 1.5px solid var(--teal);
+  box-shadow: 0 8px 22px rgba(79,143,138,0.10);
+}
+
+.button-secondary {
+  background: rgba(255,255,255,0.92);
+  color: var(--navy);
+  border: 1.5px solid var(--aqua);
+  box-shadow: 0 4px 12px rgba(216,154,115,0.07);
+}
+
+.button:hover, .button-primary:hover, .button-secondary:hover {
+  background: linear-gradient(135deg, #f8f3e8 60%, var(--mint) 100%);
+  color: var(--teal);
+  border-color: var(--teal);
+  box-shadow: 0 10px 28px rgba(79,143,138,0.13);
+  transform: translateY(-2px) scale(1.03);
+}
+
+@media (max-width: 700px) {
+  .button, .button-primary, .button-secondary {
+    min-height: 44px;
+    font-size: 1.01rem;
+    padding: 0 0.5em;
+    width: 100%;
+    border-radius: 999px;
+  }
+}
+/* --- MOBILE-FIRST PREMIUM ADDICTIVE DESIGN --- */
+@media (max-width: 700px) {
+  .hero {
+    grid-template-columns: 1fr;
+    padding: 32px 0 18px;
+    min-height: unset;
+    gap: 18px;
+  }
+  .hero-copy {
+    text-align: center;
+    padding: 0 2vw;
+  }
+  .hero-title-link {
+    font-size: 2.2rem !important;
+    letter-spacing: 0.01em;
+  }
+  .hero-value-strip, .preview-value-reinforce {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    font-size: 1.01rem !important;
+  }
+  .chat-card {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 99vw;
+    border-radius: 18px;
+    padding: 12px 6px 10px 6px;
+    box-shadow: 0 8px 32px rgba(22,59,92,0.10);
+  }
+  .chat-card .input-area {
+    flex-direction: row;
+    gap: 4px;
+    padding: 0 2px;
+  }
+  .input-area input {
+    font-size: 1.08rem;
+    min-height: 44px;
+    border-radius: 999px;
+    flex: 1 1 70%;
+  }
+  .input-area button {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.2em;
+    border-radius: 999px;
+  }
+  #floating-chat-bubble {
+    bottom: 14px;
+    right: 10px;
+    font-size: 1.01rem;
+    padding: 0.5em 0.9em;
+    border-width: 2px;
+    box-shadow: 0 4px 18px rgba(22,59,92,0.13), 0 0 0 2px #fff8ec;
+  }
+  .bubble-text {
+    display: none;
+  }
+  .bubble-emoji {
+    font-size: 1.5em;
+  }
+  .footer-value-strip {
+    font-size: 0.98rem;
+    margin-bottom: 10px;
+  }
+  .section-shell {
+    width: min(98vw, var(--max-width));
+    padding: 0 2vw;
+  }
+  .questions-section, .how-section, .tours-section, .concierge-section, .partners-section, .chatbot-section, .network-section {
+    padding: 28px 0 18px 0 !important;
+  }
+  .question-card, .feature-card, .step-card, .tour-card, .concierge-card {
+    border-radius: 14px !important;
+    font-size: 1.01rem !important;
+    min-height: 54px !important;
+    padding: 12px 10px !important;
+  }
+  .question-card span[aria-hidden], .feature-card h3::before, .concierge-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 1.1em !important;
+  }
+  .hero-actions {
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .button, .button-primary, .button-secondary {
+    min-height: 44px !important;
+    font-size: 1.01rem !important;
+    padding: 11px 0 !important;
+    width: 100%;
+    border-radius: 999px !important;
+  }
+  .cookie-banner {
+    left: 2vw;
+    right: 2vw;
+    width: 96vw;
+    padding: 10px 8px;
+    border-radius: 14px;
+    font-size: 0.98rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-title-link {
+    font-size: 1.5rem !important;
+  }
+  .chat-card {
+    padding: 7px 2px 7px 2px;
+    border-radius: 12px;
+  }
+  .input-area input {
+    font-size: 0.98rem;
+    min-height: 38px;
+  }
+  .input-area button {
+    min-width: 38px;
+    min-height: 38px;
+    font-size: 1em;
+  }
+  #floating-chat-bubble {
+    bottom: 7px;
+    right: 5px;
+    font-size: 0.98rem;
+    padding: 0.4em 0.7em;
+  }
+}
+
+/* Sticky chat bubble on scroll for mobile */
+@media (max-width: 700px) {
+  #floating-chat-bubble {
+    position: fixed;
+    bottom: 14px;
+    right: 10px;
+    left: unset;
+    top: unset;
+    z-index: 1200;
+    animation: bubblePulse 2.8s infinite, stickyAppear 0.7s;
+    transition: bottom 0.2s, right 0.2s;
+  }
+  @keyframes stickyAppear {
+    0% { opacity: 0; transform: translateY(30px) scale(0.8); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+}
+
+/* Make touch targets bigger and easier */
+@media (max-width: 700px) {
+  button, .button, .question-card, .feature-card, .step-card, .tour-card, .concierge-card {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    font-size: 1.01rem !important;
+    border-radius: 14px !important;
+  }
+}
+/* Floating Chat Bubble */
+#floating-chat-bubble {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  background: linear-gradient(135deg, #fff, var(--mint), var(--navy) 90%);
+  color: var(--navy);
+  border: 2.5px solid var(--teal);
+  border-radius: 999px;
+  box-shadow: 0 8px 32px rgba(22,59,92,0.13), 0 0 0 2px #fff8ec;
+  padding: 0.7em 1.3em;
+  font-family: var(--serif);
+  font-size: 1.18rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: box-shadow 0.18s, transform 0.18s;
+  animation: bubblePulse 2.8s infinite;
+}
+
+#floating-chat-bubble .bubble-emoji {
+  font-size: 1.45em;
+  filter: drop-shadow(0 2px 6px #b8e3dd88);
+}
+
+#floating-chat-bubble .bubble-text {
+  font-size: 1em;
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+#floating-chat-bubble:hover {
+  box-shadow: 0 12px 38px rgba(22,59,92,0.18), 0 0 0 3px var(--mint);
+  transform: translateY(-2px) scale(1.04);
+}
+
+@keyframes bubblePulse {
+  0%, 100% { box-shadow: 0 8px 32px rgba(22,59,92,0.13), 0 0 0 2px #fff8ec; }
+  50% { box-shadow: 0 16px 48px rgba(79,143,138,0.18), 0 0 0 6px var(--mint); }
+}
+
+@media (max-width: 700px) {
+  #floating-chat-bubble {
+    bottom: 18px;
+    right: 12px;
+    font-size: 1.02rem;
+    padding: 0.6em 1em;
+  }
+}
+
+/* Highlight chat on bubble click */
+.chat-highlight {
+  animation: chatHighlight 1.2s;
+}
+@keyframes chatHighlight {
+  0% { box-shadow: 0 0 0 0 var(--mint); }
+  30% { box-shadow: 0 0 0 8px var(--mint); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* Footer value strip */
+.footer-value-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  margin-bottom: 18px;
+  font-size: 1.08rem;
+  font-family: var(--serif);
+  color: var(--navy);
+  font-weight: 700;
+  opacity: 0.92;
+}
+.footer-value-icon {
+  color: var(--teal);
+  font-size: 1.1em;
+}
+
+/* Cookie value strip */
+.cookie-value-strip {
+  margin-top: 8px;
+  font-size: 0.98rem;
+  color: var(--teal);
+  font-family: var(--serif);
+  text-align: center;
+  opacity: 0.88;
+}
+
+/* CTA pulse */
+.pulse {
+  animation: pulseBtn 1.8s infinite;
+}
+@keyframes pulseBtn {
+  0%, 100% { box-shadow: 0 0 0 0 var(--apricot); }
+  50% { box-shadow: 0 0 0 8px var(--apricot, #F0B985); }
+}
+
+.sparkle {
+  color: var(--apricot);
+  font-size: 1.1em;
+  margin-left: 0.2em;
+}
 /* Mic status indicator styles */
 .mic-status {
   display: inline-block;
@@ -1146,4 +1841,1473 @@
     max-width: 100%;
     min-width: 0;
   }
+}
+
+/* ============================================================ */
+/* AEGEAN CONCIERGE — design system v3 (Phase 1.5)              */
+/* Teal + muted sage. Premium summer vibes, no gold/mustard.    */
+/* ============================================================ */
+
+:root {
+  /* Surfaces */
+  --bg: #F5F8F7;
+  --bg-soft: #EAF0EE;
+  --surface: #FFFFFF;
+  --surface-soft: #F2F6F5;
+  --text: #0E2A2D;
+  --muted: #5A6F71;
+  --hairline: rgba(14, 58, 64, 0.10);
+
+  /* Aegean teal — the primary brand */
+  --navy: #0E3A40;       /* deep teal-charcoal (text + primary) */
+  --teal: #2A7E7F;       /* mid teal — buttons, CTAs */
+  --teal-deep: #1F5F60;
+  --teal-soft: #C9E0DE;
+  --aqua: #B8D6D3;
+  --mint: #E6EEF1;
+
+  /* Muted sage — secondary accent (replaces gold) */
+  --sage: #9EB5A8;
+  --sage-soft: #DCE6E0;
+  --sage-deep: #6E8C7B;
+
+  /* Legacy aliases mapped to new palette (kept so older rules still resolve) */
+  --gold: var(--sage-deep);
+  --gold-soft: var(--sage-soft);
+  --apricot: var(--sage-deep);
+  --terracotta: var(--teal-deep);
+  --sand: var(--teal-soft);
+
+  /* Type tokens */
+  --serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Shape & depth */
+  --radius: 18px;
+  --radius-sm: 12px;
+  --radius-lg: 24px;
+  --shadow:
+    0 1px 2px rgba(14, 58, 64, 0.05),
+    0 12px 32px -8px rgba(14, 58, 64, 0.10);
+  --shadow-lg:
+    0 2px 4px rgba(14, 58, 64, 0.05),
+    0 24px 60px -16px rgba(14, 58, 64, 0.16);
+}
+
+/* Clean cycladic backdrop — no busy gradients */
+body {
+  background:
+    radial-gradient(1200px 600px at 78% -10%, rgba(201, 214, 221, 0.35), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(184, 147, 90, 0.06), transparent 60%),
+    var(--bg) !important;
+  background-blend-mode: normal !important;
+  color: var(--text);
+}
+
+/* Headings on Cormorant Garamond — hotel-menu refinement */
+h1, h2, h3,
+.section-heading h2, .split-heading h2, .network-copy h2, .policy-hero h1,
+.hero-title-link, .hero-copy h1 {
+  font-family: var(--serif) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.005em !important;
+  color: var(--navy) !important;
+  text-shadow: none !important;
+}
+
+.hero-copy h1, .hero-title-link {
+  font-family: var(--serif) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.005em !important;
+  font-size: clamp(4rem, 14vw, 6.8rem) !important;
+  line-height: 0.95 !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: var(--navy) !important;
+  color: var(--navy) !important;
+  background-clip: unset !important;
+  text-fill-color: unset !important;
+  text-transform: uppercase;
+  text-shadow: none !important;
+  margin-top: 0.2em !important;
+  margin-bottom: 0.15em !important;
+}
+.hero-title-link .hero-emoji { display: none; }
+
+.hero-subtitle {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
+  color: var(--muted);
+  letter-spacing: 0;
+  margin-top: 0.4em;
+}
+
+/* Eyebrow — small caps muted sage marker (NOT gold) */
+.eyebrow {
+  color: var(--sage-deep) !important;
+  font-family: var(--sans) !important;
+  font-weight: 700 !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.22em !important;
+  text-transform: uppercase;
+  opacity: 1 !important;
+}
+
+/* Hero value strip — sage pill badge */
+.hero-value-strip {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.55em;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  padding: 0.5em 1.1em;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 0.86rem;
+  color: var(--text);
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 10px rgba(14, 58, 64, 0.05);
+}
+.hero-value-strip::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--teal);
+  box-shadow: 0 0 0 4px rgba(42, 126, 127, 0.18);
+}
+
+.preview-value-reinforce {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--muted);
+  margin-top: 0.6em;
+  letter-spacing: 0.005em;
+}
+.preview-value-reinforce .sparkle { display: none; }
+
+/* Cards — luxury minimal, single hairline + soft layered shadow */
+.feature-card, .tour-card, .concierge-card, .step-card, .question-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow) !important;
+  transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease !important;
+}
+.feature-card:hover, .tour-card:hover, .concierge-card:hover,
+.step-card:hover, .question-card:hover {
+  border-color: var(--teal-soft) !important;
+  box-shadow: var(--shadow-lg) !important;
+  transform: translateY(-3px) !important;
+}
+
+/* Keep feature-card left padding so the ::before icon never overlaps title */
+.feature-card { padding: 18px 16px 18px 58px !important; }
+@media (max-width: 700px) {
+  .feature-card { padding: 14px 14px 14px 56px !important; min-height: unset !important; }
+}
+.feature-card h3::before {
+  border-color: rgba(42, 126, 127, 0.28) !important;
+  background: var(--surface-soft) !important;
+  color: var(--teal) !important;
+  box-shadow: 0 4px 10px rgba(14, 58, 64, 0.06) !important;
+}
+
+/* Card headings stay refined */
+.feature-card h3, .tour-card h3, .concierge-card h3, .step-card h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--navy);
+  letter-spacing: -0.005em;
+}
+
+/* Chat card — the hero piece. Teal hairline + lifted depth */
+.chat-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow:
+    0 2px 6px rgba(14, 58, 64, 0.05),
+    0 30px 70px -20px rgba(14, 58, 64, 0.20),
+    0 0 0 1px rgba(42, 126, 127, 0.10) !important;
+}
+.chat-card .chat-card-top {
+  color: var(--navy);
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+}
+.chat-card .status-dot {
+  background: var(--teal) !important;
+  box-shadow: 0 0 0 4px rgba(42, 126, 127, 0.20);
+}
+.chat-instruction-line {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.25rem;
+  color: var(--navy);
+  letter-spacing: -0.005em;
+}
+.chat-card .input-area input {
+  border: 1px solid var(--hairline) !important;
+  background: var(--surface-soft) !important;
+  font-family: var(--sans);
+  font-size: 1.02rem;
+  color: var(--text);
+}
+.chat-card .input-area input:focus {
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 4px rgba(42, 126, 127, 0.16) !important;
+  background: var(--surface) !important;
+}
+
+/* Buttons — solid teal primary + sage-hairline secondary */
+.button, .button-primary, .button-secondary {
+  font-family: var(--sans) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+  border-radius: 999px !important;
+  padding: 0 26px !important;
+  min-height: 50px !important;
+  white-space: nowrap;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease !important;
+}
+.button-primary {
+  background: var(--teal) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--teal) !important;
+  box-shadow: 0 8px 24px -8px rgba(42, 126, 127, 0.55) !important;
+}
+.button-primary:hover {
+  background: var(--teal-deep) !important;
+  color: #FFFFFF !important;
+  border-color: var(--teal-deep) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px -10px rgba(31, 95, 96, 0.6) !important;
+}
+.button-secondary {
+  background: var(--surface) !important;
+  color: var(--navy) !important;
+  border: 1px solid var(--sage) !important;
+  box-shadow: none !important;
+}
+.button-secondary:hover {
+  background: var(--surface-soft) !important;
+  color: var(--teal-deep) !important;
+  border-color: var(--sage-deep) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px -10px rgba(110, 140, 123, 0.35) !important;
+}
+
+/* Chat send button — teal, primary action inside chat */
+.chat-card .input-area button.send-btn {
+  background: var(--teal) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--teal) !important;
+  font-weight: 700 !important;
+}
+.chat-card .input-area button.send-btn:hover {
+  background: var(--teal-deep) !important;
+  border-color: var(--teal-deep) !important;
+  color: #FFFFFF !important;
+}
+.chat-card .input-area button.mic-btn {
+  background: var(--surface) !important;
+  color: var(--navy) !important;
+  border: 1px solid var(--hairline) !important;
+}
+
+/* Pulse — subtler teal halo */
+.pulse { animation: pulseTeal 2.4s ease-in-out infinite; }
+@keyframes pulseTeal {
+  0%, 100% { box-shadow: 0 8px 24px -8px rgba(42, 126, 127, 0.55), 0 0 0 0 rgba(42, 126, 127, 0.0); }
+  50%      { box-shadow: 0 8px 24px -8px rgba(42, 126, 127, 0.55), 0 0 0 8px rgba(42, 126, 127, 0.0); }
+}
+
+/* Section labels (questions, how, tours, concierge) — flat navy, no rainbow gradient */
+.section-heading h2[data-i18n="questionsTitle"],
+.section-heading h2[data-i18n="howTitle"],
+.section-heading.split-heading h2[data-i18n="toursTitle"],
+.section-heading.split-heading h2[data-i18n="conciergeTitle"] {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: var(--navy) !important;
+  background-clip: unset !important;
+  text-fill-color: unset !important;
+  color: var(--navy) !important;
+  font-family: var(--serif) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.005em !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+/* Header — luxury concierge desk: white, single hairline, navy nav */
+.site-header {
+  background: rgba(255, 255, 255, 0.86) !important;
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
+  border: 1px solid var(--hairline) !important;
+  box-shadow: 0 2px 14px rgba(14, 58, 64, 0.05) !important;
+  border-radius: 999px;
+}
+.site-nav a, .footer-links a, .footer-links button {
+  color: var(--navy) !important;
+  font-weight: 600 !important;
+  font-size: 0.98rem !important;
+  letter-spacing: 0.01em;
+}
+.site-nav a:hover, .footer-links a:hover, .footer-links button:hover {
+  color: var(--teal) !important;
+}
+.site-logo img + span, .site-logo-text {
+  font-family: var(--serif) !important;
+  font-weight: 700 !important;
+  color: var(--navy) !important;
+  letter-spacing: 0.02em;
+  text-shadow: none !important;
+  text-transform: none;
+  font-size: 1.18rem;
+  white-space: nowrap;
+}
+@media (max-width: 700px) {
+  .site-logo img + span, .site-logo-text {
+    font-size: 0.92rem;
+  }
+}
+@media (max-width: 480px) {
+  .site-logo img + span, .site-logo-text {
+    display: none;
+  }
+}
+
+/* Footer — clean teal-cream wash + tighter rhythm */
+.site-footer {
+  background: var(--bg-soft) !important;
+  border-top: 1px solid var(--hairline) !important;
+}
+.footer-inner {
+  padding: 32px 0 20px 0 !important;
+  gap: 1.4rem 2rem !important;
+}
+.footer-brand {
+  font-family: var(--serif);
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: 0.01em;
+  font-size: 1.3rem;
+}
+.footer-value-strip {
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 999px;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--navy) !important;
+  font-weight: 500;
+  font-size: 1rem;
+  box-shadow: none !important;
+}
+.footer-value-icon { color: var(--teal) !important; }
+.footer-network-line { color: var(--sage-deep) !important; }
+.footer-credit { color: var(--muted) !important; }
+@media (max-width: 900px) {
+  .footer-inner { gap: 1rem 1.2rem !important; padding: 24px 0 16px 0 !important; }
+  .footer-brand-group { gap: 0.35em !important; }
+  .footer-links { gap: 0.55em !important; }
+  .footer-credit-group { margin-top: 0.2em !important; }
+  .footer-copyright { margin-top: 8px !important; font-size: 0.85rem; }
+}
+
+/* Floating bubble — refined teal pill (concierge bell) */
+#floating-chat-bubble {
+  background: var(--teal) !important;
+  color: #FFFFFF !important;
+  border: 1px solid var(--teal) !important;
+  font-family: var(--sans) !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  box-shadow:
+    0 12px 32px -10px rgba(42, 126, 127, 0.55),
+    0 0 0 4px rgba(158, 181, 168, 0.22) !important;
+}
+#floating-chat-bubble:hover {
+  background: var(--teal-deep) !important;
+  border-color: var(--teal-deep) !important;
+  box-shadow:
+    0 18px 44px -10px rgba(31, 95, 96, 0.6),
+    0 0 0 6px rgba(158, 181, 168, 0.28) !important;
+}
+#floating-chat-bubble .bubble-emoji {
+  font-size: 1.25em;
+  filter: none;
+}
+
+/* Cookie banner — quieter */
+.cookie-banner {
+  background: var(--surface) !important;
+  border: 1px solid var(--hairline) !important;
+  box-shadow: var(--shadow) !important;
+  border-radius: var(--radius) !important;
+}
+
+/* Micro-CTA links under each section — solid teal pill (button-like), distinct from eyebrows */
+.section-micro-cta {
+  display: inline-block;
+  background: var(--teal) !important;
+  color: #FFFFFF !important;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: 1px solid var(--teal);
+  text-decoration: none !important;
+  box-shadow: 0 6px 18px -6px rgba(42, 126, 127, 0.5);
+  transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+.section-micro-cta:hover {
+  background: var(--teal-deep) !important;
+  border-color: var(--teal-deep);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -8px rgba(31, 95, 96, 0.6);
+}
+
+
+/* ============================================================ */
+/* Phase 1.5 — visibility & hierarchy fixes                     */
+/* ============================================================ */
+
+/* LIVE NOW (.chatbot-panel) — dark teal panel, MUST have white headings */
+.chatbot-panel {
+  background:
+    radial-gradient(circle at 88% 10%, rgba(158, 181, 168, 0.22), transparent 38%),
+    radial-gradient(circle at 8% 100%, rgba(201, 224, 222, 0.18), transparent 38%),
+    linear-gradient(140deg, var(--teal-deep) 0%, var(--navy) 100%) !important;
+  color: #FFFFFF !important;
+}
+.chatbot-panel h1,
+.chatbot-panel h2,
+.chatbot-panel h3,
+.chatbot-panel .chatbot-copy h2 {
+  color: #FFFFFF !important;
+  background: none !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+  text-fill-color: #FFFFFF !important;
+}
+.chatbot-panel p,
+.chatbot-panel .chatbot-copy p,
+.chatbot-panel a {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+.chatbot-panel .eyebrow {
+  color: var(--aqua) !important;
+}
+.chatbot-panel .section-micro-cta {
+  background: #FFFFFF !important;
+  color: var(--teal-deep) !important;
+  border-color: #FFFFFF !important;
+}
+.chatbot-panel .section-micro-cta:hover {
+  background: var(--mint) !important;
+  color: var(--navy) !important;
+  border-color: var(--mint) !important;
+}
+
+/* Become a partner (.partner-actions) — fix cramped button text */
+.partners-panel .button,
+.partner-actions .button,
+.partner-actions .button-primary {
+  padding: 0 32px !important;
+  min-height: 52px !important;
+  white-space: nowrap !important;
+  font-size: 1rem !important;
+}
+
+/* Hero subtitle below JUST ASK — refined supporting line */
+.hero-subtitle,
+.hero-copy p:first-of-type {
+  font-family: var(--serif) !important;
+  font-style: italic;
+  font-weight: 500 !important;
+  color: var(--muted) !important;
+  font-size: clamp(1.05rem, 2.4vw, 1.4rem) !important;
+  letter-spacing: 0.005em;
+  margin-top: 0 !important;
+}
+
+/* Eyebrow vs micro-CTA: clarify their roles globally
+   (eyebrow stays small uppercase sage label; micro-CTA is teal pill button) */
+.eyebrow + h2,
+.eyebrow + h1 {
+  margin-top: 0.35em !important;
+}
+
+/* Mobile hero spacing — bring JUST ASK to dominate the fold */
+@media (max-width: 700px) {
+  .hero { padding-top: 28px !important; padding-bottom: 22px !important; }
+  .hero-copy h1, .hero-title-link {
+    font-size: clamp(4.2rem, 18vw, 5.8rem) !important;
+    line-height: 0.92 !important;
+  }
+  .hero-subtitle,
+  .hero-copy p:first-of-type {
+    font-size: 1.05rem !important;
+  }
+  .partners-panel .button,
+  .partner-actions .button,
+  .partner-actions .button-primary {
+    padding: 0 24px !important;
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* ============================================================ */
+/* Phase 1.6 — hierarchy, motion & polish                       */
+/* ============================================================ */
+
+/* (1) Header — single logo, hide redundant ASK SANTORINI AI text, emphasise mark */
+.site-logo-text { display: none !important; }
+.site-logo picture,
+.site-logo img {
+  display: block;
+  max-height: 38px;
+  width: auto;
+  filter: drop-shadow(0 1px 0 rgba(14, 58, 64, 0.06));
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+.site-logo:hover img {
+  transform: translateY(-1px) scale(1.02);
+  filter: drop-shadow(0 3px 8px rgba(42, 126, 127, 0.22));
+}
+@media (max-width: 700px) {
+  .site-logo img { max-height: 32px; }
+}
+
+/* (4) Hero decorative line — center it under JUST ASK, re-color to sage/teal */
+.hero h1::after {
+  width: 180px !important;
+  height: 18px !important;
+  margin: 18px auto 8px auto !important;
+  background:
+    radial-gradient(circle at 50% 50%, var(--teal) 0 3px, transparent 4px),
+    linear-gradient(90deg, transparent 0, rgba(158, 181, 168, 0.55) 0 42%, transparent 42% 58%, rgba(158, 181, 168, 0.55) 58% 100%) !important;
+  background-size: 100% 100%, 100% 1px !important;
+  background-position: center, center !important;
+  background-repeat: no-repeat !important;
+}
+.hero-copy h1 {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center !important;
+}
+@media (max-width: 700px) {
+  .hero h1::after {
+    width: 140px !important;
+    margin: 12px auto 6px auto !important;
+  }
+}
+
+/* (5) JUST ASK pill micro-CTAs — center within section, align with hero rhythm */
+.section-micro-cta {
+  display: block !important;
+  width: fit-content !important;
+  margin: 22px auto 0 auto !important;
+  text-align: center;
+}
+
+/* (3) LIVE NOW dot — heartbeat pulse (double-beat) */
+.chat-card .status-dot {
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 999px;
+  background: #2DD17F !important; /* live green, more "online" than teal here */
+  position: relative;
+  display: inline-block;
+  animation: heartbeat 1.6s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(45, 209, 127, 0.55);
+}
+.chat-card .status-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 999px;
+  border: 2px solid rgba(45, 209, 127, 0.55);
+  animation: heartbeatRing 1.6s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes heartbeat {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0   rgba(45, 209, 127, 0.55); }
+  14%  { transform: scale(1.25); box-shadow: 0 0 0 4px rgba(45, 209, 127, 0.35); }
+  28%  { transform: scale(1);    box-shadow: 0 0 0 0   rgba(45, 209, 127, 0.0); }
+  42%  { transform: scale(1.2);  box-shadow: 0 0 0 3px rgba(45, 209, 127, 0.28); }
+  56%  { transform: scale(1);    box-shadow: 0 0 0 0   rgba(45, 209, 127, 0.0); }
+  100% { transform: scale(1); }
+}
+@keyframes heartbeatRing {
+  0%   { transform: scale(0.7); opacity: 0.9; }
+  60%  { transform: scale(1.6); opacity: 0;   }
+  100% { transform: scale(1.6); opacity: 0;   }
+}
+.chat-card .chat-card-top {
+  letter-spacing: 0.08em !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  color: var(--navy) !important;
+  gap: 0.55em;
+  align-items: center;
+}
+
+/* (9) BUTTON HIERARCHY — subtle gradients by importance
+   Tier 1 (apex):  #floating-chat-bubble
+   Tier 2 (hero):  .button-primary, .pulse primary
+   Tier 3 (CTA):   .section-micro-cta JUST ASK pills
+   Tier 4 (ghost): .button-secondary, .mic-btn
+*/
+
+/* Tier 2 — hero primary: teal vertical gradient */
+.button-primary {
+  background: linear-gradient(180deg, #3A9698 0%, var(--teal) 55%, var(--teal-deep) 100%) !important;
+  border-color: var(--teal-deep) !important;
+}
+.button-primary:hover {
+  background: linear-gradient(180deg, var(--teal) 0%, var(--teal-deep) 60%, #154C4D 100%) !important;
+}
+
+/* Tier 3 — micro-CTA pills: lighter teal gradient (clearly subordinate to floating) */
+.section-micro-cta {
+  background: linear-gradient(180deg, #4FA1A3 0%, var(--teal) 100%) !important;
+  border-color: var(--teal-deep) !important;
+}
+.section-micro-cta:hover {
+  background: linear-gradient(180deg, var(--teal) 0%, var(--teal-deep) 100%) !important;
+}
+
+/* Chat send button — teal gradient, matches tier 2 */
+.chat-card .input-area button.send-btn {
+  background: linear-gradient(180deg, #3A9698 0%, var(--teal) 55%, var(--teal-deep) 100%) !important;
+  border-color: var(--teal-deep) !important;
+}
+
+/* (2 + 9 Tier 1) Floating bubble — apex of hierarchy: gradient + glow + shimmer sweep border */
+#floating-chat-bubble {
+  background: linear-gradient(135deg, #3A9698 0%, var(--teal) 45%, var(--teal-deep) 100%) !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+  position: fixed !important;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.4) inset,
+    0 14px 38px -10px rgba(31, 95, 96, 0.65),
+    0 0 0 6px rgba(158, 181, 168, 0.18),
+    0 0 30px 2px rgba(42, 126, 127, 0.35) !important;
+  animation: floatBubbleGlow 3.2s ease-in-out infinite;
+}
+@keyframes floatBubbleGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.40) inset,
+      0 14px 38px -10px rgba(31, 95, 96, 0.65),
+      0 0 0 6px rgba(158, 181, 168, 0.18),
+      0 0 30px 2px rgba(42, 126, 127, 0.30);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.55) inset,
+      0 18px 46px -10px rgba(31, 95, 96, 0.75),
+      0 0 0 9px rgba(158, 181, 168, 0.10),
+      0 0 44px 6px rgba(42, 126, 127, 0.48);
+  }
+}
+/* Shimmer sweep across the bubble surface (uses the existing .shimmer span) */
+#floating-chat-bubble .shimmer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 38%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  background-position: -120% 0;
+  animation: bubbleShimmer 3.4s linear infinite;
+  mix-blend-mode: overlay;
+}
+@keyframes bubbleShimmer {
+  0%   { background-position: -120% 0; }
+  60%  { background-position: 220% 0;  }
+  100% { background-position: 220% 0;  }
+}
+
+/* (8) Network LIVE card — pulsing teal border + soft shimmer for the only live destination */
+.network-destination.is-live {
+  position: relative;
+  border: 1px solid var(--teal) !important;
+  box-shadow:
+    0 0 0 0 rgba(42, 126, 127, 0.55),
+    0 14px 32px -12px rgba(14, 58, 64, 0.18) !important;
+  animation: networkLivePulse 2.4s ease-in-out infinite;
+  overflow: hidden;
+}
+.network-destination.is-live::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 38%,
+    rgba(42, 126, 127, 0.18) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  background-position: -120% 0;
+  animation: bubbleShimmer 3.6s linear infinite;
+  border-radius: inherit;
+}
+.network-destination.is-live .network-badge {
+  background: linear-gradient(180deg, #3DD583 0%, #1FB46B 100%) !important;
+  color: #FFFFFF !important;
+  border: 1px solid #1FB46B !important;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(45, 209, 127, 0.18);
+}
+@keyframes networkLivePulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0   rgba(42, 126, 127, 0.0),
+      0 14px 32px -12px rgba(14, 58, 64, 0.18);
+    border-color: var(--teal);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(42, 126, 127, 0.18),
+      0 18px 40px -12px rgba(14, 58, 64, 0.22);
+    border-color: var(--teal-deep);
+  }
+}
+
+/* Ensure tier ordering visually: floating > hero primary > micro-CTA > secondary */
+.button-secondary {
+  background: var(--surface) !important;
+  /* keep ghost — no gradient, lowest tier */
+}
+
+/* ============================================================ */
+/* Phase 1.7 — unified button language (shimmer + halo by tier) */
+/* All CTAs share the floating-bubble effect, with ring thickness */
+/* proportional to size/importance.                              */
+/* ============================================================ */
+
+.button-primary,
+.section-micro-cta,
+.chat-card .input-area button.send-btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Shared shimmer sweep (uses ::after so it never blocks text/clicks) */
+.button-primary::after,
+.section-micro-cta::after,
+.chat-card .input-area button.send-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.42) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  background-position: -120% 0;
+  animation: bubbleShimmer 4.2s linear infinite;
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+/* Keep label/icon ABOVE the shimmer layer */
+.button-primary > *,
+.section-micro-cta > *,
+.chat-card .input-area button.send-btn > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Tier 2 — hero primary: medium halo ring (3px) */
+.button-primary {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.30) inset,
+    0 10px 28px -10px rgba(31, 95, 96, 0.55),
+    0 0 0 3px rgba(158, 181, 168, 0.18),
+    0 0 18px 1px rgba(42, 126, 127, 0.22) !important;
+}
+.button-primary:hover {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.40) inset,
+    0 14px 34px -10px rgba(31, 95, 96, 0.65),
+    0 0 0 4px rgba(158, 181, 168, 0.22),
+    0 0 26px 2px rgba(42, 126, 127, 0.32) !important;
+}
+
+/* Tier 3 — micro-CTA pills: thin halo (2px), subtler glow */
+.section-micro-cta {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.28) inset,
+    0 6px 16px -6px rgba(42, 126, 127, 0.45),
+    0 0 0 2px rgba(158, 181, 168, 0.16),
+    0 0 12px 0 rgba(42, 126, 127, 0.18) !important;
+}
+.section-micro-cta:hover {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.38) inset,
+    0 10px 22px -8px rgba(31, 95, 96, 0.55),
+    0 0 0 3px rgba(158, 181, 168, 0.20),
+    0 0 18px 2px rgba(42, 126, 127, 0.28) !important;
+}
+
+/* Chat send button — same tier as primary (medium halo) */
+.chat-card .input-area button.send-btn {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.30) inset,
+    0 8px 22px -8px rgba(31, 95, 96, 0.55),
+    0 0 0 2px rgba(158, 181, 168, 0.18),
+    0 0 14px 1px rgba(42, 126, 127, 0.22) !important;
+}
+.chat-card .input-area button.send-btn:hover {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.40) inset,
+    0 12px 28px -8px rgba(31, 95, 96, 0.65),
+    0 0 0 3px rgba(158, 181, 168, 0.22),
+    0 0 22px 2px rgba(42, 126, 127, 0.32) !important;
+}
+
+/* Slow shimmer down on hover so it feels responsive, not frantic */
+.button-primary:hover::after,
+.section-micro-cta:hover::after,
+.chat-card .input-area button.send-btn:hover::after {
+  animation-duration: 2.6s;
+}
+
+/* Respect reduced-motion users */
+@media (prefers-reduced-motion: reduce) {
+  #floating-chat-bubble,
+  .button-primary::after,
+  .section-micro-cta::after,
+  .chat-card .input-area button.send-btn::after,
+  #floating-chat-bubble .shimmer,
+  .network-destination.is-live,
+  .network-destination.is-live::after,
+  .chat-card .status-dot,
+  .chat-card .status-dot::after {
+    animation: none !important;
+  }
+}
+
+/* ============================================================ */
+/* Phase 1.8 — card borders: slightly more visible vs bg        */
+/* ============================================================ */
+
+.feature-card,
+.tour-card,
+.concierge-card,
+.step-card,
+.question-card,
+.partners-panel,
+.network-destination {
+  border: 1px solid rgba(42, 126, 127, 0.18) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 1px 2px rgba(14, 58, 64, 0.04),
+    0 10px 28px -12px rgba(14, 58, 64, 0.14) !important;
+}
+
+.feature-card:hover,
+.tour-card:hover,
+.concierge-card:hover,
+.step-card:hover,
+.question-card:hover {
+  border-color: rgba(42, 126, 127, 0.38) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 2px 4px rgba(14, 58, 64, 0.06),
+    0 20px 44px -14px rgba(14, 58, 64, 0.22) !important;
+}
+
+/* Keep the LIVE network card's animated teal border distinct (already pulses) */
+.network-destination.is-live {
+  border-color: var(--teal) !important;
+}
+
+/* Chat card hairline a touch warmer too, so it still reads as apex card */
+.chat-card {
+  border-color: rgba(42, 126, 127, 0.22) !important;
+}
+
+/* ============================================================ */
+/* Phase 1.9 — concierge card CTAs: same family as floating,    */
+/* but Tier 4 (subtler than hero primary & micro-CTA pills)     */
+/* ============================================================ */
+
+.concierge-card-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  padding: 9px 18px !important;
+  border-radius: 999px !important;
+  font-family: var(--sans) !important;
+  font-weight: 700 !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase;
+  text-decoration: none !important;
+  color: #FFFFFF !important;
+  background: linear-gradient(180deg, #5FA7A9 0%, #3A8E90 100%) !important;
+  border: 1px solid rgba(31, 95, 96, 0.55) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.30) inset,
+    0 4px 12px -4px rgba(42, 126, 127, 0.40),
+    0 0 0 1.5px rgba(158, 181, 168, 0.16),
+    0 0 10px 0 rgba(42, 126, 127, 0.18) !important;
+  transition: transform 0.18s ease, box-shadow 0.22s ease, background 0.22s ease;
+}
+
+.concierge-card-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(255, 255, 255, 0.32) 50%,
+    transparent 58%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  background-position: -120% 0;
+  animation: bubbleShimmer 5s linear infinite;
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+.concierge-card-cta > * {
+  position: relative;
+  z-index: 2;
+}
+
+.concierge-card-cta:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, var(--teal) 0%, var(--teal-deep) 100%) !important;
+  border-color: var(--teal-deep) !important;
+  color: #FFFFFF !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.40) inset,
+    0 8px 20px -6px rgba(31, 95, 96, 0.55),
+    0 0 0 2.5px rgba(158, 181, 168, 0.22),
+    0 0 16px 1px rgba(42, 126, 127, 0.32) !important;
+}
+.concierge-card-cta:hover::after {
+  animation-duration: 2.8s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .concierge-card-cta::after { animation: none !important; }
+}
+
+/* ============================================================ */
+/* Phase 1.9b — tour card CTAs share the concierge CTA style    */
+/* ============================================================ */
+
+.tour-card-cta {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  padding: 9px 18px !important;
+  border-radius: 999px !important;
+  font-family: var(--sans) !important;
+  font-weight: 700 !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase;
+  text-decoration: none !important;
+  color: #FFFFFF !important;
+  background: linear-gradient(180deg, #5FA7A9 0%, #3A8E90 100%) !important;
+  border: 1px solid rgba(31, 95, 96, 0.55) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.30) inset,
+    0 4px 12px -4px rgba(42, 126, 127, 0.40),
+    0 0 0 1.5px rgba(158, 181, 168, 0.16),
+    0 0 10px 0 rgba(42, 126, 127, 0.18) !important;
+  transition: transform 0.18s ease, box-shadow 0.22s ease, background 0.22s ease;
+}
+
+.tour-card-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(255, 255, 255, 0.32) 50%,
+    transparent 58%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  background-position: -120% 0;
+  animation: bubbleShimmer 5s linear infinite;
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+.tour-card-cta > * {
+  position: relative;
+  z-index: 2;
+}
+
+.tour-card-cta:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, var(--teal) 0%, var(--teal-deep) 100%) !important;
+  border-color: var(--teal-deep) !important;
+  color: #FFFFFF !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.40) inset,
+    0 8px 20px -6px rgba(31, 95, 96, 0.55),
+    0 0 0 2.5px rgba(158, 181, 168, 0.22),
+    0 0 16px 1px rgba(42, 126, 127, 0.32) !important;
+}
+.tour-card-cta:hover::after {
+  animation-duration: 2.8s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-card-cta::after { animation: none !important; }
+}
+
+/* ============================================================ */
+/* Phase 2.0 — bigger card titles across all sections           */
+/* Mobile/tablet-first scale (clamp grows with viewport).       */
+/* ============================================================ */
+
+.feature-card h3,
+.tour-card h3,
+.concierge-card h3,
+.step-card h3,
+.network-destination h3 {
+  font-size: clamp(1.18rem, 3.6vw, 1.42rem) !important;
+  line-height: 1.28 !important;
+  letter-spacing: -0.005em;
+}
+
+/* question-card uses span, not h3 */
+.question-card [data-question-text] {
+  font-size: clamp(1.02rem, 3.2vw, 1.12rem) !important;
+  line-height: 1.3 !important;
+  font-weight: 600 !important;
+}
+
+/* Mobile: slightly more weight + tighter top spacing so titles read first */
+@media (max-width: 700px) {
+  .feature-card h3,
+  .tour-card h3,
+  .concierge-card h3,
+  .step-card h3,
+  .network-destination h3 {
+    font-size: clamp(1.22rem, 5vw, 1.5rem) !important;
+    line-height: 1.25 !important;
+  }
+  .question-card [data-question-text] {
+    font-size: clamp(1.05rem, 4vw, 1.18rem) !important;
+  }
+}
+
+/* ============================================================ */
+/* Phase 2.1 — chat readability & input clarity                 */
+/* Goals: easier to find input under sunlight, less clutter,    */
+/* mobile-first typing comfort, addictive micro-feedback.       */
+/* ============================================================ */
+
+/* --- 1. Hide redundant secondary tech-note (keep only the     */
+/*       disclaimer about verification, which is more useful)   */
+.chat-card .chat-ai-attribution {
+  display: none !important;
+}
+
+/* --- 2. Tighter spacing in chat header so input dominates --- */
+.chat-card .chat-card-top {
+  margin-bottom: 6px !important;
+}
+.chat-card .chat-instruction-line {
+  margin: 4px 0 10px !important;
+  font-size: 0.95rem !important;
+  color: rgba(14, 58, 64, 0.66) !important;
+}
+.chat-card .chat-disclaimer-note {
+  font-size: 0.72rem !important;
+  opacity: 0.62;
+  margin-top: 8px !important;
+}
+
+/* --- 3. Input area: high-contrast border, big touch target -- */
+.chat-card .input-area {
+  position: relative;
+  padding: 6px !important;
+  background: #FFFFFF !important;
+  border: 2px solid var(--teal) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.9) inset,
+    0 4px 14px -4px rgba(31, 95, 96, 0.22),
+    0 0 0 4px rgba(42, 126, 127, 0.06);
+  transition: border-color 0.2s ease, box-shadow 0.25s ease;
+}
+.chat-card .input-area:focus-within {
+  border-color: var(--teal-deep) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 1) inset,
+    0 6px 18px -4px rgba(31, 95, 96, 0.32),
+    0 0 0 4px rgba(42, 126, 127, 0.18);
+}
+
+/* --- 4. The text input itself: big, legible, no iOS zoom ---- */
+.chat-card .input-area #user-input {
+  flex: 1 1 auto;
+  min-height: 48px;
+  padding: 12px 14px !important;
+  font-size: 16px !important; /* prevents iOS zoom-on-focus */
+  font-family: var(--sans);
+  color: var(--navy) !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+.chat-card .input-area #user-input::placeholder {
+  color: rgba(14, 58, 64, 0.42) !important;
+  font-weight: 500;
+}
+
+/* --- 5. Mic + Send: clearly separated, mic ghost / send solid */
+.chat-card .input-area .mic-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px !important;
+  background: rgba(42, 126, 127, 0.08) !important;
+  border: 1px solid rgba(42, 126, 127, 0.18) !important;
+  color: var(--teal-deep) !important;
+  font-size: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+.chat-card .input-area .mic-btn:hover,
+.chat-card .input-area .mic-btn:active {
+  background: rgba(42, 126, 127, 0.16) !important;
+  transform: scale(1.04);
+}
+
+.chat-card .input-area .send-btn {
+  min-height: 44px;
+  padding: 10px 18px !important;
+  font-size: 0.92rem !important;
+  letter-spacing: 0.06em;
+}
+
+/* --- 6. Mobile: even bigger input + stacked send for thumbs - */
+@media (max-width: 700px) {
+  .chat-card .input-area {
+    padding: 5px !important;
+    gap: 4px;
+  }
+  .chat-card .input-area #user-input {
+    min-height: 52px;
+    font-size: 17px !important;
+    padding: 14px 12px !important;
+  }
+  .chat-card .input-area .mic-btn {
+    width: 48px;
+    height: 48px;
+  }
+  .chat-card .input-area .send-btn {
+    min-height: 48px;
+    padding: 12px 16px !important;
+  }
+  .chat-card .chat-instruction-line {
+    font-size: 1rem !important;
+  }
+}
+
+/* --- 7. Empty-state helper: softer, less repetitive ---------- */
+.chat-card .chat-empty-helper {
+  font-size: 0.85rem !important;
+  color: rgba(14, 58, 64, 0.50) !important;
+  font-style: italic;
+}
+
+/* --- 8. Bot/user bubbles: softer, slightly more breathing room */
+.chat-card #chat-box {
+  padding: 4px 2px !important;
+  gap: 10px;
+}
+.chat-card .bot-message,
+.chat-card .user-message {
+  font-size: 0.96rem !important;
+  line-height: 1.5 !important;
+  padding: 12px 14px !important;
+  border-radius: 14px !important;
+}
+
+/* --- 9. Mic status: subtle pill, not floating text ----------- */
+.chat-card .mic-status:not(:empty) {
+  font-size: 0.72rem !important;
+  background: rgba(42, 126, 127, 0.10);
+  color: var(--teal-deep) !important;
+  padding: 4px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================ */
+/* Phase 2.2 — chat UX layer: chips, dots, sun-mode, bounce     */
+/* ============================================================ */
+
+/* --- Quick-suggestion chips above input ---------------------- */
+.chat-suggestion-chips,
+.chat-recent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 8px;
+  align-items: center;
+}
+.chat-recent-chips[hidden] { display: none !important; }
+
+.chat-recent-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(14, 58, 64, 0.55);
+  margin-right: 2px;
+  font-weight: 700;
+}
+
+.chat-chip {
+  appearance: none;
+  border: 1px solid rgba(42, 126, 127, 0.28);
+  background: rgba(42, 126, 127, 0.06);
+  color: var(--teal-deep);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.15s ease, border-color 0.18s ease;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-chip:hover {
+  background: rgba(42, 126, 127, 0.14);
+  border-color: rgba(42, 126, 127, 0.45);
+  transform: translateY(-1px);
+}
+.chat-chip:active { transform: scale(0.97); }
+
+.chat-chip-recent {
+  background: rgba(158, 181, 168, 0.14);
+  border-color: rgba(110, 140, 123, 0.32);
+  color: var(--navy);
+  font-weight: 500;
+}
+
+/* --- Textarea overrides (auto-grow friendly) ----------------- */
+.chat-card .input-area #user-input {
+  resize: none !important;
+  line-height: 1.4 !important;
+  max-height: 140px;
+  overflow-y: hidden;
+  transition: background 0.2s ease;
+}
+.chat-card .input-area #user-input.placeholder-fading::placeholder {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.chat-card .input-area #user-input::placeholder {
+  transition: opacity 0.3s ease;
+}
+
+/* --- Mic helper line under input ----------------------------- */
+.chat-card .mic-helper-line {
+  margin: 6px 0 0 !important;
+  font-size: 0.74rem !important;
+  color: rgba(14, 58, 64, 0.55) !important;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+@media (min-width: 701px) {
+  .chat-card .mic-helper-line { display: none; }
+}
+
+/* --- Typing dots indicator ----------------------------------- */
+.bot-message.loading {
+  background: rgba(42, 126, 127, 0.06) !important;
+  padding: 14px 16px !important;
+  min-height: 40px;
+}
+.typing-dots {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 2px 0;
+}
+.typing-dots > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  display: inline-block;
+  animation: typingDot 1.2s ease-in-out infinite both;
+}
+.typing-dots > span:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots > span:nth-child(3) { animation-delay: 0.30s; }
+@keyframes typingDot {
+  0%, 60%, 100% { opacity: 0.28; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .typing-dots > span { animation: none !important; opacity: 0.55; }
+}
+
+/* --- Send-button bounce on send ------------------------------ */
+.send-btn.send-bounce {
+  animation: sendPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes sendPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .send-btn.send-bounce { animation: none !important; }
+}
+
+/* --- Outdoor (sun) mode toggle button ------------------------ */
+.chat-sun-toggle {
+  margin-left: auto;
+  appearance: none;
+  border: 1px solid rgba(42, 126, 127, 0.28);
+  background: rgba(42, 126, 127, 0.06);
+  color: var(--teal-deep);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s, transform 0.18s, color 0.18s;
+}
+.chat-sun-toggle:hover { background: rgba(42, 126, 127, 0.14); transform: scale(1.06); }
+.chat-sun-toggle[aria-pressed="true"] {
+  background: #FFD86B;
+  color: #5A3F00;
+  border-color: #C9A227;
+  box-shadow: 0 0 0 2px rgba(255, 216, 107, 0.35);
+}
+
+/* --- SUN MODE: high-contrast for outdoor / sunlight ---------- */
+body.sun-mode .chat-card {
+  background: #FFFFFF !important;
+  box-shadow:
+    0 0 0 2px rgba(14, 58, 64, 0.10) inset,
+    0 12px 32px -10px rgba(14, 58, 64, 0.28) !important;
+}
+body.sun-mode .chat-card .input-area {
+  border-width: 3px !important;
+  border-color: var(--navy) !important;
+  box-shadow:
+    0 0 0 1px #FFFFFF inset,
+    0 0 0 4px rgba(14, 58, 64, 0.12),
+    0 6px 18px -4px rgba(14, 58, 64, 0.40) !important;
+}
+body.sun-mode .chat-card .input-area:focus-within {
+  border-color: #000814 !important;
+  box-shadow:
+    0 0 0 1px #FFFFFF inset,
+    0 0 0 5px rgba(14, 58, 64, 0.24),
+    0 8px 22px -4px rgba(14, 58, 64, 0.50) !important;
+}
+body.sun-mode .chat-card .input-area #user-input {
+  color: #0A1E22 !important;
+  font-weight: 600 !important;
+}
+body.sun-mode .chat-card .input-area #user-input::placeholder {
+  color: rgba(14, 58, 64, 0.65) !important;
+}
+body.sun-mode .chat-card .bot-message,
+body.sun-mode .chat-card .user-message {
+  font-weight: 500 !important;
+  color: #0A1E22 !important;
+}
+body.sun-mode .chat-card .chat-instruction-line,
+body.sun-mode .chat-card .chat-disclaimer-note,
+body.sun-mode .chat-card .mic-helper-line {
+  color: rgba(14, 58, 64, 0.80) !important;
+  opacity: 1 !important;
+}
+body.sun-mode .chat-chip {
+  border-width: 2px;
+  background: #FFFFFF;
+  color: var(--navy);
+}
+
+/* Mobile chip row layout */
+@media (max-width: 700px) {
+  .chat-chip { font-size: 0.84rem; padding: 8px 13px; }
+  .chat-recent-label { font-size: 0.65rem; }
 }
