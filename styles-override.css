@@ -2338,7 +2338,7 @@ h1, h2, h3,
   font-family: var(--serif) !important;
   font-style: italic;
   font-weight: 500 !important;
-  color: var(--muted) !important;
+  color: var(--teal) !important;
   font-size: clamp(1.05rem, 2.4vw, 1.4rem) !important;
   letter-spacing: 0.005em;
   margin-top: 0 !important;
@@ -3310,4 +3310,72 @@ body.sun-mode .chat-chip {
 @media (max-width: 700px) {
   .chat-chip { font-size: 0.84rem; padding: 8px 13px; }
   .chat-recent-label { font-size: 0.65rem; }
+}
+
+/* Subtle breathing glow for key teal/glass CTAs only */
+#floating-chat-bubble,
+.chat-card .input-area button.send-btn,
+.partner-actions .button-primary[data-i18n="becomePartner"] {
+  animation: buttonGlowPulse 3.8s ease-in-out infinite !important;
+  will-change: box-shadow, filter;
+}
+
+#floating-chat-bubble {
+  --button-glow-base:
+    0 0 0 1px rgba(255, 255, 255, 0.40) inset,
+    0 14px 38px -10px rgba(31, 95, 96, 0.65),
+    0 0 0 6px rgba(158, 181, 168, 0.18),
+    0 0 30px 2px rgba(42, 126, 127, 0.30);
+  --button-glow-peak:
+    0 0 0 1px rgba(255, 255, 255, 0.52) inset,
+    0 18px 48px -10px rgba(31, 95, 96, 0.76),
+    0 0 0 8px rgba(158, 181, 168, 0.18),
+    0 0 44px 5px rgba(42, 126, 127, 0.44);
+}
+
+.chat-card .input-area button.send-btn {
+  --button-glow-base:
+    0 0 0 1px rgba(255, 255, 255, 0.30) inset,
+    0 8px 22px -8px rgba(31, 95, 96, 0.55),
+    0 0 0 2px rgba(158, 181, 168, 0.18),
+    0 0 14px 1px rgba(42, 126, 127, 0.22);
+  --button-glow-peak:
+    0 0 0 1px rgba(255, 255, 255, 0.38) inset,
+    0 12px 28px -8px rgba(31, 95, 96, 0.66),
+    0 0 0 3px rgba(158, 181, 168, 0.22),
+    0 0 24px 3px rgba(42, 126, 127, 0.36);
+}
+
+.partner-actions .button-primary[data-i18n="becomePartner"] {
+  --button-glow-base:
+    0 0 0 1px rgba(255, 255, 255, 0.30) inset,
+    0 10px 28px -10px rgba(31, 95, 96, 0.55),
+    0 0 0 3px rgba(158, 181, 168, 0.18),
+    0 0 18px 1px rgba(42, 126, 127, 0.22);
+  --button-glow-peak:
+    0 0 0 1px rgba(255, 255, 255, 0.40) inset,
+    0 14px 36px -10px rgba(31, 95, 96, 0.68),
+    0 0 0 4px rgba(158, 181, 168, 0.22),
+    0 0 28px 3px rgba(42, 126, 127, 0.36);
+}
+
+@keyframes buttonGlowPulse {
+  0%,
+  100% {
+    box-shadow: var(--button-glow-base);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: var(--button-glow-peak);
+    filter: brightness(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #floating-chat-bubble,
+  .chat-card .input-area button.send-btn,
+  .partner-actions .button-primary[data-i18n="becomePartner"] {
+    animation: none !important;
+    filter: none !important;
+  }
 }
