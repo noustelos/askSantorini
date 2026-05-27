@@ -1624,6 +1624,7 @@ async function finalizeResponse({
   ctaDebug = null,
   onBeforeRender = null
 } = {}) {
+  // --- REGRESSION MITIGATION: LEGACY SAFE MODE ---
   const pipelineStepLog = [];
   const hydratedEntity = resolveStructuredEntity(entity);
   const routingDebug = intentRouting || Object.freeze({
@@ -1639,53 +1640,55 @@ async function finalizeResponse({
   pipelineStepLog.push("hydration");
   const intent = getSfpIntent(userMessage, selectedIntent, hydratedEntity);
   pipelineStepLog.push("intent");
-  // truthComplete removed: intent-based validation is now used
-  const missingFieldsList = hydratedEntity?.missingFieldsList || truthLayerFactualFields;
-  const requestedMissingField = getRequestedMissingTruthField(intent, missingFieldsList);
-  const truthFallbackTriggered = Boolean(fallbackTriggered || requestedMissingField);
-  const truthFallbackMessage = getTruthLayerFallbackMessage(requestedMissingField ? [requestedMissingField] : missingFieldsList, {
-      entity: hydratedEntity,
-      intent,
-      fallbackPathUsed
-  });
-  const ctas = buildSfpTruthCtas(hydratedEntity, intent);
-  pipelineStepLog.push("cta_gen");
 
-  if (typeof generateLlmText === "function") {
-    const llmResult = await generateLlmText();
-    generatedText = llmResult?.text || "";
-    generatedCtaDebug = llmResult?.ctaDebug || generatedCtaDebug;
+  // --- BYPASS strict validation and fallback layers ---
+  // Only render phone CTA if entity exists and has phone
+  let actions = [];
+  let regression_trigger_detected = false;
+  let disabled_layers = [
+    "hasAllContactFieldsMissing",
+    "truthComplete",
+    "strict_fallback_triggers"
+  ];
+  let active_render_path = "legacy_safe_mode";
+
+  if (hydratedEntity && hydratedEntity.phone) {
+    actions = [
+      {
+        type: "phone",
+        label: "Call Now",
+        url: hydratedEntity.phone,
+        style: "primary"
+      }
+    ];
+    regression_trigger_detected = true;
   }
 
-  const shouldUseTruthFallbackText = Boolean(requestedMissingField && !fallbackTriggered);
-  const responseText = shouldUseTruthFallbackText ? truthFallbackMessage : (generatedText || truthFallbackMessage);
+  // If no entity or no phone, show safe fallback
+  let responseText = "";
+  if (!hydratedEntity) {
+    responseText = "Verified contact details are not available right now.";
+  } else if (!hydratedEntity.phone) {
+    responseText = "I couldn't find a verified contact number for this place right now.";
+  } else {
+    responseText = generatedText || "";
+  }
+
+  // Always sanitize output
   const sanitizedText = sanitizeGeneratedFacts(responseText);
-  pipelineStepLog.push("llm");
-  const enforced = enforceSfpCtas({
-    actions: ctas,
-    entity: hydratedEntity,
-    intent,
-    rawText: generatedText,
-    llmPhoneAttempt: generatedCtaDebug?.phone_llm_attempt_blocked,
-    fallbackTriggered: truthFallbackTriggered,
-    entityMatchConfidence,
-    entityResolutionSource,
-    intentRouting: routingDebug,
-    fallbackAttemptedOverride,
-    locationFallbackTriggered,
-    entityMissingLocationCase,
-    fallbackPathUsed
-  });
-  pipelineStepLog.push("enforce");
-  pipelineStepLog.push("render");
+  pipelineStepLog.push("legacy_safe_mode");
 
   const finalResponse = {
     message_id: messageId,
-    text: sanitizedText || getTruthLayerFallbackMessage(),
+    text: sanitizedText,
     intent,
     entity: hydratedEntity,
-    actions: enforced.actions,
-    cta_debug: enforced.debug,
+    actions,
+    cta_debug: {
+      regression_trigger_detected,
+      disabled_layers,
+      active_render_path
+    },
     entity_match_confidence: entityMatchConfidence,
     entity_resolution_source: entityResolutionSource,
     detected_intent_type: routingDebug.detected_intent_type,
@@ -1695,21 +1698,11 @@ async function finalizeResponse({
     fallback_attempted_override: Boolean(fallbackAttemptedOverride),
     location_fallback_triggered: Boolean(locationFallbackTriggered),
     entity_missing_location_case: Boolean(entityMissingLocationCase),
-    fallback_triggered: truthFallbackTriggered,
-    fallback_path_used: truthFallbackTriggered ? fallbackPathUsed : "",
-    missing_fields_list: missingFieldsList,
+    fallback_triggered: false,
+    fallback_path_used: "",
+    missing_fields_list: hydratedEntity?.missingFieldsList || truthLayerFactualFields,
     pipeline_step_log: pipelineStepLog
   };
-
-  if (truthFallbackTriggered) {
-    askSantoriniTrafficLog("AskSantorini Helpful Action Fallback Layer v1:", {
-      entityId: hydratedEntity?.entityId || "",
-      entity_resolution_source: entityResolutionSource,
-      fallback_path_used: fallbackPathUsed,
-      fallback_triggered: true,
-      missing_fields_list: missingFieldsList
-    });
-  }
 
   if (typeof onBeforeRender === "function") {
     onBeforeRender();
@@ -1717,7 +1710,7 @@ async function finalizeResponse({
 
   appendFinalResponse(finalResponse, className);
 
-  askSantoriniTrafficLog("AskSantorini Single Final Output Pipeline:", finalResponse);
+  askSantoriniTrafficLog("AskSantorini Single Final Output Pipeline (legacy_safe_mode):", finalResponse);
 
   return finalResponse;
 }
