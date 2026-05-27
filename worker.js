@@ -312,19 +312,29 @@ function buildCtaList({ rawText, sources, isGreek = false }) {
     return blockedDomainPatterns.some((pattern) => pattern.test(host));
   };
 
+  let websiteHost = "";
   const websiteSource = sources.find((source) => {
     const titleHost = String(source.title || "").trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0];
-    if (titleHost) return !isBlockedHost(titleHost);
+    if (titleHost) {
+      if (isBlockedHost(titleHost)) return false;
+      websiteHost = titleHost;
+      return true;
+    }
     try {
       const host = new URL(source.uri).hostname.toLowerCase();
-      return !isBlockedHost(host);
+      if (isBlockedHost(host)) return false;
+      websiteHost = host;
+      return true;
     } catch {
       return false;
     }
   });
 
-  if (websiteSource) {
-    ctas.push({ type: "link", label: websiteLabel, url: websiteSource.uri, style: "secondary" });
+  if (websiteSource && websiteHost) {
+    // Prefer the homepage of the real domain over Gemini's deep-link redirect:
+    // users expect "Visit website" to land on the brand's main page.
+    const homepageUrl = `https://${websiteHost.replace(/^www\./, "")}/`;
+    ctas.push({ type: "link", label: websiteLabel, url: homepageUrl, style: "secondary" });
   }
 
   return ctas.length ? ctas : null;
