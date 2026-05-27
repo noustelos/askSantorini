@@ -2535,7 +2535,7 @@ h1, h2, h3,
   );
   background-size: 220% 100%;
   background-position: -120% 0;
-  animation: bubbleShimmer 3.4s linear infinite;
+  animation: bubbleShimmer 7.5s ease-in-out infinite;
   mix-blend-mode: overlay;
 }
 @keyframes bubbleShimmer {
@@ -2569,7 +2569,7 @@ h1, h2, h3,
   );
   background-size: 220% 100%;
   background-position: -120% 0;
-  animation: bubbleShimmer 3.6s linear infinite;
+  animation: bubbleShimmer 8s ease-in-out infinite;
   border-radius: inherit;
 }
 .network-destination.is-live .network-badge {
@@ -2638,7 +2638,7 @@ h1, h2, h3,
   );
   background-size: 220% 100%;
   background-position: -120% 0;
-  animation: bubbleShimmer 3.2s linear infinite;
+  animation: bubbleShimmer 7s ease-in-out infinite;
   mix-blend-mode: screen;
   z-index: 1;
 }
@@ -2703,7 +2703,7 @@ h1, h2, h3,
 .button-primary:hover::after,
 .section-micro-cta:hover::after,
 .chat-card .input-area button.send-btn:hover::after {
-  animation-duration: 2.6s;
+  animation-duration: 5.5s;
 }
 
 /* Respect reduced-motion users */
@@ -2809,7 +2809,7 @@ h1, h2, h3,
   );
   background-size: 220% 100%;
   background-position: -120% 0;
-  animation: bubbleShimmer 5s linear infinite;
+  animation: bubbleShimmer 9s ease-in-out infinite;
   mix-blend-mode: overlay;
   z-index: 1;
 }
@@ -2885,7 +2885,7 @@ h1, h2, h3,
   );
   background-size: 220% 100%;
   background-position: -120% 0;
-  animation: bubbleShimmer 5s linear infinite;
+  animation: bubbleShimmer 9s ease-in-out infinite;
   mix-blend-mode: overlay;
   z-index: 1;
 }
@@ -3014,7 +3014,7 @@ h1, h2, h3,
   transform: translateX(-115%);
   opacity: 0.42;
   will-change: transform, opacity;
-  animation: inputBorderShimmer 4.8s ease-in-out infinite;
+  animation: inputBorderShimmer 9s ease-in-out infinite;
 }
 
 .chat-card .input-area:hover,

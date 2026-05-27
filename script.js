@@ -4079,7 +4079,10 @@ if (micBtn && userInput && SpeechRecognition) {
   }
 
   function startRecognition() {
-      let recognitionHadResult = false;
+    if (autoRestartTimeout) {
+      clearTimeout(autoRestartTimeout);
+      autoRestartTimeout = null;
+    }
     if (recognition) {
       recognition.onend = null;
       recognition.onerror = null;
@@ -4089,13 +4092,18 @@ if (micBtn && userInput && SpeechRecognition) {
       try { recognition.stop(); } catch {}
     }
     recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    // Dictation mode: one-shot, auto-stops on silence (industry standard:
+    // ChatGPT / Claude / Gemini / iOS keyboard mic).
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.lang = getCurrentSpeechLanguage();
 
-    let finalTranscript = "";
-    let lastResultTime = Date.now();
+    // Snapshot of text that was already in the input before dictation began.
+    // We APPEND the spoken transcript to it instead of overwriting.
+    const baselineText = userInput.value;
+    const needsSeparator = baselineText.length > 0 && !/\s$/.test(baselineText);
+    const prefix = baselineText + (needsSeparator ? " " : "");
 
     recognition.onstart = () => {
       setState(STATE.listening);
@@ -4104,70 +4112,52 @@ if (micBtn && userInput && SpeechRecognition) {
     };
 
     recognition.onresult = (event) => {
-        recognitionHadResult = true;
-      let interim = "";
-      finalTranscript = "";
+      let finalText = "";
+      let interimText = "";
       for (let i = 0; i < event.results.length; ++i) {
         const res = event.results[i];
         if (res.isFinal) {
-          finalTranscript += res[0].transcript;
+          finalText += res[0].transcript;
         } else {
-          interim += res[0].transcript;
+          interimText += res[0].transcript;
         }
       }
-      // Stream interim + final into input
-      userInput.value = (finalTranscript + interim).trim();
-      lastResultTime = Date.now();
-      // Show partials instantly
+      userInput.value = (prefix + finalText + interimText).replace(/\s+/g, " ").trimStart();
       if (userInput.value.trim()) {
         lastStableTranscript = userInput.value;
       }
     };
 
     recognition.onend = () => {
-      setState(STATE.processing);
-      setMicStatus(STATE.processing);
-      resetMicButton();
-      // If no result and Greek, fallback to last stable
-      const isGreek = recognition && recognition.lang && recognition.lang.startsWith("el");
-      if (!recognitionHadResult && isGreek) {
-        // No error, just fallback
-        userInput.value = lastStableTranscript;
-      } else if (userInput.value.trim()) {
-        lastStableTranscript = userInput.value;
-      }
-      // Auto-recovery: restart if not idle
-      if (state !== STATE.idle) {
-        autoRestartTimeout = setTimeout(() => {
-          if (state !== STATE.idle) startRecognition();
-        }, 350);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      // Silently auto-recover on error, fallback for Greek
-      setState(STATE.processing);
-      setMicStatus(STATE.processing);
-      resetMicButton();
-      const isGreek = recognition && recognition.lang && recognition.lang.startsWith("el");
-      if (isGreek && userInput.value.trim() === "") {
-        userInput.value = lastStableTranscript;
-      }
-      if (state !== STATE.idle) {
-        autoRestartTimeout = setTimeout(() => {
-          if (state !== STATE.idle) startRecognition();
-        }, 350);
-      }
-    };
-
-    recognition.onspeechend = () => {
-      setState(STATE.processing);
-      setMicStatus(STATE.processing);
-      try { recognition.stop(); } catch {}
+      // One-shot: do NOT auto-restart. Return to idle and let the user
+      // review the text before pressing send.
+      setState(STATE.idle);
+      setMicStatus(STATE.idle);
       resetMicButton();
       if (userInput.value.trim()) {
         lastStableTranscript = userInput.value;
       }
+    };
+
+    recognition.onerror = (event) => {
+      // Hard stop on permission / availability errors — no silent retry loop.
+      setState(STATE.idle);
+      setMicStatus(STATE.idle);
+      resetMicButton();
+      const fatal = event && (
+        event.error === "not-allowed" ||
+        event.error === "service-not-allowed" ||
+        event.error === "audio-capture"
+      );
+      if (fatal) {
+        // Restore prior text so the user doesn't lose their draft.
+        userInput.value = baselineText;
+      }
+    };
+
+    recognition.onspeechend = () => {
+      // Let onend handle the state transition to keep behavior consistent.
+      try { recognition.stop(); } catch {}
     };
   }
 
