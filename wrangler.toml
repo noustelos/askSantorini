@@ -1,0 +1,11 @@
+name = "white-fog-d126"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# GEMINI_API_KEY is set as a secret via:
+#   wrangler secret put GEMINI_API_KEY
+# or via Cloudflare Dashboard → Settings → Variables → Secrets.
+# Do NOT commit it here.
+
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash"
