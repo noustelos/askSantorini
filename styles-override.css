@@ -1235,22 +1235,16 @@ body::before, body::after {
 }
 
 @keyframes livePulse {
-  0% {
-    opacity: 0.45;
+  0%, 100% {
+    opacity: 0.55;
     transform: scale(1);
     box-shadow: 0 0 0 rgba(0, 0, 0, 0);
   }
 
   50% {
     opacity: 1;
-    transform: scale(1.2);
-    box-shadow: 0 0 10px rgba(0, 255, 160, 0.30);
-  }
-
-  100% {
-    opacity: 0.45;
-    transform: scale(1);
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    transform: scale(1.12);
+    box-shadow: 0 0 12px rgba(0, 255, 160, 0.28);
   }
 }
 
@@ -1271,7 +1265,7 @@ body::before, body::after {
   box-shadow:
     0 0 0 4px rgba(139, 196, 188, 0.13),
     0 0 18px rgba(72, 136, 128, 0.24);
-  animation: livePulse 2.8s ease-in-out infinite;
+  animation: livePulse 4.2s ease-in-out infinite;
   will-change: opacity, transform, box-shadow;
 }
 
@@ -2195,16 +2189,37 @@ h1, h2, h3,
   letter-spacing: 0.01em;
   font-size: 1.3rem;
 }
+/* Footer value pill — matches the hero pill for a consistent "easy & clear" promise */
 .footer-value-strip {
-  background: var(--surface) !important;
-  border: 1px solid var(--hairline) !important;
-  border-radius: 999px;
-  font-family: var(--serif);
-  font-style: italic;
-  color: var(--navy) !important;
-  font-weight: 500;
-  font-size: 1rem;
-  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin: 0 0 1.1rem !important;
+  padding: 0.82rem 1.35rem !important;
+  border-radius: 999px !important;
+  background: #ffffff !important;
+  border: 2px solid rgba(22, 59, 92, 0.28) !important;
+  box-shadow:
+    0 18px 44px rgba(22, 59, 92, 0.14),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset !important;
+  color: #163B5C !important;
+  font-family: var(--sans) !important;
+  font-style: normal !important;
+  font-size: clamp(0.96rem, 1.4vw, 1.1rem) !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.015em !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+}
+.footer-value-strip .footer-value-icon {
+  display: inline-block !important;
+  color: #4F8F8A !important;
+  font-size: 0.85em !important;
+  opacity: 1 !important;
+  margin: 0 0.55rem !important;
+  flex: 0 0 auto !important;
 }
 .footer-value-icon { color: var(--teal) !important; }
 .footer-network-line { color: var(--sage-deep) !important; }
@@ -2247,6 +2262,18 @@ h1, h2, h3,
   border: 1px solid var(--hairline) !important;
   box-shadow: var(--shadow) !important;
   border-radius: var(--radius) !important;
+  color: var(--text) !important;
+}
+.cookie-banner p {
+  color: var(--text) !important;
+}
+.cookie-secondary {
+  border-color: var(--hairline) !important;
+  color: var(--navy) !important;
+}
+.cookie-secondary:hover {
+  border-color: var(--navy) !important;
+  color: var(--navy) !important;
 }
 
 /* Micro-CTA links under each section — solid teal pill (button-like), distinct from eyebrows */
@@ -2534,14 +2561,14 @@ h1, h2, h3,
     transparent 100%
   );
   background-size: 220% 100%;
-  background-position: -120% 0;
-  animation: bubbleShimmer 7.5s ease-in-out infinite;
+  background-position: 200% 0;
+  animation: bubbleShimmer 7.5s linear infinite;
   mix-blend-mode: overlay;
 }
 @keyframes bubbleShimmer {
-  0%   { background-position: -120% 0; }
-  60%  { background-position: 220% 0;  }
-  100% { background-position: 220% 0;  }
+  0%   { background-position: 200% 0; }
+  45%  { background-position: -120% 0; }
+  100% { background-position: -120% 0; }
 }
 
 /* (8) Network LIVE card — pulsing teal border + soft shimmer for the only live destination */
@@ -2637,8 +2664,8 @@ h1, h2, h3,
     transparent 100%
   );
   background-size: 220% 100%;
-  background-position: -120% 0;
-  animation: bubbleShimmer 7s ease-in-out infinite;
+  background-position: 200% 0;
+  animation: bubbleShimmer 7s linear infinite;
   mix-blend-mode: screen;
   z-index: 1;
 }
@@ -2836,6 +2863,19 @@ h1, h2, h3,
 
 @media (prefers-reduced-motion: reduce) {
   .concierge-card-cta::after { animation: none !important; }
+}
+
+/* Concierge cards — push CTA to bottom so all buttons align across the row */
+.concierge-card {
+  align-items: stretch !important;
+}
+.concierge-card-content {
+  flex: 1 1 auto;
+  min-height: 100%;
+}
+.concierge-card-content .concierge-card-cta {
+  margin-top: auto !important;
+  align-self: flex-start;
 }
 
 /* ============================================================ */
@@ -3085,6 +3125,10 @@ h1, h2, h3,
 .chat-card .input-area #user-input::placeholder {
   color: rgba(14, 58, 64, 0.42) !important;
   font-weight: 500;
+  font-size: 0.92rem !important; /* keep textarea at 16px to prevent iOS zoom, but soften placeholder so long rotations don't wrap */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* --- 5. Mic + Send: clearly separated, mic ghost / send solid */
