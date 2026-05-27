@@ -91,11 +91,11 @@
   <body id="top">
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <!-- Floating Chat Bubble -->
-    <button id="floating-chat-bubble" aria-label="Open Santorini AI Concierge" class="floating-chat-bubble pulse" style="position:fixed;">
+    <a id="floating-chat-bubble" href="#ask-ai" aria-label="Open Santorini AI Concierge" class="floating-chat-bubble pulse" role="button" style="position:fixed;">
       <span class="bubble-emoji">💬</span>
       <span class="bubble-text">Ask Santorini Ai</span>
       <span class="shimmer"></span>
-    </button>
+    </a>
     <header class="site-header">
       <a class="site-logo" href="#top" aria-label="Ask Santorini AI home">
         <picture>
@@ -500,53 +500,17 @@
 
     <script src="script.js" defer></script>
     <script>
-      // Floating chat bubble — land the user IN the chat reliably.
-      // Strategy: compute target with live header height, smooth-scroll,
-      // re-correct after the scroll settles (covers font/layout shifts
-      // and mobile URL-bar collapse), then highlight the card. Focus the
-      // input only on devices with a real keyboard so we don't pop the
-      // soft keyboard unexpectedly on touch devices.
+      // Floating bubble — lightweight "landed" highlight on top of
+      // script.js's existing #ask-ai click delegate (which handles
+      // smooth scroll + URL hash + desktop focus). Keep this minimal:
+      // we ONLY add the pulse highlight class, nothing else.
       (function () {
         const bubble = document.getElementById('floating-chat-bubble');
-        if (!bubble) return;
-
-        const getOffset = () => {
-          const header = document.querySelector('.site-header');
-          const h = header ? header.getBoundingClientRect().height : 0;
-          return h + 16;
-        };
-
-        const targetTopFor = (el) =>
-          Math.max(0, el.getBoundingClientRect().top + window.pageYOffset - getOffset());
-
-        bubble.addEventListener('click', (event) => {
-          event.preventDefault();
-          const chat = document.getElementById('ask-ai');
-          if (!chat) return;
-
-          window.scrollTo({ top: targetTopFor(chat), behavior: 'smooth' });
-
-          if (window.location.hash !== '#ask-ai') {
-            try { history.pushState(null, '', '#ask-ai'); } catch (_) { /* ignore */ }
-          }
-
+        const chat = document.getElementById('ask-ai');
+        if (!bubble || !chat) return;
+        bubble.addEventListener('click', () => {
           chat.classList.add('chat-highlight');
           window.setTimeout(() => chat.classList.remove('chat-highlight'), 1400);
-
-          // Settle correction + desktop-only input focus once the
-          // smooth-scroll has finished.
-          window.setTimeout(() => {
-            const delta = chat.getBoundingClientRect().top - (getOffset() - 16);
-            if (Math.abs(delta) > 24) {
-              window.scrollTo({ top: targetTopFor(chat), behavior: 'auto' });
-            }
-            if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-              const input = document.getElementById('user-input');
-              if (input) {
-                try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
-              }
-            }
-          }, 700);
         });
       })();
     </script>
