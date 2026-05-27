@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Aqua Blue Hotel",
+    "type": "hotel",
+    "phone": "+30 22860 12345",
+    "website": "https://aquabluehotel.gr",
+    "maps_url": "https://maps.app.goo.gl/example1",
+    "active": true
+  }
+]
