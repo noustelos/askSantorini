@@ -500,16 +500,34 @@
 
     <script src="script.js" defer></script>
     <script>
-      // Floating chat bubble logic
+      // Floating chat bubble logic — land the user IN the chat:
+      // scroll the chat card to the top with a header offset, then
+      // focus the input so the keyboard appears on mobile.
       const bubble = document.getElementById('floating-chat-bubble');
       if (bubble) {
-        bubble.addEventListener('click', () => {
+        bubble.addEventListener('click', (event) => {
+          event.preventDefault();
           const chat = document.getElementById('ask-ai');
-          if (chat) {
-            chat.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            chat.classList.add('chat-highlight');
-            setTimeout(() => chat.classList.remove('chat-highlight'), 1200);
-          }
+          if (!chat) return;
+
+          const header = document.querySelector('.site-header');
+          const headerH = header ? header.getBoundingClientRect().height : 0;
+          const offset = headerH + 16;
+          const top = chat.getBoundingClientRect().top + window.pageYOffset - offset;
+
+          window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+
+          chat.classList.add('chat-highlight');
+          setTimeout(() => chat.classList.remove('chat-highlight'), 1200);
+
+          // Focus the textarea once the smooth scroll settles so the
+          // mobile keyboard rises and the user is truly "in" the chat.
+          setTimeout(() => {
+            const input = document.getElementById('user-input');
+            if (input) {
+              try { input.focus({ preventScroll: true }); } catch (_) { input.focus(); }
+            }
+          }, 650);
         });
       }
     </script>

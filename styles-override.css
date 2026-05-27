@@ -3502,3 +3502,130 @@ body.sun-mode .chat-chip {
     filter: none !important;
   }
 }
+
+/* ============================================================ */
+/* Phase 2.0 — Fixes pack                                       */
+/* 1) iPhone hamburger nav anchoring                            */
+/* 2) Shimmer only on 3 premium CTAs (Ask Santorini / Send /     */
+/*    Become a Partner) with subtle premium sheen                */
+/* 3) Stop iOS "endless page" below the footer                   */
+/* ============================================================ */
+
+/* (1) Hamburger fix — earlier override set .site-header to
+   position:static!important, which broke .site-nav's absolute
+   anchoring on mobile (the menu escaped the header and dropped
+   over the hero). Re-anchor it with position:relative on small
+   screens, and keep the body scrollable. */
+@media (max-width: 980px) {
+  .site-header {
+    position: relative !important;
+    z-index: 1000;
+  }
+  .site-nav {
+    /* keep within viewport edges and never wider than the header */
+    left: 8px !important;
+    right: 8px !important;
+    max-height: calc(100vh - 96px);
+    max-height: calc(100dvh - 96px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* (2) Strip the shimmer sweep from all CTAs except the three the
+   client approved. The shared rule earlier paints ::after on
+   .button-primary / .section-micro-cta / .send-btn — we neutralise
+   it on everything, then re-enable it (subtly) for the 3 targets. */
+.button-primary::after,
+.section-micro-cta::after,
+.concierge-card-cta::after,
+.tour-card-cta::after,
+.chat-card .input-area button.send-btn::after {
+  display: none !important;
+  animation: none !important;
+  background: none !important;
+  mix-blend-mode: normal !important;
+  content: none !important;
+}
+
+/* Premium sheen — slow, low-opacity diagonal sweep, like luxury
+   sites. Applied ONLY to: floating bubble, Send, Become a Partner.
+   NOTE: no mix-blend-mode (iOS Safari has bugs with `screen` over
+   backdrop-filter/gradient backgrounds → sheen invisible on iPhone). */
+#floating-chat-bubble .shimmer,
+.chat-card .input-area button.send-btn::after,
+.partner-actions .button-primary[data-i18n="becomePartner"]::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  pointer-events: none !important;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(255, 255, 255, 0.42) 50%,
+    transparent 58%,
+    transparent 100%
+  ) !important;
+  background-size: 240% 100% !important;
+  background-position: -150% 0 !important;
+  animation: premiumSheen 5s ease-in-out infinite !important;
+  animation-delay: 0.8s !important;
+  mix-blend-mode: normal !important;
+  z-index: 1 !important;
+}
+
+/* Make sure ::after is enabled on the partner CTA host */
+.partner-actions .button-primary[data-i18n="becomePartner"] {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.partner-actions .button-primary[data-i18n="becomePartner"] > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Sheen visible for ~36% of cycle (1.8s of 5s) → noticeable in a
+   short visit but not "marquee". Long-enough idle to feel premium. */
+@keyframes premiumSheen {
+  0%   { background-position: -150% 0; opacity: 0; }
+  6%   { opacity: 1; }
+  36%  { background-position: 150% 0;  opacity: 1; }
+  44%  { opacity: 0; }
+  100% { background-position: 150% 0;  opacity: 0; }
+}
+
+/* Reduced-motion: slow the sheen down instead of killing it.
+   iOS Low Power Mode auto-enables prefers-reduced-motion; we don't
+   want the affordance to disappear there, just to feel calmer. */
+@media (prefers-reduced-motion: reduce) {
+  #floating-chat-bubble .shimmer,
+  .chat-card .input-area button.send-btn::after,
+  .partner-actions .button-primary[data-i18n="becomePartner"]::after {
+    animation: premiumSheen 11s ease-in-out infinite !important;
+    animation-delay: 1.5s !important;
+  }
+}
+
+/* (3) iOS "endless page" below footer — caused by
+   body { min-height: 100vh } combined with hero
+   min-height: calc(100vh - 108px) on browsers where 100vh
+   includes the URL bar. Switch to dynamic viewport units and
+   clamp horizontal overflow defensively. */
+html, body {
+  overflow-x: clip;
+}
+body {
+  min-height: 100dvh !important;
+}
+.hero {
+  min-height: calc(100dvh - 108px);
+}
+.site-footer {
+  margin-bottom: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
