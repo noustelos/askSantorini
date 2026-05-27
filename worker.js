@@ -242,15 +242,20 @@ function dedupeSources(sources) {
   const result = [];
   (sources || []).forEach((source) => {
     if (!source?.uri) return;
-    let host = "";
+    // Gemini wraps every source in a vertexaisearch redirect, so the URL
+    // hostname collides for every chunk. Dedupe on the title (real domain
+    // shown by Gemini) instead, falling back to the URL hostname.
+    const titleKey = String(source.title || "").trim().toLowerCase();
+    let fallbackHost = "";
     try {
-      host = new URL(source.uri).hostname.toLowerCase();
+      fallbackHost = new URL(source.uri).hostname.toLowerCase();
     } catch {
-      host = source.uri.toLowerCase();
+      fallbackHost = source.uri.toLowerCase();
     }
-    if (seen.has(host)) return;
-    seen.add(host);
-    result.push({ uri: source.uri, title: source.title || host });
+    const dedupeKey = titleKey || fallbackHost;
+    if (seen.has(dedupeKey)) return;
+    seen.add(dedupeKey);
+    result.push({ uri: source.uri, title: source.title || fallbackHost });
   });
   return result.slice(0, 5);
 }
@@ -278,8 +283,28 @@ function buildCtaList({ rawText, sources, isGreek = false }) {
     /(^|\.)instagram\.com$/i,
     /(^|\.)twitter\.com$/i,
     /(^|\.)x\.com$/i,
+    /(^|\.)youtube\.com$/i,
+    /(^|\.)tiktok\.com$/i,
+    /(^|\.)wikipedia\.org$/i,
     /(^|\.)tripadvisor\./i,
-    /(^|\.)booking\.com$/i
+    /(^|\.)booking\.com$/i,
+    /(^|\.)expedia\./i,
+    /(^|\.)hotels\.com$/i,
+    /(^|\.)agoda\.com$/i,
+    /(^|\.)trivago\./i,
+    /(^|\.)kayak\./i,
+    /(^|\.)hostelworld\.com$/i,
+    /(^|\.)hotelbeds\.com$/i,
+    /(^|\.)vrbo\.com$/i,
+    /(^|\.)airbnb\./i,
+    /(^|\.)reserve-online\.net$/i,
+    /(^|\.)hotelscombined\./i,
+    /(^|\.)priceline\.com$/i,
+    /(^|\.)momondo\./i,
+    /(^|\.)skyscanner\./i,
+    /(^|\.)getyourguide\./i,
+    /(^|\.)viator\.com$/i,
+    /(^|\.)tui\./i
   ];
 
   const isBlockedHost = (host) => {
