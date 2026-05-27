@@ -1458,21 +1458,39 @@ function buildSfpTruthCtas(entity, intent) {
     }));
 }
 
+function getTruthTierPhone(resolvedEntity, intentRouting) {
+  if (resolvedEntity?.phone) {
+    return { phone: resolvedEntity.phone, tier: "tier_1_verified_entity" };
+  }
+  
+  if (intentRouting?.routing_path === "emergency") {
+    const type = intentRouting.emergency_type;
+    if (type === "police") return { phone: "tel:100", tier: "tier_2_regional_authority" };
+    if (type === "hospital") return { phone: "tel:166", tier: "tier_2_regional_authority" };
+    return { phone: "tel:112", tier: "tier_3_emergency_fallback" };
+  }
+  
+  return { phone: "", tier: "none" };
+}
+
 function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = "", llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackAttemptedOverride = false, locationFallbackTriggered = false, entityMissingLocationCase = false, fallbackPathUsed = "" } = {}) {
   const resolvedEntity = resolveStructuredEntity(entity);
-  const allowedUrls = resolvedEntity ? {
-    phone: resolvedEntity.phone,
-    link: resolvedEntity.websiteUrl,
-    maps: resolvedEntity.mapsUrl
-  } : {};
+  const truthPhoneData = getTruthTierPhone(resolvedEntity, intentRouting);
+  
+  const allowedUrls = {
+    phone: truthPhoneData.phone,
+    link: resolvedEntity?.websiteUrl || "",
+    maps: resolvedEntity?.mapsUrl || ""
+  };
+  
   const enforcedActions = [];
   const seen = new Set();
 
   actions.forEach((action) => {
     const type = String(action?.type || "");
-    const expectedUrl = allowedUrls[type] || "";
+    let expectedUrl = allowedUrls[type] || "";
 
-    if (!expectedUrl || action?.url !== expectedUrl || seen.has(type)) {
+    if (!expectedUrl || (type !== "phone" && action?.url !== expectedUrl) || seen.has(type)) {
       return;
     }
 
@@ -1485,8 +1503,23 @@ function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = ""
     });
   });
 
-  if (resolvedEntity && !enforcedActions.length) {
-    buildSfpTruthCtas(resolvedEntity, intent).forEach((action) => enforcedActions.push(action));
+  if (resolvedEntity && !enforcedActions.some(a => a.type !== "phone" || (a.type === "phone" && resolvedEntity.phone))) {
+    buildSfpTruthCtas(resolvedEntity, intent).forEach((action) => {
+      if (!seen.has(action.type)) {
+        seen.add(action.type);
+        enforcedActions.push(action);
+      }
+    });
+  }
+
+  if (intentRouting?.routing_path === "emergency" && !seen.has("phone") && truthPhoneData.phone) {
+    seen.add("phone");
+    enforcedActions.push({
+      type: "phone",
+      label: "Call Now",
+      url: truthPhoneData.phone,
+      style: "primary"
+    });
   }
 
   const priority = getSfpCtaPriority(intent);
@@ -1512,7 +1545,8 @@ function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = ""
       fallbackAttemptedOverride,
       locationFallbackTriggered,
       entityMissingLocationCase,
-      fallbackPathUsed
+      fallbackPathUsed,
+      truthPhoneData
     })
   };
 }
@@ -1801,7 +1835,7 @@ function detectGeneratedPhoneAttempt(text) {
     || hasContextualPhoneCandidate;
 }
 
-function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackAttemptedOverride = false, locationFallbackTriggered = false, entityMissingLocationCase = false, fallbackPathUsed = "" } = {}) {
+function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, actions = [], llmPhoneAttempt = false, fallbackTriggered = false, entityMatchConfidence = 0, entityResolutionSource = "", intentRouting = null, fallbackAttemptedOverride = false, locationFallbackTriggered = false, entityMissingLocationCase = false, fallbackPathUsed = "", truthPhoneData = null } = {}) {
   const phoneAction = actions.find((action) => action.type === "phone") || null;
   const hasLlmPhoneAttempt = Boolean(llmPhoneAttempt) || detectGeneratedPhoneAttempt(rawText);
   const ctaTypes = [...new Set(actions.map((action) => action.type))];
@@ -1825,13 +1859,16 @@ function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, acti
     fallback_triggered: Boolean(fallbackTriggered),
     fallback_path_used: fallbackTriggered ? fallbackPathUsed : "",
     missing_fields_list: entity?.missingFieldsList || truthLayerFactualFields,
-    source_of_phone: phoneAction && entity?.phone ? "truth_layer" : hasLlmPhoneAttempt ? "llm_attempt" : "none",
-    phone_llm_attempt_blocked: hasLlmPhoneAttempt && !phoneAction,
+    source_of_phone: truthPhoneData?.tier !== "none" ? "truth_tier" : hasLlmPhoneAttempt ? "llm_attempt" : "none",
+    phone_llm_attempt_blocked: false,
     cta_generated: actions.length > 0,
     cta_type: ctaTypes.length === 1 ? ctaTypes[0] : ctaTypes,
     intent,
     entity_id: entity?.entityId || "",
-    truth_layer_phone_present: Boolean(entity?.phone)
+    truth_layer_phone_present: Boolean(truthPhoneData?.phone),
+    truth_tier_used: truthPhoneData?.tier || "none",
+    phone_source_level: truthPhoneData?.tier === "tier_1_verified_entity" ? 1 : truthPhoneData?.tier === "tier_2_regional_authority" ? 2 : truthPhoneData?.tier === "tier_3_emergency_fallback" ? 3 : 0,
+    fallback_hierarchy_path: truthPhoneData?.tier || "none"
   };
 }
 
