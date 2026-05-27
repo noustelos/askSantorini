@@ -1646,6 +1646,7 @@ async function finalizeResponse({
   });
   let generatedText = llmText;
   let generatedCtaDebug = ctaDebug;
+  let extraActions = [];
 
   pipelineStepLog.push("hydration");
   const intent = getSfpIntent(userMessage, selectedIntent, hydratedEntity);
@@ -1669,6 +1670,9 @@ async function finalizeResponse({
         if (llmResult.ctaDebug && !generatedCtaDebug) {
           generatedCtaDebug = llmResult.ctaDebug;
         }
+        if (Array.isArray(llmResult.extraActions)) {
+          extraActions = llmResult.extraActions.filter((action) => action && action.url && action.type);
+        }
       } else {
         generatedText = String(llmResult || "");
       }
@@ -1687,6 +1691,21 @@ async function finalizeResponse({
       }
     ];
     regression_trigger_detected = true;
+  }
+
+  if (extraActions.length) {
+    const seenKeys = new Set(actions.map((action) => `${action.type}:${action.url}`));
+    extraActions.forEach((action) => {
+      const key = `${action.type}:${action.url}`;
+      if (seenKeys.has(key)) return;
+      seenKeys.add(key);
+      actions.push({
+        type: String(action.type),
+        label: String(action.label || (action.type === "phone" ? "Call" : "Open")),
+        url: String(action.url),
+        style: action.style === "primary" ? "primary" : "secondary"
+      });
+    });
   }
 
   const trimmedLlmText = String(generatedText || "").trim();
@@ -2104,7 +2123,8 @@ Concierge behavior rules:
 - Only mention the selected concierge partner when it is directly relevant to the user's intent.
 - Never show more than one affiliate or partner in a single answer.
 - Do not write phone numbers, addresses, URLs, map links, booking links, or contact details.
-- Never invent or guess phone numbers, websites, addresses or any contact details. If you do not have verified data, say so honestly.
+- Never invent or guess phone numbers, websites, addresses or any contact details. Only state contact details if the grounded search results explicitly provide them.
+- When Google Search grounding returns verified results, you may reference that you found the information; the website button will be displayed alongside your answer automatically.
 - Never use advertising language, sales pressure, "best", "top-rated", "official", or guaranteed claims.
 - Keep the recommendation optional, subtle, and in a travel concierge style.
 - Tell the user to confirm availability, timing, prices, and details directly before booking.
@@ -3809,7 +3829,8 @@ async function sendMessage(text) {
 
         return {
           text: data?.reply || copy.noReplyMessage,
-          ctaDebug: data?.cta_debug || null
+          ctaDebug: data?.cta_debug || null,
+          extraActions: Array.isArray(data?.cta) ? data.cta : []
         };
       },
       selectedIntent,

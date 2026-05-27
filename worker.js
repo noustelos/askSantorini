@@ -57,18 +57,28 @@ export default {
     const intent = String(body?.intent || "").trim();
 
     try {
-      const rawReply = await callGemini(env, prompt);
-      const reply = sanitizeGeneratedFacts(rawReply);
+      const gemini = await callGemini(env, prompt, { enableGrounding: true });
+      const rawReply = gemini.text;
       const llmPhoneAttempt = detectGeneratedPhoneAttempt(rawReply);
+      const sources = dedupeSources(gemini.grounding);
+      const cta = buildCtaList({ rawText: rawReply, sources });
+      // When grounding produced verified CTAs, trust the LLM text (already sourced).
+      // Otherwise apply defensive sanitization to strip unverified phones/URLs.
+      const reply = cta && cta.length
+        ? cleanupReply(rawReply)
+        : sanitizeGeneratedFacts(rawReply);
 
       return jsonResponse({
         reply,
         intent,
         entity_id: entityId,
-        cta: null,
+        cta,
+        sources,
         debug: {
           entity_source: entitySource,
           llm_phone_attempt: llmPhoneAttempt,
+          grounding_used: true,
+          source_count: sources.length,
           model: env.GEMINI_MODEL || "gemini-2.5-flash"
         }
       });
@@ -167,7 +177,7 @@ async function postEventWithRetry(url, event) {
   return null;
 }
 
-async function callGemini(env, prompt) {
+async function callGemini(env, prompt, { enableGrounding = false } = {}) {
   if (!env.GEMINI_API_KEY) {
     throw new Error("Missing GEMINI_API_KEY.");
   }
@@ -175,24 +185,30 @@ async function callGemini(env, prompt) {
   const model = env.GEMINI_MODEL || "gemini-2.5-flash";
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
+  const requestBody = {
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.6,
+      maxOutputTokens: 768
+    }
+  };
+
+  if (enableGrounding) {
+    requestBody.tools = [{ google_search: {} }];
+  }
+
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-goog-api-key": env.GEMINI_API_KEY
     },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.6,
-        maxOutputTokens: 768
-      }
-    })
+    body: JSON.stringify(requestBody)
   });
 
   const data = await response.json();
@@ -201,14 +217,88 @@ async function callGemini(env, prompt) {
     throw new Error(data?.error?.message || "Gemini request failed.");
   }
 
-  const parts = data?.candidates?.[0]?.content?.parts || [];
+  const candidate = data?.candidates?.[0];
+  const parts = candidate?.content?.parts || [];
   const text = parts.map((part) => part.text || "").join("").trim();
 
   if (!text) {
     throw new Error("Gemini returned an empty reply.");
   }
 
-  return text;
+  const groundingChunks = candidate?.groundingMetadata?.groundingChunks || [];
+  const grounding = groundingChunks
+    .map((chunk) => ({
+      uri: chunk?.web?.uri || "",
+      title: chunk?.web?.title || ""
+    }))
+    .filter((source) => source.uri);
+
+  return { text, grounding };
+}
+
+function dedupeSources(sources) {
+  const seen = new Set();
+  const result = [];
+  (sources || []).forEach((source) => {
+    if (!source?.uri) return;
+    let host = "";
+    try {
+      host = new URL(source.uri).hostname.toLowerCase();
+    } catch {
+      host = source.uri.toLowerCase();
+    }
+    if (seen.has(host)) return;
+    seen.add(host);
+    result.push({ uri: source.uri, title: source.title || host });
+  });
+  return result.slice(0, 5);
+}
+
+function buildCtaList({ rawText, sources }) {
+  const ctas = [];
+  const phoneMatch = String(rawText || "").match(/\+?30[\s().-]*(?:\d[\s().-]*){8,12}/);
+
+  if (phoneMatch && sources.length > 0) {
+    const normalised = phoneMatch[0].replace(/[^\d+]/g, "");
+    if (normalised.length >= 10) {
+      const telHref = normalised.startsWith("+") ? `tel:${normalised}` : `tel:+${normalised}`;
+      ctas.push({ type: "phone", label: "\uD83D\uDCDE Call", url: telHref, style: "primary" });
+    }
+  }
+
+  const trustedHostBlocklist = new Set([
+    "google.com",
+    "www.google.com",
+    "vertexaisearch.cloud.google.com",
+    "facebook.com",
+    "www.facebook.com",
+    "instagram.com",
+    "www.instagram.com"
+  ]);
+
+  const websiteSource = sources.find((source) => {
+    try {
+      const host = new URL(source.uri).hostname.toLowerCase();
+      return !trustedHostBlocklist.has(host);
+    } catch {
+      return false;
+    }
+  });
+
+  if (websiteSource) {
+    ctas.push({ type: "link", label: "\uD83C\uDF10 Visit website", url: websiteSource.uri, style: "secondary" });
+  }
+
+  return ctas.length ? ctas : null;
+}
+
+function cleanupReply(text) {
+  // Light cleanup: collapse whitespace, trim, drop trailing markdown link clutter.
+  return String(text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
 }
 
 function sanitizeGeneratedFacts(text) {
