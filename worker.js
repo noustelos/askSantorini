@@ -269,20 +269,30 @@ function buildCtaList({ rawText, sources, isGreek = false }) {
     }
   }
 
-  const trustedHostBlocklist = new Set([
-    "google.com",
-    "www.google.com",
-    "vertexaisearch.cloud.google.com",
-    "facebook.com",
-    "www.facebook.com",
-    "instagram.com",
-    "www.instagram.com"
-  ]);
+  // Note: Gemini grounding wraps source URLs in vertexaisearch.cloud.google.com
+  // redirect links. The real domain lives in `source.title`. Block based on
+  // the title (or url host when not a redirect) so we surface the actual site.
+  const blockedDomainPatterns = [
+    /(^|\.)google\.com$/i,
+    /(^|\.)facebook\.com$/i,
+    /(^|\.)instagram\.com$/i,
+    /(^|\.)twitter\.com$/i,
+    /(^|\.)x\.com$/i,
+    /(^|\.)tripadvisor\./i,
+    /(^|\.)booking\.com$/i
+  ];
+
+  const isBlockedHost = (host) => {
+    if (!host) return true;
+    return blockedDomainPatterns.some((pattern) => pattern.test(host));
+  };
 
   const websiteSource = sources.find((source) => {
+    const titleHost = String(source.title || "").trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0];
+    if (titleHost) return !isBlockedHost(titleHost);
     try {
       const host = new URL(source.uri).hostname.toLowerCase();
-      return !trustedHostBlocklist.has(host);
+      return !isBlockedHost(host);
     } catch {
       return false;
     }

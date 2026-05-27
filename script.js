@@ -1721,9 +1721,14 @@ async function finalizeResponse({
     responseText = trimmedLlmText;
   }
 
-  // Always sanitize output
-  const sanitizedText = sanitizeGeneratedFacts(responseText);
-  pipelineStepLog.push("legacy_safe_mode");
+  // When the worker returned grounded CTAs (extraActions), trust the reply
+  // text as-is — stripping the phone/URL leaves dangling sentences like
+  // "…είναι ." next to the Call button. Otherwise apply the legacy safety net.
+  const hasGroundedActions = extraActions.length > 0;
+  const sanitizedText = hasGroundedActions
+    ? String(responseText || "").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim()
+    : sanitizeGeneratedFacts(responseText);
+  pipelineStepLog.push(hasGroundedActions ? "grounded_passthrough" : "legacy_safe_mode");
 
   const finalResponse = {
     message_id: messageId,
