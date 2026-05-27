@@ -412,6 +412,7 @@ const getStoredValue = (key) => {
   try {
     return window.localStorage.getItem(key);
   } catch {
+    console.log("FINAL RESPONSE REACHED: getStoredValue fallback");
     return null;
   }
 };
@@ -1312,7 +1313,10 @@ function hasTruthCompleteness(entity) {
 function getEntityById(entityId) {
   const normalizedId = normalizeEntityId(entityId);
 
-  if (!normalizedId) return null;
+  if (!normalizedId) {
+    console.log("FINAL RESPONSE REACHED: getEntityById normalizedId missing");
+    return null;
+  }
 
   return conciergeAffiliates.find((affiliate) => affiliate.entityId === normalizedId) || null;
 }
@@ -1404,7 +1408,10 @@ function isEntityContextResetIntent(text) {
 function resolveStructuredEntity(entity) {
   const canonicalEntity = getEntityById(entity?.entityId) || entity || null;
 
-  if (!canonicalEntity?.entityId) return null;
+  if (!canonicalEntity?.entityId) {
+    console.log("FINAL RESPONSE REACHED: resolveStructuredEntity canonicalEntity missing");
+    return null;
+  }
 
   const phone = getEntityPhoneUrl(canonicalEntity);
   const website = getEntityWebsiteUrl(canonicalEntity);
@@ -1581,7 +1588,10 @@ function renderSfpFragment(finalResponse) {
 }
 
 function appendFinalResponse(finalResponse, className = "bot-message") {
-  if (!chatBox) return null;
+  if (!chatBox) {
+    console.log("FINAL RESPONSE REACHED: appendFinalResponse chatBox missing");
+    return null;
+  }
 
   const msgDiv = document.createElement("div");
   const id = "msg-" + Date.now() + "-" + Math.random().toString(36).slice(2);
@@ -1641,8 +1651,7 @@ async function finalizeResponse({
   const intent = getSfpIntent(userMessage, selectedIntent, hydratedEntity);
   pipelineStepLog.push("intent");
 
-  // --- BYPASS strict validation and fallback layers ---
-  // Only render phone CTA if entity exists and has phone
+  // --- Resolve final text: always prefer real LLM/fallback content over generic notice. ---
   let actions = [];
   let regression_trigger_detected = false;
   let disabled_layers = [
@@ -1651,6 +1660,22 @@ async function finalizeResponse({
     "strict_fallback_triggers"
   ];
   let active_render_path = "legacy_safe_mode";
+
+  if (typeof generateLlmText === "function" && !generatedText) {
+    try {
+      const llmResult = await generateLlmText();
+      if (llmResult && typeof llmResult === "object") {
+        generatedText = String(llmResult.text || "");
+        if (llmResult.ctaDebug && !generatedCtaDebug) {
+          generatedCtaDebug = llmResult.ctaDebug;
+        }
+      } else {
+        generatedText = String(llmResult || "");
+      }
+    } catch (llmError) {
+      console.warn("AskSantorini generateLlmText failed:", llmError);
+    }
+  }
 
   if (hydratedEntity && hydratedEntity.phone) {
     actions = [
@@ -1664,14 +1689,17 @@ async function finalizeResponse({
     regression_trigger_detected = true;
   }
 
-  // If no entity or no phone, show safe fallback
+  const trimmedLlmText = String(generatedText || "").trim();
   let responseText = "";
-  if (!hydratedEntity) {
+
+  if (trimmedLlmText) {
+    responseText = trimmedLlmText;
+  } else if (!hydratedEntity) {
     responseText = "Verified contact details are not available right now.";
   } else if (!hydratedEntity.phone) {
     responseText = "I couldn't find a verified contact number for this place right now.";
   } else {
-    responseText = generatedText || "";
+    responseText = trimmedLlmText;
   }
 
   // Always sanitize output
@@ -1709,9 +1737,8 @@ async function finalizeResponse({
   }
 
   appendFinalResponse(finalResponse, className);
-
   askSantoriniTrafficLog("AskSantorini Single Final Output Pipeline (legacy_safe_mode):", finalResponse);
-
+  console.log("FINAL RESPONSE REACHED");
   return finalResponse;
 }
 
@@ -3512,6 +3539,7 @@ async function sendMessage(text) {
       : null;
     selectedAffiliate = resolvedEntity || selectedAffiliate;
 
+    // EMERGENCY: always handled first
     if (intentRouting.routing_path === "emergency") {
       const finalResponse = await finalizeResponse({
         userMessage: cleanText,
@@ -3552,6 +3580,7 @@ async function sendMessage(text) {
       return;
     }
 
+    // LOCATION: only fallback if entity is missing
     if (intentRouting.routing_path === "location" && !resolvedEntity) {
       const finalResponse = await finalizeResponse({
         userMessage: cleanText,
@@ -3593,64 +3622,39 @@ async function sendMessage(text) {
       return;
     }
 
-    const truthComplete = Boolean(resolvedEntity && hasTruthCompleteness(resolvedEntity));
-    const fallbackAttemptedRoutingPath = (!activeEntity && mentionedEntityMatch?.ambiguous) || !resolvedEntity
-      ? "business"
-      : "";
-    fallbackAttemptedOverride = getFallbackAttemptedRoutingOverride(intentRouting, fallbackAttemptedRoutingPath);
-    const fallbackRequired = Boolean(
-      !fallbackAttemptedOverride
-      && (
-        (intentRouting.routing_path === "business" && !activeEntity && mentionedEntityMatch?.ambiguous)
-        || (isBusinessContactIntent(cleanText) && !resolvedEntity)
-      )
-    );
-
-    if (fallbackRequired) {
-      const sessionFallbackEntity = activeEntityId
-        ? hydrateTruthLayerEntity(activeEntityId, "fallback_session_reuse")
-        : null;
-      if (sessionFallbackEntity) {
-        resolvedEntity = sessionFallbackEntity;
-        selectedAffiliate = sessionFallbackEntity;
-        selectedIntent = selectedIntent || sessionFallbackEntity.type;
-      }
-      const fallbackPathUsed = activeEntityId && sessionFallbackEntity
-        ? "session_reuse"
-        : "clarification_request";
-      entityResolutionSource = fallbackPathUsed === "session_reuse" ? "session" : "fallback_prompt";
-      const fallbackMessage = !activeEntity && mentionedEntityMatch?.ambiguous
-        ? "I found more than one similar place. Please send the full business name so I can use only verified details."
-        : getTruthLayerFallbackMessage(resolvedEntity?.missingFieldsList || truthLayerFactualFields, {
-            entity: resolvedEntity,
-            intent: selectedIntent,
-            fallbackPathUsed
-          });
-      askSantoriniTrafficLog("AskSantorini Helpful Action Fallback Layer v1:", {
-        sessionId: getConciergeSessionId(),
-        sessionEntityId: activeEntityId,
-        resolvedEntityId: resolvedEntity?.entityId || "",
-        entity_resolution_source: entityResolutionSource,
-        detected_intent_type: intentRouting.detected_intent_type,
-        intent_confidence_score: intentRouting.intent_confidence_score,
-        routing_path: intentRouting.routing_path,
-        routing_path_locked: Boolean(intentRouting.routing_path_locked),
-        fallback_attempted_override: fallbackAttemptedOverride,
-        fallback_path_used: fallbackPathUsed,
-        fallback_triggered: true
+    // GENERAL: bypass Truth Layer and CTA system, return direct LLM response
+    if (intentRouting.routing_path === "general") {
+      const response = await fetch(workerUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: cleanText,
+          prompt: buildConciergePrompt(cleanText, null)
+        })
       });
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        throw new Error("Worker did not return valid JSON.");
+      }
+      if (!response.ok) {
+        throw new Error(data?.error || "Worker request failed.");
+      }
       const finalResponse = await finalizeResponse({
         userMessage: cleanText,
-        llmText: fallbackMessage,
+        llmText: data?.reply || copy.noReplyMessage,
         selectedIntent,
-        entity: fallbackPathUsed === "clarification_request" ? null : resolvedEntity,
-        entityMatchConfidence: entityMatchDebug.confidence,
-        entityResolutionSource,
+        entity: null,
+        entityMatchConfidence: 0,
+        entityResolutionSource: "llm_only",
         intentRouting,
-        fallbackAttemptedOverride,
-        fallbackTriggered: true,
-        fallbackPathUsed,
-        className: "bot-message error",
+        fallbackAttemptedOverride: false,
+        fallbackTriggered: false,
+        fallbackPathUsed: "",
+        className: "bot-message",
         messageId,
         onBeforeRender: () => {
           const loadingEl = loadingId ? document.getElementById(loadingId) : null;
@@ -3661,12 +3665,90 @@ async function sendMessage(text) {
         userMessage: cleanText,
         botResponse: finalResponse.text,
         intent: finalResponse.intent,
-        affiliate: fallbackPathUsed === "session_reuse" ? selectedAffiliate : "",
+        affiliate: "",
         eventType: "message",
         messageId
       });
       await sendEvent(latestInteractionEvent);
       return;
+    }
+
+    // BUSINESS: fallback logic ONLY for business queries
+    if (intentRouting.routing_path === "business") {
+      const truthComplete = Boolean(resolvedEntity && hasTruthCompleteness(resolvedEntity));
+      const fallbackAttemptedRoutingPath = (!activeEntity && mentionedEntityMatch?.ambiguous) || !resolvedEntity
+        ? "business"
+        : "";
+      fallbackAttemptedOverride = getFallbackAttemptedRoutingOverride(intentRouting, fallbackAttemptedRoutingPath);
+      const fallbackRequired = Boolean(
+        !fallbackAttemptedOverride
+        && (
+          (intentRouting.routing_path === "business" && !activeEntity && mentionedEntityMatch?.ambiguous)
+          || (isBusinessContactIntent(cleanText) && !resolvedEntity)
+        )
+      );
+      if (fallbackRequired) {
+        const sessionFallbackEntity = activeEntityId
+          ? hydrateTruthLayerEntity(activeEntityId, "fallback_session_reuse")
+          : null;
+        if (sessionFallbackEntity) {
+          resolvedEntity = sessionFallbackEntity;
+          selectedAffiliate = sessionFallbackEntity;
+          selectedIntent = selectedIntent || sessionFallbackEntity.type;
+        }
+        const fallbackPathUsed = activeEntityId && sessionFallbackEntity
+          ? "session_reuse"
+          : "clarification_request";
+        entityResolutionSource = fallbackPathUsed === "session_reuse" ? "session" : "fallback_prompt";
+        const fallbackMessage = !activeEntity && mentionedEntityMatch?.ambiguous
+          ? "I found more than one similar place. Please send the full business name so I can use only verified details."
+          : getTruthLayerFallbackMessage(resolvedEntity?.missingFieldsList || truthLayerFactualFields, {
+              entity: resolvedEntity,
+              intent: selectedIntent,
+              fallbackPathUsed
+            });
+        askSantoriniTrafficLog("AskSantorini Helpful Action Fallback Layer v1:", {
+          sessionId: getConciergeSessionId(),
+          sessionEntityId: activeEntityId,
+          resolvedEntityId: resolvedEntity?.entityId || "",
+          entity_resolution_source: entityResolutionSource,
+          detected_intent_type: intentRouting.detected_intent_type,
+          intent_confidence_score: intentRouting.intent_confidence_score,
+          routing_path: intentRouting.routing_path,
+          routing_path_locked: Boolean(intentRouting.routing_path_locked),
+          fallback_attempted_override: fallbackAttemptedOverride,
+          fallback_path_used: fallbackPathUsed,
+          fallback_triggered: true
+        });
+        const finalResponse = await finalizeResponse({
+          userMessage: cleanText,
+          llmText: fallbackMessage,
+          selectedIntent,
+          entity: fallbackPathUsed === "clarification_request" ? null : resolvedEntity,
+          entityMatchConfidence: entityMatchDebug.confidence,
+          entityResolutionSource,
+          intentRouting,
+          fallbackAttemptedOverride,
+          fallbackTriggered: true,
+          fallbackPathUsed,
+          className: "bot-message error",
+          messageId,
+          onBeforeRender: () => {
+            const loadingEl = loadingId ? document.getElementById(loadingId) : null;
+            if (loadingEl) loadingEl.remove();
+          }
+        });
+        latestInteractionEvent = buildEvent({
+          userMessage: cleanText,
+          botResponse: finalResponse.text,
+          intent: finalResponse.intent,
+          affiliate: fallbackPathUsed === "session_reuse" ? selectedAffiliate : "",
+          eventType: "message",
+          messageId
+        });
+        await sendEvent(latestInteractionEvent);
+        return;
+      }
     }
 
     selectedOptimizationContext = latestConciergeSelectionContext;
