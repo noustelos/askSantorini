@@ -3413,13 +3413,32 @@ body.sun-mode .chat-chip {
   animation-duration: 3.0s !important;
 }
 
+/* Reduce-motion: keep a slow, gentle breathing glow (no scale, no shimmer).
+   Higher specificity than the universal *,::after,::before kill-switch in
+   styles.min.css, so our brand affordance survives the accessibility filter
+   while still being calmer than the default. */
 @media (prefers-reduced-motion: reduce) {
   #floating-chat-bubble,
   .chat-card .input-area button.send-btn,
   .partner-actions .button-primary[data-i18n="becomePartner"] {
-    animation: none !important;
-    filter: none !important;
+    animation: buttonGlowPulseSoft 6s ease-in-out infinite !important;
+    animation-duration: 6s !important;
+    animation-iteration-count: infinite !important;
     transform: none !important;
+    will-change: filter;
+  }
+}
+
+@keyframes buttonGlowPulseSoft {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 0 rgba(42, 126, 127, 0))
+      brightness(1);
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 10px rgba(42, 126, 127, 0.32))
+      brightness(1.03);
   }
 }
 
@@ -3470,10 +3489,16 @@ body.sun-mode .chat-chip {
   }
 }
 
+/* Reduce-motion: skip the 3 intro pulses; keep the slow calm halo so the
+   card is still visibly discoverable. Higher specificity (.chat-card) than
+   the universal *,::after,::before kill-switch in styles.min.css. */
 @media (prefers-reduced-motion: reduce) {
   .chat-card {
-    animation: none !important;
-    outline-color: rgba(42, 126, 127, 0.18) !important;
+    animation: chatCardCalmHalo 8s ease-in-out infinite !important;
+    animation-duration: 8s !important;
+    animation-iteration-count: infinite !important;
+    outline: 2px solid rgba(42, 126, 127, 0.10) !important;
+    outline-offset: 6px !important;
     filter: none !important;
   }
 }
