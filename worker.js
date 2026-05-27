@@ -52,7 +52,7 @@ export default {
   }
 };
 
-const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbwefn-8Ghek_jMNYR1jcAsFFJe5dWmf0u2NH7kGEIMKSfv6DqnA0cQiZgQuw04Z8QMl/exec";
+const eventWebhookUrl = "https://script.google.com/macros/s/AKfycbzTvfkY34RF0qD0cH2MeUxpobdrVLFeAX35hg4Y9MTVabyL-l6ggrBLaCVEzq4C9Y9d/exec";
 const eventForwardUrls = [eventWebhookUrl];
 const sessionEntityMemory = new Map();
 
