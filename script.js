@@ -1647,7 +1647,7 @@ async function finalizeResponse({
   const truthComplete = Boolean(hydratedEntity && hasTruthCompleteness(hydratedEntity));
   const missingFieldsList = hydratedEntity?.missingFieldsList || truthLayerFactualFields;
   const requestedMissingField = getRequestedMissingTruthField(intent, missingFieldsList);
-  const truthFallbackTriggered = Boolean(fallbackTriggered || (hydratedEntity && !truthComplete) || requestedMissingField);
+  const truthFallbackTriggered = Boolean(fallbackTriggered || requestedMissingField);
   const truthFallbackMessage = getTruthLayerFallbackMessage(requestedMissingField ? [requestedMissingField] : missingFieldsList, {
       entity: hydratedEntity,
       intent,
@@ -1662,9 +1662,7 @@ async function finalizeResponse({
     generatedCtaDebug = llmResult?.ctaDebug || generatedCtaDebug;
   }
 
-  const shouldUseTruthFallbackText = Boolean(
-    (requestedMissingField || (hydratedEntity && !truthComplete)) && !fallbackTriggered
-  );
+  const shouldUseTruthFallbackText = Boolean(requestedMissingField && !fallbackTriggered);
   const responseText = shouldUseTruthFallbackText ? truthFallbackMessage : (generatedText || truthFallbackMessage);
   const sanitizedText = sanitizeGeneratedFacts(responseText);
   pipelineStepLog.push("llm");
@@ -1846,6 +1844,11 @@ function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, acti
     routing_path_locked: false
   };
 
+  let finalPhoneSource = "none";
+  if (truthPhoneData?.tier === "tier_1_verified_entity") finalPhoneSource = "entity";
+  else if (truthPhoneData?.tier === "tier_2_regional_authority") finalPhoneSource = "regional";
+  else if (truthPhoneData?.tier === "tier_3_emergency_fallback") finalPhoneSource = "fallback";
+
   return {
     entity_match_confidence: Number(entityMatchConfidence) || 0,
     entity_resolution_source: entityResolutionSource,
@@ -1868,7 +1871,11 @@ function getCtaEnforcementDebug({ rawText = "", intent = "", entity = null, acti
     truth_layer_phone_present: Boolean(truthPhoneData?.phone),
     truth_tier_used: truthPhoneData?.tier || "none",
     phone_source_level: truthPhoneData?.tier === "tier_1_verified_entity" ? 1 : truthPhoneData?.tier === "tier_2_regional_authority" ? 2 : truthPhoneData?.tier === "tier_3_emergency_fallback" ? 3 : 0,
-    fallback_hierarchy_path: truthPhoneData?.tier || "none"
+    fallback_hierarchy_path: truthPhoneData?.tier || "none",
+    resolved_entity_phone_present: Boolean(entity?.phone),
+    selected_truth_tier: truthPhoneData?.tier === "tier_1_verified_entity" ? 1 : truthPhoneData?.tier === "tier_2_regional_authority" ? 2 : truthPhoneData?.tier === "tier_3_emergency_fallback" ? 3 : 0,
+    enforcement_override_triggered: Boolean(truthPhoneData?.phone && hasLlmPhoneAttempt && !phoneAction),
+    final_phone_source: finalPhoneSource
   };
 }
 
@@ -3496,9 +3503,9 @@ async function sendMessage(text) {
         userMessage: cleanText,
         llmText: getEmergencyFallbackMessage(intentRouting.emergency_type),
         selectedIntent: "emergency_request",
-        entity: null,
-        entityMatchConfidence: 0,
-        entityResolutionSource: "fallback_prompt",
+        entity: resolvedEntity,
+        entityMatchConfidence: entityMatchDebug?.confidence || 0,
+        entityResolutionSource: resolvedEntity ? entityResolutionSource : "fallback_prompt",
         intentRouting,
         fallbackAttemptedOverride: false,
         fallbackTriggered: true,
@@ -3573,7 +3580,7 @@ async function sendMessage(text) {
     }
 
     const truthComplete = Boolean(resolvedEntity && hasTruthCompleteness(resolvedEntity));
-    const fallbackAttemptedRoutingPath = (!activeEntity && mentionedEntityMatch?.ambiguous) || !resolvedEntity || (resolvedEntity && !truthComplete)
+    const fallbackAttemptedRoutingPath = (!activeEntity && mentionedEntityMatch?.ambiguous) || !resolvedEntity
       ? "business"
       : "";
     fallbackAttemptedOverride = getFallbackAttemptedRoutingOverride(intentRouting, fallbackAttemptedRoutingPath);
@@ -3582,7 +3589,6 @@ async function sendMessage(text) {
       && (
         (intentRouting.routing_path === "business" && !activeEntity && mentionedEntityMatch?.ambiguous)
         || (isBusinessContactIntent(cleanText) && !resolvedEntity)
-        || (intentRouting.routing_path === "business" && resolvedEntity && !truthComplete)
       )
     );
 
