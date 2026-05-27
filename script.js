@@ -2122,9 +2122,8 @@ Concierge behavior rules:
 - Always answer the user's travel question first with useful local guidance.
 - Only mention the selected concierge partner when it is directly relevant to the user's intent.
 - Never show more than one affiliate or partner in a single answer.
-- Do not write phone numbers, addresses, URLs, map links, booking links, or contact details.
-- Never invent or guess phone numbers, websites, addresses or any contact details. Only state contact details if the grounded search results explicitly provide them.
-- When Google Search grounding returns verified results, you may reference that you found the information; the website button will be displayed alongside your answer automatically.
+- Never invent or guess phone numbers, websites, addresses or any contact details. Only state contact details that come directly from the grounded Google Search results provided to you.
+- Reply in the same language the user used (Greek or English).
 - Never use advertising language, sales pressure, "best", "top-rated", "official", or guaranteed claims.
 - Keep the recommendation optional, subtle, and in a travel concierge style.
 - Tell the user to confirm availability, timing, prices, and details directly before booking.
@@ -2134,9 +2133,10 @@ Concierge behavior rules:
 const conciergeRuleWithVerifiedEntity = "- The user's selected business has verified contact details available. If the user asks for phone, website, address or map, refer generally to the contact buttons shown with the answer.";
 
 const conciergeRuleWithoutVerifiedEntity = [
-  "- You do NOT have verified contact details for the specific business in the user's message.",
-  "- Do NOT tell the user to look at buttons, links, or CTAs — none will be shown.",
-  "- If the user asks for phone, website or address of a specific business that is not verified, reply honestly that you do not have verified contact details for it, and suggest they search on Google Maps or Booking.com, or explore the verified Partners section of AskSantorini.ai.",
+  "- The business is not in your verified partner list, but Google Search grounding is active for this turn.",
+  "- If the user asks for phone, website, address or a map, use ONLY facts that appear in the grounded search results to answer; quote the exact phone number from the sources when available.",
+  "- A Call and/or Visit website button will be rendered automatically beneath your reply when grounded contact details are found.",
+  "- If the grounded results do not contain the specific contact detail the user asked for, say so honestly in one short sentence and suggest checking Google Maps or the business's own website.",
   "- For general travel questions (no specific business name), answer normally with travel guidance."
 ].join("\n");
 
@@ -3666,28 +3666,32 @@ async function sendMessage(text) {
 
     // GENERAL: bypass Truth Layer and CTA system, return direct LLM response
     if (intentRouting.routing_path === "general") {
-      const response = await fetch(workerUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          message: cleanText,
-          prompt: buildConciergePrompt(cleanText, null)
-        })
-      });
-      let data = null;
-      try {
-        data = await response.json();
-      } catch (jsonError) {
-        throw new Error("Worker did not return valid JSON.");
-      }
-      if (!response.ok) {
-        throw new Error(data?.error || "Worker request failed.");
-      }
       const finalResponse = await finalizeResponse({
         userMessage: cleanText,
-        llmText: data?.reply || copy.noReplyMessage,
+        generateLlmText: async () => {
+          const response = await fetch(workerUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: cleanText,
+              prompt: buildConciergePrompt(cleanText, null)
+            })
+          });
+          let data = null;
+          try {
+            data = await response.json();
+          } catch (jsonError) {
+            throw new Error("Worker did not return valid JSON.");
+          }
+          if (!response.ok) {
+            throw new Error(data?.error || "Worker request failed.");
+          }
+          return {
+            text: data?.reply || copy.noReplyMessage,
+            ctaDebug: data?.cta_debug || null,
+            extraActions: Array.isArray(data?.cta) ? data.cta : []
+          };
+        },
         selectedIntent,
         entity: null,
         entityMatchConfidence: 0,
@@ -3742,7 +3746,8 @@ async function sendMessage(text) {
           ? "session_reuse"
           : "clarification_request";
         entityResolutionSource = fallbackPathUsed === "session_reuse" ? "session" : "fallback_prompt";
-        const fallbackMessage = !activeEntity && mentionedEntityMatch?.ambiguous
+        const ambiguousMatch = !activeEntity && mentionedEntityMatch?.ambiguous;
+        const staticFallbackMessage = ambiguousMatch
           ? "I found more than one similar place. Please send the full business name so I can use only verified details."
           : getTruthLayerFallbackMessage(resolvedEntity?.missingFieldsList || truthLayerFactualFields, {
               entity: resolvedEntity,
@@ -3762,9 +3767,40 @@ async function sendMessage(text) {
           fallback_path_used: fallbackPathUsed,
           fallback_triggered: true
         });
+        // Grounding-first fallback: when no verified entity but the user asked for contact info,
+        // try Gemini Search Grounding via the worker before showing the static "no verified data" message.
+        const useGroundingFallback = !ambiguousMatch;
         const finalResponse = await finalizeResponse({
           userMessage: cleanText,
-          llmText: fallbackMessage,
+          llmText: useGroundingFallback ? "" : staticFallbackMessage,
+          generateLlmText: useGroundingFallback
+            ? async () => {
+                try {
+                  const response = await fetch(workerUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      message: cleanText,
+                      prompt: buildConciergePrompt(cleanText, null)
+                    })
+                  });
+                  const data = await response.json();
+                  if (!response.ok) {
+                    return { text: staticFallbackMessage, ctaDebug: null, extraActions: [] };
+                  }
+                  const replyText = String(data?.reply || "").trim();
+                  const extraActions = Array.isArray(data?.cta) ? data.cta : [];
+                  return {
+                    text: replyText || staticFallbackMessage,
+                    ctaDebug: data?.cta_debug || null,
+                    extraActions
+                  };
+                } catch (groundingError) {
+                  console.warn("AskSantorini grounding fallback failed:", groundingError);
+                  return { text: staticFallbackMessage, ctaDebug: null, extraActions: [] };
+                }
+              }
+            : null,
           selectedIntent,
           entity: fallbackPathUsed === "clarification_request" ? null : resolvedEntity,
           entityMatchConfidence: entityMatchDebug.confidence,
@@ -3773,7 +3809,7 @@ async function sendMessage(text) {
           fallbackAttemptedOverride,
           fallbackTriggered: true,
           fallbackPathUsed,
-          className: "bot-message error",
+          className: useGroundingFallback ? "bot-message" : "bot-message error",
           messageId,
           onBeforeRender: () => {
             const loadingEl = loadingId ? document.getElementById(loadingId) : null;

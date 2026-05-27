@@ -1,12 +1,15 @@
 name: Deploy Cloudflare Worker
 
+# Auto-deploy disabled until CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID
+# secrets are added under: GitHub repo → Settings → Secrets and variables → Actions.
+# Re-enable by uncommenting the `push:` block below.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "worker.js"
-      - "wrangler.toml"
-      - ".github/workflows/deploy-worker.yml"
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - "worker.js"
+  #     - "wrangler.toml"
+  #     - ".github/workflows/deploy-worker.yml"
   workflow_dispatch:
 
 jobs:
