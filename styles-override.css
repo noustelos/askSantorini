@@ -188,7 +188,6 @@
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   background-clip: text !important;
-  text-fill-color: transparent !important;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-shadow:
@@ -209,7 +208,6 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  text-fill-color: transparent;
   text-shadow: 0 4px 32px #b8e3dd44, 0 1px 0 #fff8ec;
   letter-spacing: 0.01em;
   margin-bottom: 0.18em;
@@ -259,7 +257,6 @@ body::before, body::after {
   -webkit-background-clip: unset !important;
   -webkit-text-fill-color: unset !important;
   background-clip: unset !important;
-  text-fill-color: unset !important;
   text-shadow: none !important;
 }
 
@@ -281,7 +278,6 @@ body::before, body::after {
   -webkit-background-clip: unset !important;
   -webkit-text-fill-color: unset !important;
   background-clip: unset !important;
-  text-fill-color: unset !important;
   text-shadow: none !important;
   margin-bottom: 0.18em;
   margin-top: 0.18em;
@@ -299,8 +295,6 @@ body::before, body::after {
     padding-top: 0.12em;
     padding-bottom: 0.12em;
   }
-}
-  100% { transform: translateX(120%); }
 }
 
 /* Fine-tuning: section spacing, cards, headings, micro-animations */
@@ -1926,7 +1920,6 @@ h1, h2, h3,
   -webkit-text-fill-color: var(--navy) !important;
   color: var(--navy) !important;
   background-clip: unset !important;
-  text-fill-color: unset !important;
   text-transform: uppercase;
   text-shadow: none !important;
   margin-top: 0.2em !important;
@@ -2139,7 +2132,6 @@ h1, h2, h3,
   -webkit-background-clip: unset !important;
   -webkit-text-fill-color: var(--navy) !important;
   background-clip: unset !important;
-  text-fill-color: unset !important;
   color: var(--navy) !important;
   font-family: var(--serif) !important;
   font-weight: 600 !important;
@@ -2301,7 +2293,6 @@ h1, h2, h3,
   color: #FFFFFF !important;
   background: none !important;
   -webkit-text-fill-color: #FFFFFF !important;
-  text-fill-color: #FFFFFF !important;
 }
 .chatbot-panel p,
 .chatbot-panel .chatbot-copy p,
