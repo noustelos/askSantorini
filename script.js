@@ -28,7 +28,6 @@ const translations = {
     chatGreeting: "Hi! I'm your local Santorini AI. Ask me anything.",
     chatPlaceholder: "Ask Santorini AI...",
     chatPlaceholderRotations: [
-      "Where's the best sunset tonight?",
       "Best beach near me?",
       "How do I get to Oia?",
       "Where to eat tonight?",
