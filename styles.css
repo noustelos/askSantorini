@@ -172,9 +172,25 @@ img {
 
 .site-logo img {
   width: auto;
-  height: 54px;
+  height: 68px;
   max-width: 280px;
   object-fit: contain;
+}
+
+.site-logo-text {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--navy);
+  margin-left: 12px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.site-logo-text em {
+  font-style: italic;
+  color: var(--terracotta);
 }
 
 .site-nav {
@@ -2065,8 +2081,13 @@ section[id] {
   }
 
   .site-logo img {
-    height: 40px;
+    height: 50px;
     max-width: 220px;
+  }
+
+  .site-logo-text {
+    font-size: 1.1rem;
+    margin-left: 9px;
   }
 
   .site-nav a {
@@ -2222,8 +2243,13 @@ section[id] {
 
 @media (max-width: 420px) {
   .site-logo img {
-    height: 36px;
+    height: 44px;
     max-width: 190px;
+  }
+
+  .site-logo-text {
+    font-size: 0.95rem;
+    margin-left: 8px;
   }
 
   h1 {

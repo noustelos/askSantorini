@@ -2393,22 +2393,41 @@ h1, h2, h3,
 /* Phase 1.6 — hierarchy, motion & polish                       */
 /* ============================================================ */
 
-/* (1) Header — single logo, hide redundant ASK SANTORINI AI text, emphasise mark */
-.site-logo-text { display: none !important; }
+/* (1) Header — logo + brand name side by side */
+.site-logo-text {
+  display: inline-block !important;
+  font-family: var(--serif) !important;
+  font-weight: 700 !important;
+  font-size: 1.25rem !important;
+  color: var(--navy) !important;
+  letter-spacing: 0.01em !important;
+  white-space: nowrap !important;
+  text-transform: none !important;
+  text-shadow: none !important;
+  margin-left: 10px !important;
+}
+.site-logo-text em {
+  font-style: italic !important;
+  color: var(--teal) !important;
+}
 .site-logo picture,
 .site-logo img {
   display: block;
-  max-height: 38px;
-  width: auto;
-  filter: drop-shadow(0 1px 0 rgba(14, 58, 64, 0.06));
-  transition: transform 0.25s ease, filter 0.25s ease;
+  height: 66px !important;
+  width: auto !important;
+  max-width: none !important;
+  clip-path: circle(44%);
+  transition: transform 0.25s ease;
 }
 .site-logo:hover img {
   transform: translateY(-1px) scale(1.02);
-  filter: drop-shadow(0 3px 8px rgba(42, 126, 127, 0.22));
 }
 @media (max-width: 700px) {
-  .site-logo img { max-height: 32px; }
+  .site-logo img { height: 50px !important; }
+  .site-logo-text { font-size: 1rem !important; }
+}
+@media (max-width: 480px) {
+  .site-logo-text { display: none !important; }
 }
 
 /* (4) Hero decorative line — center it under JUST ASK, re-color to sage/teal */
