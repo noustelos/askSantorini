@@ -1745,10 +1745,12 @@ async function finalizeResponse({
 
   // Emergency routing: always inject the verified phone CTA (entity is null for police/ambulance)
   if (routingDebug?.routing_path === "emergency" && !actions.some(a => a.type === "phone")) {
-    const emergencyPhoneData = getTruthTierPhone(hydratedEntity, intentRouting);
-    if (emergencyPhoneData.phone) {
-      actions.push({ type: "phone", label: "Call Now", url: emergencyPhoneData.phone, style: "primary" });
-    }
+    const emergencyType = intentRouting?.emergency_type || "";
+    const emergencyPhone = emergencyType === "police" ? "tel:2286022649"
+      : emergencyType === "hospital" ? "tel:166"
+      : "tel:112";
+    actions.push({ type: "phone", label: "Call Now", url: emergencyPhone, style: "primary" });
+    console.log("[emergency CTA]", emergencyType, emergencyPhone);
   }
 
   const trimmedLlmText = String(generatedText || "").trim();
