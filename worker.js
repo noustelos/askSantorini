@@ -264,12 +264,18 @@ function buildCtaList({ rawText, sources, isGreek = false }) {
   const ctas = [];
   const callLabel = isGreek ? "\uD83D\uDCDE \u039A\u03BB\u03AE\u03C3\u03B7" : "\uD83D\uDCDE Call";
   const websiteLabel = isGreek ? "\uD83C\uDF10 \u0399\u03C3\u03C4\u03BF\u03C3\u03B5\u03BB\u03AF\u03B4\u03B1" : "\uD83C\uDF10 Visit website";
-  const phoneMatch = String(rawText || "").match(/\+?30[\s().-]*(?:\d[\s().-]*){8,12}/);
+  // Match Greek numbers with or without country code:
+  // - +30 XXXXXXXXXX / 30 XXXXXXXXXX (existing form)
+  // - 69XXXXXXXX (mobile without country code)
+  // - 2XXXXXXXXX (landline without country code, covers Santorini 22860XXXXX etc.)
+  const phoneMatch = String(rawText || "").match(/(?:\+?30[\s().-]*)?(?:69|2\d)[\s().-]*(?:\d[\s().-]*){7}\d/);
 
   if (phoneMatch && sources.length > 0) {
-    const normalised = phoneMatch[0].replace(/[^\d+]/g, "");
-    if (normalised.length >= 10) {
-      const telHref = normalised.startsWith("+") ? `tel:${normalised}` : `tel:+${normalised}`;
+    const digits = phoneMatch[0].replace(/[^\d]/g, "");
+    if (digits.length >= 10) {
+      // Ensure full E.164 form: +30 + 10-digit local number
+      const local = digits.startsWith("30") && digits.length === 12 ? digits.slice(2) : digits;
+      const telHref = `tel:+30${local}`;
       ctas.push({ type: "phone", label: callLabel, url: telHref, style: "primary" });
     }
   }
