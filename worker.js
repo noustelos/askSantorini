@@ -304,7 +304,23 @@ function buildCtaList({ rawText, sources, isGreek = false }) {
     /(^|\.)skyscanner\./i,
     /(^|\.)getyourguide\./i,
     /(^|\.)viator\.com$/i,
-    /(^|\.)tui\./i
+    /(^|\.)tui\./i,
+    /(^|\.)greeka\.com$/i,
+    /(^|\.)lonelyplanet\.com$/i,
+    /(^|\.)roughguides\.com$/i,
+    /(^|\.)fodors\.com$/i,
+    /(^|\.)frommers\.com$/i,
+    /(^|\.)timeout\.com$/i,
+    /(^|\.)theculturetrip\.com$/i,
+    /(^|\.)discovergreece\.com$/i,
+    /(^|\.)visitgreece\.gr$/i,
+    /(^|\.)theguardian\.com$/i,
+    /(^|\.)telegraph\.co\.uk$/i,
+    /(^|\.)cntraveler\.com$/i,
+    /(^|\.)travelandleisure\.com$/i,
+    /(^|\.)atlasobscura\.com$/i,
+    /(^|\.)santorini-dave\.com$/i,
+    /(^|\.)wanderlust\.co\.uk$/i,
   ];
 
   const isBlockedHost = (host) => {
@@ -312,28 +328,42 @@ function buildCtaList({ rawText, sources, isGreek = false }) {
     return blockedDomainPatterns.some((pattern) => pattern.test(host));
   };
 
-  let websiteHost = "";
-  const websiteSource = sources.find((source) => {
-    const titleHost = String(source.title || "").trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0];
-    if (titleHost) {
-      if (isBlockedHost(titleHost)) return false;
-      websiteHost = titleHost;
-      return true;
-    }
-    try {
-      const host = new URL(source.uri).hostname.toLowerCase();
-      if (isBlockedHost(host)) return false;
-      websiteHost = host;
-      return true;
-    } catch {
-      return false;
-    }
-  });
+  // Score a host: prefer .gr domains, domains whose name appears in the reply, and simple domains.
+  const scoreHost = (host) => {
+    let score = 0;
+    if (host.endsWith(".gr")) score += 3;
+    const domainRoot = host.replace(/^www\./, "").split(".")[0];
+    if (domainRoot.length > 3 && String(rawText || "").toLowerCase().includes(domainRoot.toLowerCase())) score += 2;
+    if (host.replace(/^www\./, "").split(".").length <= 2) score += 1;
+    return score;
+  };
 
-  if (websiteSource && websiteHost) {
+  let bestHost = "";
+  let bestScore = -1;
+
+  for (const source of sources) {
+    let host = "";
+    const titleHost = String(source.title || "").trim().toLowerCase().replace(/^https?:\/\//, "").split("/")[0];
+    if (titleHost && !isBlockedHost(titleHost)) {
+      host = titleHost;
+    } else if (!titleHost) {
+      try {
+        const h = new URL(source.uri).hostname.toLowerCase();
+        if (!isBlockedHost(h)) host = h;
+      } catch {}
+    }
+    if (!host) continue;
+    const s = scoreHost(host);
+    if (s > bestScore) {
+      bestScore = s;
+      bestHost = host;
+    }
+  }
+
+  if (bestHost) {
     // Prefer the homepage of the real domain over Gemini's deep-link redirect:
     // users expect "Visit website" to land on the brand's main page.
-    const homepageUrl = `https://${websiteHost.replace(/^www\./, "")}/`;
+    const homepageUrl = `https://${bestHost.replace(/^www\./, "")}/`;
     ctas.push({ type: "link", label: websiteLabel, url: homepageUrl, style: "secondary" });
   }
 
