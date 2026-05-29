@@ -366,7 +366,7 @@ function buildCtaList({ rawText, sources, isGreek = false }) {
     }
   }
 
-  if (bestHost) {
+  if (bestHost && bestScore >= 2) {
     // Prefer the homepage of the real domain over Gemini's deep-link redirect:
     // users expect "Visit website" to land on the brand's main page.
     const homepageUrl = `https://${bestHost.replace(/^www\./, "")}/`;
