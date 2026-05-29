@@ -802,6 +802,8 @@ body::before, body::after {
 .chat-card {
   overflow: visible;
   isolation: isolate;
+  position: relative;
+  z-index: 1;
   padding: clamp(22px, 3vw, 30px);
   border: 1px solid rgba(255, 255, 255, 0.82);
   background:
