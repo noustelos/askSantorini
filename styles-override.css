@@ -1672,7 +1672,6 @@ body::before, body::after {
 
 .questions-section::after,
 .how-section::before,
-.tours-section::after,
 .concierge-section::after,
 .partners-section::before,
 .network-section::before {
@@ -1699,17 +1698,6 @@ body::before, body::after {
     radial-gradient(ellipse at 82% 50%, rgba(240, 185, 133, 0.12), transparent 58%);
 }
 
-.tours-section::after {
-  top: 54px;
-  right: max(18px, calc((100vw - var(--max-width)) / 2));
-  width: min(260px, 34vw);
-  height: 120px;
-  border-radius: 999px;
-  background:
-    radial-gradient(ellipse at 70% 50%, rgba(79, 143, 138, 0.12), transparent 58%),
-    radial-gradient(ellipse at 20% 70%, rgba(255, 255, 255, 0.46), transparent 64%);
-  filter: blur(2px);
-}
 
 .concierge-section::after {
   right: max(18px, calc((100vw - var(--max-width)) / 2));
