@@ -1759,8 +1759,10 @@ async function finalizeResponse({
   // When the worker returned grounded CTAs (extraActions), trust the reply
   // text as-is — stripping the phone/URL leaves dangling sentences like
   // "…είναι ." next to the Call button. Otherwise apply the legacy safety net.
+  // Exception: emergency routing always strips URLs regardless of grounded actions.
   const hasGroundedActions = extraActions.length > 0;
-  const sanitizedText = hasGroundedActions
+  const isEmergencyRouting = routingDebug?.routing_path === "emergency";
+  const sanitizedText = (hasGroundedActions && !isEmergencyRouting)
     ? String(responseText || "").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim()
     : sanitizeGeneratedFacts(responseText);
   pipelineStepLog.push(hasGroundedActions ? "grounded_passthrough" : "legacy_safe_mode");
