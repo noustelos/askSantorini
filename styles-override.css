@@ -743,7 +743,11 @@ body::before, body::after {
   letter-spacing: inherit !important;
 }
 
-.hero-value-strip::before,
+.hero-value-strip::before {
+  content: "" !important;
+  display: none !important;
+}
+
 .hero-value-strip::after {
   content: "✦" !important;
   display: inline-block !important;
@@ -751,13 +755,6 @@ body::before, body::after {
   font-size: 0.85em !important;
   opacity: 1 !important;
   flex: 0 0 auto !important;
-}
-
-.hero-value-strip::before {
-  margin-right: 0.65rem !important;
-}
-
-.hero-value-strip::after {
   margin-left: 0.65rem !important;
 }
 

@@ -457,20 +457,17 @@ h3 {
   -webkit-backdrop-filter: blur(18px);
 }
 
-.hero-value-strip::before,
+.hero-value-strip::before {
+  content: "";
+  display: none;
+}
+
 .hero-value-strip::after {
   content: "✦";
   color: var(--teal, #4F8F8A);
   font-size: 0.85em;
   opacity: 0.95;
   flex: 0 0 auto;
-}
-
-.hero-value-strip::before {
-  margin-right: 0.65rem;
-}
-
-.hero-value-strip::after {
   margin-left: 0.65rem;
 }
 
