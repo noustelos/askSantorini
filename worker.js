@@ -325,7 +325,7 @@ function buildCtaList({ rawText, sources, isGreek = false }) {
     /(^|\.)cntraveler\.com$/i,
     /(^|\.)travelandleisure\.com$/i,
     /(^|\.)atlasobscura\.com$/i,
-    /(^|\.)santorini-dave\.com$/i,
+    /(^|\.)santorinidave\.com$/i,
     /(^|\.)wanderlust\.co\.uk$/i,
   ];
 
