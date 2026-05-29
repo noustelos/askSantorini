@@ -2425,7 +2425,7 @@ h1, h2, h3,
   .site-logo-text { font-size: 1rem !important; }
 }
 @media (max-width: 480px) {
-  .site-logo-text { display: none !important; }
+  .site-logo-text { font-size: 0.88rem !important; }
 }
 
 /* (4) Hero decorative line — center it under JUST ASK, re-color to sage/teal */
