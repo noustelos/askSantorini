@@ -1012,7 +1012,15 @@ body::before, body::after {
 }
 
 .chat-message-text {
-  white-space: pre-wrap;
+  white-space: normal;
+}
+
+.chat-message-text p {
+  margin: 0 0 0.5em;
+}
+
+.chat-message-text p:last-child {
+  margin-bottom: 0;
 }
 
 .chat-inline-link {

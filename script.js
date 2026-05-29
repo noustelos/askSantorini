@@ -1588,12 +1588,23 @@ function enforceSfpCtas({ actions = [], entity = null, intent = "", rawText = ""
   };
 }
 
+function renderMessageHtml(text) {
+  const escaped = String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return escaped
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\n\n/g, "</p><p>")
+    .replace(/\n/g, "<br>");
+}
+
 function renderSfpFragment(finalResponse) {
   const fragment = document.createDocumentFragment();
   const textContainer = document.createElement("div");
 
   textContainer.className = "chat-message-text";
-  textContainer.appendChild(document.createTextNode(finalResponse.text || getTruthLayerFallbackMessage()));
+  textContainer.innerHTML = "<p>" + renderMessageHtml(finalResponse.text || getTruthLayerFallbackMessage()) + "</p>";
   fragment.appendChild(textContainer);
 
   if (finalResponse.actions.length) {
