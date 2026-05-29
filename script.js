@@ -1502,7 +1502,7 @@ function getTruthTierPhone(resolvedEntity, intentRouting) {
   
   if (intentRouting?.routing_path === "emergency") {
     const type = intentRouting.emergency_type;
-    if (type === "police") return { phone: "tel:100", tier: "tier_2_regional_authority" };
+    if (type === "police") return { phone: "tel:2286022649", tier: "tier_2_regional_authority" };
     if (type === "hospital") return { phone: "tel:166", tier: "tier_2_regional_authority" };
     return { phone: "tel:112", tier: "tier_3_emergency_fallback" };
   }
@@ -1902,7 +1902,7 @@ function getLocationFallbackMessage(userMessage = "") {
 
 function getEmergencyFallbackMessage(emergencyType = "general") {
   if (emergencyType === "police") {
-    return "For police assistance in Santorini, please dial 100 or the European Emergency Number 112.";
+    return "Το τοπικό τηλέφωνο της Αστυνομίας στη Σαντορίνη είναι το **2286022649** (Υποδιεύθυνση Αστυνομίας Θήρας, Καρτεράδος).\n\nΑστυνομικό Τμήμα Οίας: **22860 71954** · Αστυνομία Αερολιμένα: **2286028451**\n\nΓια άμεση έκτακτη ανάγκη καλέστε **100** ή τον Ευρωπαϊκό αριθμό **112**.";
   }
   if (emergencyType === "hospital") {
     return "For medical emergencies in Santorini, please dial 166 for an ambulance or 112 for the European Emergency Number.";
