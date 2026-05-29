@@ -1743,6 +1743,14 @@ async function finalizeResponse({
     });
   }
 
+  // Emergency routing: always inject the verified phone CTA (entity is null for police/ambulance)
+  if (routingDebug?.routing_path === "emergency" && !actions.some(a => a.type === "phone")) {
+    const emergencyPhoneData = getTruthTierPhone(hydratedEntity, intentRouting);
+    if (emergencyPhoneData.phone) {
+      actions.push({ type: "phone", label: "Call Now", url: emergencyPhoneData.phone, style: "primary" });
+    }
+  }
+
   const trimmedLlmText = String(generatedText || "").trim();
   let responseText = "";
 
