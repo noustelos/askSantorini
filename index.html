@@ -25,10 +25,13 @@
     <meta name="twitter:description" content="Ask Santorini in real time. Get instant AI answers about beaches, sunsets, tours, food, transport and local experiences.">
     <meta name="twitter:image" content="https://asksantorini.ai/assets/social/ask-santorini-og.jpg">
     <meta name="theme-color" content="#0F3D78">
-    <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="assets/icons/favicon.ico" sizes="any">
+    <link rel="icon" href="assets/icons/favicon-32x32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="assets/icons/favicon-16x16.png" type="image/png" sizes="16x16">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.min.css">
     <link rel="stylesheet" href="styles-override.css">
     <script type="application/ld+json">
@@ -191,26 +194,36 @@
 
       <section class="feature-strip" aria-label="Guide topics">
         <div class="feature-row section-shell">
-          <article class="feature-card">
+          <a class="feature-card ask-ai-link" href="#ask-ai"
+            data-chat-prefill-en="Which beach in Santorini is best for me today? Black sand, red cliffs, or something calm?"
+            data-chat-prefill-el="Ποια παραλία στη Σαντορίνη ταιριάζει για σήμερα; Μαύρη άμμος, κόκκινοι βράχοι ή κάτι ήσυχο;">
             <h3 data-i18n="featureBeaches">Which beach fits today?</h3>
             <p data-i18n="featureBeachesLine">Black sand, red cliffs or family calm — just ask.</p>
-          </article>
-          <article class="feature-card">
+          </a>
+          <a class="feature-card ask-ai-link" href="#ask-ai"
+            data-chat-prefill-en="Where is the best place to watch the sunset in Santorini tonight?"
+            data-chat-prefill-el="Πού είναι το καλύτερο μέρος για ηλιοβασίλεμα στη Σαντορίνη απόψε;">
             <h3 data-i18n="featureSunsets">Where is sunset best?</h3>
             <p data-i18n="featureSunsetsLine">Where the light actually lands tonight — not just Oia.</p>
-          </article>
-          <article class="feature-card">
+          </a>
+          <a class="feature-card ask-ai-link" href="#ask-ai"
+            data-chat-prefill-en="Tell me about Caldera boat tours in Santorini — volcano, hot springs, and sea experiences."
+            data-chat-prefill-el="Πες μου για θαλάσσιες εκδρομές στη Σαντορίνη — Καλντέρα, ηφαίστειο, θερμά νερά.">
             <h3 data-i18n="featureTours">Want the sea route?</h3>
             <p data-i18n="featureToursLine">Caldera, volcano, hot springs — chosen by locals.</p>
-          </article>
-          <article class="feature-card">
+          </a>
+          <a class="feature-card ask-ai-link" href="#ask-ai"
+            data-chat-prefill-en="What are the best local restaurants and food experiences in Santorini?"
+            data-chat-prefill-el="Ποια είναι τα καλύτερα τοπικά εστιατόρια και γαστρονομικές εμπειρίες στη Σαντορίνη;">
             <h3 data-i18n="featureFood">Craving local food?</h3>
             <p data-i18n="featureFoodLine">Caldera tables locals actually book.</p>
-          </article>
-          <article class="feature-card">
+          </a>
+          <a class="feature-card ask-ai-link" href="#ask-ai"
+            data-chat-prefill-en="How do I get around Santorini? What are my transport options — bus, taxi, or private transfer?"
+            data-chat-prefill-el="Πώς μετακινούμαι στη Σαντορίνη; Ποιες είναι οι επιλογές μεταφοράς — λεωφορείο, ταξί ή ιδιωτικό;">
             <h3 data-i18n="featureTransport">How do you get there?</h3>
             <p data-i18n="featureTransportLine">Bus, taxi, private transfer or helicopter — your call.</p>
-          </article>
+          </a>
         </div>
         <a class="section-micro-cta" href="#ask-ai" data-i18n="featureMicroCta">Ask the concierge</a>
       </section>
