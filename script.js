@@ -1035,10 +1035,10 @@ const emergencyIntentPattern = /\b(hospital|emergency|urgent care|police|ambulan
 const mapsIntentPattern = /\b(maps?|google\s+maps?|directions?|navigate|navigation|location|address|route|χάρτης|χάρτες|οδηγίες|τοποθεσία|διεύθυνση)\b/i;
 const coordinatePattern = /-?\d{1,2}\.\d{3,}\s*,\s*-?\d{1,3}\.\d{3,}/;
 const criticalIntentPatterns = {
-  emergency_service_request: /\b(emergency|emergencies|ambulance|fire\s*(?:department|brigade|service)?|paramedic|911|112|166|199|έκτακτ|επείγον|επείγουσα|επείγουσα\s+ανάγκη|ασθενοφόρο|πυροσβεστική)\b/i,
-  hospital_request: /\b(hospital|hospitals|urgent\s+care|emergency\s+room|er\b|doctor|doctors|medical\s+(?:help|care|center|centre)|health\s+(?:center|centre)|clinic|νοσοκομείο|νοσοκομεια|γιατρ|κλινική|κέντρο\s+υγείας|κεντρο\s+υγειας)\b/i,
-  police_request: /\b(police|police\s+station|cop|cops|law\s+enforcement|100|αστυνομία|αστυνομικο|αστυνομικό\s+τμήμα|αστυνομικο\s+τμημα)\b/i,
-  urgent_help_request: /\b(urgent|urgently|help\s+now|need\s+help|need\s+assistance|critical|danger|unsafe|stranded|lost\s+passport|stolen|theft|robbed|accident|injured|injury|άμεσα|αμεσα|βοήθεια|βοηθεια|κίνδυνος|κινδυνος|ατύχημα|ατυχημα|τραυματ)\b/i
+  emergency_service_request: /(?:\b(?:emergency|emergencies|ambulance|fire\s*(?:department|brigade|service)?|paramedic|911|112|166|199)\b)|(?:εκτακτ|επειγ|ασθενοφορ|πυροσβεστ)/i,
+  hospital_request: /(?:\b(?:hospital|hospitals|urgent\s+care|emergency\s+room|er\b|doctor|doctors|medical\s+(?:help|care|center|centre)|health\s+(?:center|centre)|clinic)\b)|(?:νοσοκομ|γιατρ|κλινικ|κεντρο\s+υγει)/i,
+  police_request: /(?:\b(?:police|police\s+station|cop|cops|law\s+enforcement|100)\b)|(?:αστυνομ)/i,
+  urgent_help_request: /(?:\b(?:urgent|urgently|help\s+now|need\s+help|need\s+assistance|critical|danger|unsafe|stranded|lost\s+passport|stolen|theft|robbed|accident|injured|injury)\b)|(?:αμεσα|βοηθει|κινδυν|ατυχημ|τραυματ)/i
 };
 const universalCtaIntentPatterns = {
   phone_request: /\b(call|phone|telephone|tel|contact|dial|number|τηλέφωνο|κάλεσε|επικοινωνία)\b/i,
@@ -1229,8 +1229,8 @@ function classifyRoutingIntent(userMessage) {
   const sourceText = String(userMessage || "");
   const normalizedText = sourceText.toLowerCase().replace(/[^\w\s\u0370-\u03FF]/g, "").trim();
 
-  const emergencyKeywords = ["hospital", "police", "emergency", "ambulance", "doctor", "clinic", "medical", "urgent", "fire", "νοσοκομείο", "αστυνομία", "ασθενοφόρο", "έκτακτ", "επείγον", "γιατρός", "κλινική"];
-  const contactKeywords = ["number", "phone", "contact", "call", "τηλέφωνο", "επικοινωνία"];
+  const emergencyKeywords = ["hospital", "police", "emergency", "ambulance", "doctor", "clinic", "medical", "urgent", "fire", "νοσοκομ", "αστυνομ", "ασθενοφορ", "εκτακτ", "επειγ", "γιατρ", "κλινικ"];
+  const contactKeywords = ["number", "phone", "contact", "call", "τηλεφ", "επικοινων"];
 
   const foundEmergency = emergencyKeywords.filter(kw => normalizedText.includes(kw));
   const foundContact = contactKeywords.filter(kw => normalizedText.includes(kw));
@@ -1245,9 +1245,9 @@ function classifyRoutingIntent(userMessage) {
     emergencyIntentConfidence = 0.99;
     matchedEmergencyKeywords = [...foundEmergency, ...foundContact];
     
-    if (foundEmergency.some(kw => ["hospital", "doctor", "clinic", "medical", "νοσοκομείο", "γιατρός", "κλινική"].includes(kw))) {
+    if (foundEmergency.some(kw => ["hospital", "doctor", "clinic", "medical", "νοσοκομ", "γιατρ", "κλινικ"].includes(kw))) {
       robustEmergencyType = "hospital";
-    } else if (foundEmergency.some(kw => ["police", "αστυνομία"].includes(kw))) {
+    } else if (foundEmergency.some(kw => ["police", "αστυνομ"].includes(kw))) {
       robustEmergencyType = "police";
     }
   }
