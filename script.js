@@ -3557,6 +3557,7 @@ async function sendMessage(text) {
   const cleanText = String(text || "").trim();
 
   if (!cleanText) return;
+  if (cleanText.length > 2000) return;
   if (!chatBox || !userInput) return;
 
   const copy = translations[currentLanguage];
