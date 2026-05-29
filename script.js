@@ -1750,7 +1750,6 @@ async function finalizeResponse({
       : emergencyType === "hospital" ? "tel:166"
       : "tel:112";
     actions.push({ type: "phone", label: "Call Now", url: emergencyPhone, style: "primary" });
-    console.log("[emergency CTA]", emergencyType, emergencyPhone);
   }
 
   const trimmedLlmText = String(generatedText || "").trim();
