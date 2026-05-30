@@ -3845,3 +3845,31 @@ body {
     display: none;
   }
 }
+
+/* Mobile: full-screen chat when input is focused */
+@media (max-width: 700px) {
+  .chat-card--input-focused {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 12px 14px !important;
+    padding-top: max(env(safe-area-inset-top, 0px), 12px) !important;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px) !important;
+  }
+
+  .chat-card--input-focused::before,
+  .chat-card--input-focused::after {
+    display: none !important;
+  }
+
+  .chat-card--input-focused .chat-thread.chat-box {
+    flex: 1 !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+  }
+}

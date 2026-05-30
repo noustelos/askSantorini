@@ -1647,7 +1647,8 @@ function appendFinalResponse(finalResponse, className = "bot-message") {
   msgDiv.className = className;
   msgDiv.replaceChildren(fragment);
   chatBox.appendChild(msgDiv);
-  chatBox.scrollTop = chatBox.scrollHeight;
+  // Scroll so the TOP of the new message is visible (not the bottom)
+  chatBox.scrollTop += msgDiv.getBoundingClientRect().top - chatBox.getBoundingClientRect().top;
 
   askSantoriniTrafficLog("AskSantorini SFP final render:", {
     id,
@@ -4429,6 +4430,26 @@ setLanguage(getInitialLanguage());
       applySunMode(sunOn);
       try { localStorage.setItem(SUN_KEY, sunOn ? "1" : "0"); } catch {}
       tinyHaptic();
+    });
+  }
+
+  /* ---- 8. Mobile: full-screen chat on input focus ----------- */
+  const chatCard = document.getElementById("ask-ai");
+  if (chatCard) {
+    input.addEventListener("focus", () => {
+      if (window.matchMedia("(max-width: 700px)").matches) {
+        chatCard.classList.add("chat-card--input-focused");
+        requestAnimationFrame(() => {
+          chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
+        });
+      }
+    });
+    input.addEventListener("blur", () => {
+      setTimeout(() => {
+        if (chatCard.contains(document.activeElement)) return;
+        if (chatBoxEl.querySelector(".loading")) return;
+        chatCard.classList.remove("chat-card--input-focused");
+      }, 150);
     });
   }
 })();
