@@ -1485,27 +1485,48 @@ section[id] {
   font-weight: 800;
 }
 
+.network-soon-col {
+  width: 100%;
+}
+
+.network-soon-label {
+  display: block;
+  margin: 0 0 14px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--muted);
+}
+
 .network-destinations {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-end;
+  gap: 8px;
+  justify-content: center;
 }
 
 .network-destination {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  min-height: 42px;
-  padding: 10px 12px 10px 14px;
+  min-height: 38px;
+  padding: 8px 14px;
   border: 1px solid rgba(216, 154, 115, 0.20);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.58);
   color: var(--navy);
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
+}
+
+.network-featured {
+  margin-top: 20px;
+  padding: 12px 18px;
+  font-size: 1rem;
 }
 
 .network-destination.is-live {
@@ -1531,11 +1552,6 @@ section[id] {
   font-weight: 900;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-}
-
-.network-destination:not(.is-live) .network-badge {
-  border-color: rgba(216, 154, 115, 0.22);
-  color: var(--muted);
 }
 
 .site-footer {
@@ -2028,10 +2044,6 @@ section[id] {
     justify-items: start;
   }
 
-  .network-destinations {
-    justify-content: flex-start;
-  }
-
   .footer-inner {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 2rem 2.5rem;
@@ -2200,13 +2212,9 @@ section[id] {
   }
 
   .network-destinations {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .network-destination {
-    justify-content: space-between;
-    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
   }
 
   .footer-links {
