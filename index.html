@@ -142,6 +142,7 @@
         </div>
 
         <aside class="chat-card" id="ask-ai" aria-label="Ask Santorini AI live chat">
+          <a href="#top" class="chat-back-btn" aria-label="Back to page" onclick="this.closest('.chat-card').classList.remove('chat-card--input-focused');this.blur();">&#8593;</a>
           <div class="chat-card-top">
             <span class="status-dot" aria-hidden="true"></span>
             <span data-i18n="previewMode">Live · Ask Santorini AI</span>
@@ -153,12 +154,6 @@
             <div class="bot-message" data-i18n="chatGreeting">Hi! I'm your local Santorini AI. Ask me anything.</div>
           </div>
           <div class="chat-recent-chips" id="chat-recent-chips" hidden aria-label="Recent questions"></div>
-          <div class="chat-suggestion-chips" id="chat-suggestion-chips" aria-label="Quick suggestions">
-            <button type="button" class="chat-chip" data-chip-en="Best sunset spot tonight" data-chip-el="Καλύτερο σημείο για ηλιοβασίλεμα απόψε" data-i18n="chipSunset">☼ Sunset</button>
-            <button type="button" class="chat-chip" data-chip-en="Best local food near me" data-chip-el="Καλύτερο τοπικό φαγητό κοντά μου" data-i18n="chipFood">• Food</button>
-            <button type="button" class="chat-chip" data-chip-en="Best beach for today" data-chip-el="Καλύτερη παραλία για σήμερα" data-i18n="chipBeach">◒ Beach</button>
-            <button type="button" class="chat-chip" data-chip-en="Santorini plan for today" data-chip-el="Πρόγραμμα για σήμερα στη Σαντορίνη" data-i18n="chipToday">◇ Today</button>
-          </div>
           <div class="input-area">
             <textarea id="user-input" rows="1" data-i18n-attr="placeholder:chatPlaceholder" placeholder="Ask Santorini AI..." autocomplete="off"></textarea>
             <button id="send-btn" class="send-btn" type="button" data-i18n="sendButton">Send</button>
